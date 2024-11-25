@@ -1,0 +1,59 @@
+DMCH_input            # file name  
+$ctrl                                  # start of control section
+str=cov               # type of VB_structures will generate "cov" for covalent str others are 'ion' and 'full'
+nao=8                 # number of active orbitals (nao) 
+nae=8                 # number of active electrons 
+nmul=1                # multiplicity value = 2*S+1
+frgtyp=sao            # fragment type symmetrised atomic orbitals(sao)
+chinst=1              # generate Chemical insight VB structures. '= 0' will generate Rumer structures 
+$end                                   # end of the cotrol section
+$frag                                  # start of the fragment section
+16 1*8                # number of atom per fragment, '16': 16 atom in the 1st fragment '1*8': 1 atom in consecutive 8 fragments
+spypz 1 - 16          # spypz : fragment contains 3 atomic symmetries. 1 - 16: fragment delocalised over 16 atoms.
+px 1                  # px: fragment contains only one atomic symmetry or AO and localised on atom number 1. 
+px 2
+px 3
+px 4
+px 5
+px 6
+px 11
+px 14
+$end                                  # end of the fragment section 
+$orb                                  # start of the orbital section
+1*32                 # orbital description; 1*32: molecule contains 32 orbitals and each one is described with only one type of fragment 
+1                    # fragment type of this orb is described at the position 1 in $frag section
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+1
+8                    # fragment type of this orb is described at the position 8 in $frag section
+7                    # fragment type of this orb is described at the position 7 in $frag section
+2
+3
+4
+9
+5
+6
+$end                                   # end of the orbital section 
+nset 0               # spatial keyword 'nset': number of set, '0': single set, '1': all identical quality set, '2': all sets
+sym qual             # 'sym': provide symmetric set; 'qual': chemical quality structures
+######## please see the manual for other keywords and there nacessity ###############

@@ -1,0 +1,26 @@
+CH4
+$ctrl
+str=cov nao=8 nae=8 nmul=1 frgtyp=sao chinst=1
+$end
+$frag
+1*5
+spzdxxdyydzz 1
+spzdxxdyydzz 2
+spzdxxdyydzz 3
+spzdxxdyydzz 4
+spzdxxdyydzz 5
+$end
+$orb
+1*9
+1
+1
+1
+1
+1
+2
+3
+4
+5
+$end
+nset 0
+sym qual
