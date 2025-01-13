@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Exit on any error
+set -e
+
 # Define the source files
 SOURCE_FILES="
 commondat1.f90
@@ -48,20 +51,47 @@ read_spl_key.f90
 ol.f90
 cov_struc.f90
 read_info.f90
-program_main.f90
 get_ctrl_inputs.f90
 get_geometry_info.f90
+get_orbs_info.f90
+get_splkeywds.f90
+get_input_data.f90
 "
+
 # Define the module name (used in Python imports)
 MODULE_NAME="symm_str"
 
-# Create a concatenated string of all source files for f2py
+# Define the output directory
+OUTPUT_DIR="/home/sourav/Desktop/SYMM_VB_SOFTWARE/Python_interface"
+
+# Create the concatenated string of all source files for f2py
 SOURCE_FILES_LIST=$(echo $SOURCE_FILES | tr '\n' ' ')
+
+# Activate the virtual environment if required
+# Uncomment the following line if you're using a virtual environment
+source /home/sourav/Desktop/environment/myenv/bin/activate
+
+echo "Compiling Fortran source files into a Python module using f2py..."
 
 # Use f2py to compile all source files into a Python module
 f2py -c -m $MODULE_NAME $SOURCE_FILES_LIST
 
-# Move the generated shared object file (.so) to the target directory
-mv "${MODULE_NAME}".*.so /home/sourav/Desktop/SYMM_VB_SOFTWARE/Python_interface
+# Check if the shared object file was created
+SHARED_OBJECT=$(ls "${MODULE_NAME}".*.so 2>/dev/null || true)
+if [[ -z "$SHARED_OBJECT" ]]; then
+  echo "Error: Compilation failed. Shared object file not created."
+  exit 1
+fi
 
-echo "Compilation complete. Python-compatible shared object file created: ${MODULE_NAME}.so"
+# Ensure the output directory exists
+mkdir -p "$OUTPUT_DIR"
+
+# Move the generated shared object file (.so) to the target directory
+mv "$SHARED_OBJECT" "$OUTPUT_DIR"
+
+echo "Compilation complete. Python-compatible shared object file created: ${OUTPUT_DIR}/${SHARED_OBJECT}"
+
+# Deactivate virtual environment if it was activated
+# Uncomment the following line if a virtual environment was activated
+deactivate
+

@@ -538,6 +538,11 @@ class Orb_Input:
         self.keywd_button = keywd_button
         self.atm_entry = []
         self.typ_entry = []
+        self.atoset = np.zeros((200, 50), dtype = int)
+        self.norbsym_py = np.zeros(50, dtype = int)
+        self.orbsym = np.zeros((20, 20), dtype = int)
+        self.activeatoms = np.zeros(30, dtype = int)
+        self.atn_vector = np.zeros(200, dtype = int)
 #       self.assoatm_entries = []
 #       self.assotyp_entries = []
         self.orbital_data = []
@@ -655,7 +660,6 @@ class Orb_Input:
             })
 
         messagebox.showinfo("Success", "Orbital inputs validated and stored successfully.")
-        norbsym = ()
         sorbs = []
         pxorbs = []
         pyorbs = []
@@ -693,14 +697,29 @@ class Orb_Input:
                                      "Please put s, px, py or pz otherwise put sig or sigma,\n"
                                      " pi1, pi2, pi3 if the direction of pi orbs are different"
                         )
-        self.norbsym = (px_type, py_type, pz_type, sig_type)
-        self.orbsym = [
-                pxorbs,
-                pyorbs,
-                pzorbs,
-                sorbs
+        norbsym = [
+                px_type, 
+                py_type, 
+                pz_type, 
+                sig_type
                 ]
-        print('norbsym', norbsym)
+
+        self.norbsym_py = np.zeros(50, dtype=int)
+        self.norbsym_py[:len(norbsym)]=norbsym
+#        max_len = max(len(pxorbs), len(pyorbs), len(pzorbs), len(sorbs))
+        max_len = 20 
+
+        # Pad lists to be of equal length
+        pxorbs_padded = pxorbs + [0] * (max_len - len(pxorbs))
+        pyorbs_padded = pyorbs + [0] * (max_len - len(pyorbs))
+        pzorbs_padded = pzorbs + [0] * (max_len - len(pzorbs))
+        sorbs_padded = sorbs + [0] * (max_len - len(sorbs))
+        self.orbsym[0,:] = pxorbs_padded
+        self.orbsym[1,:] = pyorbs_padded
+        self.orbsym[2,:] = pzorbs_padded
+        self.orbsym[3,:] = sorbs_padded
+
+        print('norbsym', self.norbsym_py)
         print('sig_type, px_type, py_type, pz_type',sig_type, px_type, py_type, pz_type )
         # Check how many types are non-zero
         type_orb_count = sum(1 for count in [sig_type, px_type, py_type, pz_type] if count > 0)
@@ -716,6 +735,7 @@ class Orb_Input:
         # Step 1: Gather atom numbers and their orbitals
         print('self.orbital_data',self.orbital_data)
         atom_to_orbitals = {}
+        active=[]
         for orbital_number, entry in enumerate(self.orbital_data, start=1):
             atom_number = entry["atom_number"] 
             if atom_number not in atom_to_orbitals:
@@ -728,21 +748,30 @@ class Orb_Input:
         max_orbitals = max(len(orbitals) for orbitals in atom_to_orbitals.values())
 
         # Step 3: Initialize the matrix
-        matrix = np.zeros((max_atom_number, max_orbitals+1), dtype=int)
+#        matrix = np.zeros((max_atom_number, max_orbitals+1), dtype=int)
+        matrix = np.zeros((200, 20), dtype=int)
 
         for atom_number, orbitals in atom_to_orbitals.items():
             matrix[atom_number - 1, 0] = 1  # Mark presence
             for col_index, orbital in enumerate(orbitals):
                 matrix[atom_number - 1, col_index + 1] = orbital + num_iao # num_iao = number of inactive orbitals
 
-        self.activeatoms = [value[:2] for key, value in atom_to_orbitals.items() if isinstance(key, int)]
-        self.atn_vector = [sum(1 for x in row if x != 0) for row in matrix]
+        active = np.where(matrix[:, 0] == 1)[0]+1
+
+#        self.activeatoms = [value[:2] for key, value in atom_to_orbitals.items() if isinstance(key, int)]
+#        for sublist in [value[:2] for key, value in atom_to_orbitals.items() if isinstance(key, int)]:
+#            active.append(sublist)
+        self.activeatoms[:len(active)]= active
+        print(active, self.activeatoms)
+
+        atn_vec = [sum(1 for x in row if x != 0) for row in matrix]
+        self.atn_vector[:len(atn_vec)]=atn_vec
 
         return matrix
 
     def get_orbital_matrices(self):
         atoset_matrix = self.atoset
-        norbsym_vector= self.norbsym
+        norbsym_vector= self.norbsym_py
         active_atoms = self.activeatoms
         atn = self.atn_vector
         orbsym_matrix = self.orbsym
@@ -1324,7 +1353,7 @@ class Keywd_Input:
         Retrieve data from the dynamically created structure entry fields.
         """
         self.PDB_data = [entry.get() for entry in self.prio_bond_entries]
-        print("Entered prio_bond:", data)
+        print("Entered prio_bond:", self.PDB_data)
         self.prio_bond_window.destroy()
         self.prio_bond_window = None
         return self.PDB_data
@@ -1482,8 +1511,9 @@ class Keywd_Input:
 
     def get_keywds(self):
         "default values"
-        symtype = 'Nill'
-        mnbond = 0
+        checksym = 0
+        nmbond = 0
+        symm = 1
         main_bond = []
         method_type = self.update_method_type()
         if method_type == 'Chem inst':
@@ -1497,7 +1527,7 @@ class Keywd_Input:
         elif cheminst == 'Asymmetry':
             symm = 0
         elif cheminst == 'Checksymm':
-            symtype = 'check'
+            checksym = 1
 
 
         sotype = self.symmetry_set_order_type_read()
@@ -1533,39 +1563,161 @@ class Keywd_Input:
         mnbond = self.get_PDB_Priority()
         radical = self.get_PDR_Priority()
 
-        if mnbond != None:
+        if itb == 'None':
+            itbp = 0
+        else:
+            itbp = int(itb)
+
+        if nnb == 'None':
+            nnbp = 0
+        else:
+            nnbp = int(nnb)
+
+        if syb == 'None':
+            sybp = 0
+        else:
+            sybp = int(syb)
+
+        if mnbond == 'None':
+            mnbondp = 0
+        else:
+            mnbondp = int(mnbond)
+
+        if radical == 'None':
+            radicalp = 0
+        else:
+            radicalp = int(radical)
+
+        if mnbond != 'None':
             nmbond = self.bond_number
             main_bond = self.PDB_data
         
-        return (chinst, symm, symtype, set_order, nset, mout, ovlp, itb, nnb, syb, mnbond, radical, mnbond, main_bond)
+        return (int(chinst), int(symm), int(checksym), 
+                int(set_order), int(nset), int(mout), int(ovlp), int(itbp), 
+                int(nnbp), int(sybp), int(mnbondp), int(radicalp), int(nmbond))
 
 class Run_Fort:
     def __init__(self,root, ctrl_class):
         self.root = root
         self.ctrl_class = ctrl_class
     def get_keywds(self, keywd_class):
-        chinst, symm, symtype, set_order, nset, mout, ovlp, itb, nnb, syb, mnbond, radical, mnbond, main_bond=keywd_class.get_keywds()
-
-        print(chinst, symm, symtype, set_order, nset, mout, ovlp, itb, nnb, syb, mnbond, radical, mnbond, main_bond)
+        self.chinst, self.symm, self.checksym, self.set_order, self.nset,\
+                self.mout, self.ovlp, self.itb, self.nnb, self.syb, self.mnbond, \
+                self.radical, self.nmbond=keywd_class.get_keywds()
+#        print('checksym_type',type(self.checksym))
+#        print('i am in get keywds',type(self.chinst), type(self.symm), type(self.checksym), type(self.set_order), type(self.nset), type(self.mout),\
+#                type(self.ovlp), type(self.itb), type(self.nnb), type(self.syb), type(self.mnbond), type(self.radical), type(self.nmbond))
+#        symm_str.get_splkeywds(self.chinst, self.symm, self.checksym, self.set_order, self.nset, self.mout, self.ovlp, self.itb, self.nnb,\
+#                self.syb, self.mnbond, self.radical, self.nmbond)
 
     def get_orbs(self, orb_class):
-        atoset, norbsym, active, atn, orbsym = orb_class.get_orbital_matrices()
-        print(atoset, norbsym, active, atn, orbsym)
+        self.atoset, self.norbsym, self.active, self.atn, self.orbsym = orb_class.get_orbital_matrices()
+        print('orbs_datai,atoset',self.atoset)
+        print('norbsym',self.norbsym)
+        print('active',self.active)
+        print('atn',self.atn)
+        print('orbsym',self.orbsym)
+#        print('orbs_data_shape',self.atoset.shape, self.norbsym.shape, self.active.shape, self.atn.shape, self.orbsym.shape)
+        #try:
+        #    self.atoset_py = np.zeros((200,20), dtype=int)    
+        #    self.atoset_py[:len(atoset)]=atoset
+#       #     self.atoset_row, self.atoset_col = self.atoset.shape
+
+#       #     print('atoset_row, atoset_col',self.atoset_row, self.atoset_col)
+        #    self.norbsym_py = np.zeros(50, dtype=int)  
+        #    self.norbsym_py[:len(norbsym)] = norbsym  
+#       #     self.norbsym_size = len(self.norbsym)
+
+        #    self.active_py = np.zeros(30, dtype=int)    
+        #    self.active_py[:len(active)] = active
+#       #     self.active_size = len(self.active)
+
+        #    self.atn_py = np.zeros(50, dtype=int)         
+        #    self.atn_py[:len(atn)] = atn   
+#       #     self.atn_size = len(self.atn)
+
+        #    self.orbsym_py = np.zeros((20, 20), dtype=int)   
+        #    self.orbsym_py[:len(orbsym)] = orbsym
+#       #     self.orbsym_row, self.orbsym_col = self.orbsym.shape
+        #except ValueError as e:
+        #    raise ValueError(f"Error in input data conversion: {e}")
+        #print('orbs_data',self.atoset, self.norbsym, self.active, self.atn, self.orbsym)
+#        symm_str.get_orbs_info(self.atoset, self.norbsym, self.active, \
+#                self.atn, self.orbsym, self.atoset_row, self.atoset_col, self.norbsym_size, \
+#                self.active_size, self.atn_size, self.orbsym_row, self.orbsym_col)
 
     def get_geometry(self):
         global readgeo, geometry_inserted
         if not geometry_inserted:
-            messagebox.showerror("Invalid Geometry", "please insert the geometry file")
+            messagebox.showerror("Invalid Geometry", "please insert the geometry")
             return
         symat, coordx, coordy, coordz, symatno = readgeo.get_geometry_data()
-        print(symat, coordx, coordy, coordz, symatno)
+        # Convert each to a numpy array
+        self.symat_py = np.zeros(20, dtype="U5")
+        self.symat_py[:len(symat)]=symat
+        self.coordx_py = np.zeros(100, dtype=np.float64)
+        self.coordx_py[:len(coordx)]=coordx
+        self.coordy_py = np.zeros(100, dtype=np.float64)
+        self.coordy_py[:len(coordy)]=coordy
+        self.coordz_py = np.zeros(100, dtype=np.float64)
+        self.coordz_py[:len(coordz)]=coordz
+        self.symatno_py = np.zeros(20, dtype=np.float64)
+        self.symatno_py[:len(symatno)] = symatno
+
+#        self.size_array=len(self.symat)
+
+#        symm_str.get_geometry_info(self.symat, self.coordx, self.coordy, self.coordz, self.symatno, self.size_array)
+        print('geometry:',self.symat_py, self.coordx_py, self.coordy_py, self.coordz_py, self.symatno_py)
     
     def get_ctrl_keywds(self, ctrl_keywds):
-        geometry_unit, nao, nae, nmul, output_file_name = ctrl_keywds.get_ctrl_keywds()
-        symm_str.get_ctrl_inputs(geometry_unit, nao, nae, nmul, output_file_name)
+        self.geometry_unit, self.nao, self.nae, self.nmul, self.output_file_name = ctrl_keywds.get_ctrl_keywds()
+        symm_str.get_ctrl_inputs(self.geometry_unit, self.nao, self.nae, self.nmul, self.output_file_name, self.chinst, self.symm,\
+                self.checksym, self.set_order, self.nset, self.mout, self.ovlp, self.itb, self.nnb,\
+                self.syb, self.mnbond, self.radical, self.nmbond, self.symat_py, self.coordx_py, self.coordy_py,\
+                self.coordz_py, self.symatno_py, self.atoset, self.norbsym, self.active, self.atn, self.orbsym)
 
-        print(geometry_unit, nao, nae, nmul, output_file_name)
+#        print(geometry_unit, nao, nae, nmul, output_file_name)
         
+    def share_input_data(self):
+        symm_str.get_input_data(
+                str(self.geometry_unit), 
+                int(self.nao), 
+                int(self.nae), 
+                int(self.nmul), 
+                str(self.output_file_name),
+                int(self.atoset_row), 
+                int(self.atoset_col), 
+                int(self.norbsym_size),
+                int(self.active_size), 
+                int(self.atn_size), 
+                int(self.orbsym_row), 
+                int(self.orbsym_col), 
+                self.atoset, 
+                self.norbsym, 
+                self.active, 
+                self.atn, 
+                self.orbsym, 
+                self.symat, 
+                self.coordx, 
+                self.coordy, 
+                self.coordz,
+                self.symatno, 
+                int(self.size_array), 
+                int(self.chinst), 
+             #   int(self.symm), 
+             #   int(self.checksym), 
+             #   int(self.set_order), 
+             #   int(self.nset),
+             #   int(self.mout), 
+             #   int(self.ovlp), 
+             #   int(self.itb), 
+             #   int(self.nnb), 
+             #   int(self.syb), 
+             #   int(self.mnbond), 
+             #   int(self.radical), 
+             #   int(self.nmbond)
+            )
+
 
 
 
@@ -1596,6 +1748,7 @@ class class_manager:
         self.runfort.get_orbs(self.inputo)
         self.runfort.get_geometry()
         self.runfort.get_ctrl_keywds(self.inputc)
+#        self.runfort.share_input_data()
 
     
 

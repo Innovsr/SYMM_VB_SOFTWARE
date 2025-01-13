@@ -7,7 +7,7 @@ integer::nao,nae,niao,mult,nlast,nlp,tncs,tnis,is,atom,nabsym,ndet,symm,repl,itb
 ,nlpset,lp(100),plpair(100,10),flg1,uoptstr,mnbond,nmbond,main_bond(100),iabd(50),ialp(50),iach(50)
 integer::atoset(200,20),at_num(88),at_covrad(88),key_frag,frag_cntr(10)&
 ,at_ab_symset(20,20),tot_ndet,nrs,mset,loopsymsc(15000) &
-,atn(50),absyn(50),qult(100),radical,actv_atom(30),num_frag_cntr,input_flg,ovopt,vpt,all_at_num(100)&
+,atn(200),absyn(50),qult(100),radical,actv_atom(30),num_frag_cntr,input_flg,ovopt,vpt,all_at_num(100)&
 ,strt_struc(100,15),nstrt,repl_struc(100,15),nnmat_act(100,2),nnmat_inact(100,2),nactorb,active_orbs(20),&
 active_atoms(30),nnat_bond_inact(100,2),nnatominact,tot_atom,biasmat(100),sig_sym_flg,valence_state(54)&
 ,bond_count(1000,100),totrum,vacorb
