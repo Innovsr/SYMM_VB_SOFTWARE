@@ -67,5 +67,39 @@ do i = 1,10
 print*,'from_Fortran: orbsym ',(orbsym(i,j),j=1,10)
 enddo
 
+if(itb.eq.1.and.syb.eq.1.and.nnb.eq.1.and.radical.eq.1.and.mnbond.eq.1.and.flg1.ne.1)then
+  qflg=1
+endif
+nlast=(mult-1)
+
+if(ovlp.eq.0)ovopt=0
+if(ovlp.eq.2)ovopt=1
+if(ovlp.eq.1.and.nfset.eq.0)ovopt=0
+if(ovlp.eq.1.and.nfset.eq.1)ovopt=1
+if(ovlp.eq.1.and.nfset.eq.2)ovopt=1
+if(ovlp.eq.1.and.nfset.eq.3)ovopt=1
+!!!!!!!!! "vpt" is the option for user specifying overlap value "ovval". It will work
+!!!!!!!!!!!!!only for vpt=1. To lock it please put any other value
+vpt=1
+
+write(7,*)'******************************************************************************************'
+write(7,900)'*','active orbs =',nao,'active electrons =',nae,'multiplicity =',mult,'inactive orbs =',niao
+write(7,*)'******************************************************************************************'
+write(7,*)'******************************************************************************************'
+900 format(a,1x,a,1x,I4,3x,a,1x,I4,3x,a,1x,I4,3x,a,1x,I4)
+
+if (geometry_unit.eq.Bohr) then
+do i=1,tot_atom
+coordx(i)=coordx(i)*0.529177
+coordy(i)=coordy(i)*0.529177
+coordz(i)=coordz(i)*0.529177
+all_at_num(i)=int(symatno(i))
+enddo
+endif
+do i=1,atom
+act_at_num(i)=symatno(active_atoms(i))
+val_state_num(i)=valence_state(act_at_num(i))
+enddo
+
 stop
 end subroutine get_ctrl_inputs

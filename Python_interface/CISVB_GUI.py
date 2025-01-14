@@ -1,7 +1,27 @@
-################################################################################################################
-# python GUI interface to interact with the users to get input keywords geometry file orbital informations and #
-# send them to Fortran subroutines to generate set of VB structures and store them in the output file.         #
-################################################################################################################
+#####################################################################################################################################################
+# python GUI interface of Chemical Intuitive & Symmetric Valence Bond structure set generation code to interact with the users;
+# This interface can be used to get control keywords (Class CtrlInput): Chemical Formula (need to validate other inputs & create name of output file) 
+# , Number of Active orbitals, Number of Active Electrons, Multiplicity; Geometry of molecule (Class ReadGeo) : there are two options to insert
+# geometry (1: can be brows to upload a file, 2: can insert manually), The geometry can be inserted in two different units Bohr or Angstrom;
+# Orbital informations (class Orb_Input): User need to specify the number of the active atoms (according to geometry) associated with active orbitals.
+# User also need to specify type of the orbitals (sig or pi(x) or pi(y) or pi(z)), they can also provide fragments (the cluster of atomic orbitals 
+# such as s, px, py, pz, dxx, dxy, dyy etc. over which the orbitals delocalised); finally user need to specify spatial keywords (class Keywd_Input)
+# : method type (Chem_Inst: provide Chemically meaningfull VB structure set or Rumer: provide Rumer VB structure set), Rumer Set type (Single_Rumer_set:
+# Rumer set corresponding to the present orbital order or All_Rumer_Set: Rumer sets corresponding to all possible unique permutations of the orbital 
+# order); Structure Type (Covalent or Ionic or Both); Chem Inst Set Type (Single set: One Best Chemically meaning ful set, All Best Sets: All highesr 
+# quality sets, All Sets: all possible sets with their quality scores, Eq Bond: Sets where all bonds appear same number of time ); Chem_Inst Str Type 
+# ( Symmetry: sets will be symmetric, Asymmetry: there may not be any symmetry in the sets, Checksymm: Check if the set or sets are symmetric or not);
+# Symmetric group arrangement (Quality-Arrange: Symmetric groups are arranged according to chemical quality scores, Big-to-Small: big group to small 
+# group, small-to-big: arrange small group to big group); Estimate Overlap (Yes: Estimate the overlap of the structures of a set or No:); Decide 
+# priorities of the Chemical Qualities: (The Chemical quality of a structures has been measured depending of 5 criteria which are, 1) IAB : Presence of
+# inter atomic bonds in the structure -Negative quality, as less as this type of bonds prefered 2) NAB: Near atomic Bonds - positive quality -as many 
+# as this type of bond is prefered, 3) SBB: Symmetry Breaking Bonds - negative quality, PDB: Pre-defined bonds, user can provide their prefered bonds,
+# taken as positive quality, PDR: Pre-defined radicals, for systems with radicals, user can provide there prefered radical positions or orbitals, taken
+# as positive quality), User can choose the priorities of these qualities; Priority Structures (user can put some structures they prefered to have in 
+# the set, it is possible only if the provided structures are linearly independent); Maximum Number of Output File: if All sets are selected then it 
+# might be important for larger system to specify output set numbers, by default one output set can have only 75000 sets.
+# After getting all the data, class Run_Fort send them to Fortran subroutines to generate set of VB structures and store them in the output file.      
+########################################################################################################################################################
     
 import tkinter as tk
 from tkinter import filedialog
@@ -18,29 +38,34 @@ import numpy as np
 import Pmw
 import symm_str
 
-num_orbital, num_electron, multiplicity = None, None, None
-type_orb_count = None
-num_iao = None
-geometry_inserted = False
-readgeo = None 
-at_list_bold = [
-    'H', 'HE', 'LI', 'BE', 'B', 'C', 'N', 'O', 'F', 'NE', 'NA', 'MG', 'AL',
-    'SL', 'P', 'S', 'CL', 'AR', 'K', 'CA', 'SC', 'TI', 'V', 'CR', 'MN', 'FE', 'CO', 'NR',
-    'CU', 'ZN', 'GA', 'GE', 'AS', 'SE', 'BR', 'KR', 'RB', 'SR', 'Y', 'ZR', 'NB', 'MO', 'TC',
-    'RU', 'RH', 'PD', 'AG', 'CD', 'IN', 'SN', 'SB', 'TE', 'I', 'XE', 'CS', 'BA', 'LA', 'CE',
-    'PR', 'ND', 'PM', 'SM', 'EU', 'GD', 'TB', 'DY', 'HO', 'ER', 'TM', 'YB', 'LU', 'HF', 'TA',
-    'W', 'RE', 'OS', 'IR', 'PT', 'AU', 'HG', 'TL', 'PB', 'BI', 'PO', 'AT', 'RN', 'FR', 'RA'
-]
+class GlobVar:
+    "Class Contains Global Variables"
+    num_orbital= None           # number of active localised VB orbitals taken in the calculation.
+    num_electron = None         # number of active lectrons taken in the calculations.
+    multiplicity = None         # multiplicity = 2*S + 1/2 , S = Total Spin of the system.
+    type_orb_count = None       # orbital can be sigma, px, py or pz; type_orb_count counts how many different type of orbs present.
+    num_iao = None              # number of inactive orbitals in the system.
+    geometry_inserted = False   # This indicates that the geometry has not been provided.
+    readgeo = None              # Instance of ReadGeo class, it indicates if the instance has been created or not.
+    at_list_bold = [                                                                                       
+        'H', 'HE', 'LI', 'BE', 'B', 'C', 'N', 'O', 'F', 'NE', 'NA', 'MG', 'AL',                   # List of Atoms according to periodic table
+        'SL', 'P', 'S', 'CL', 'AR', 'K', 'CA', 'SC', 'TI', 'V', 'CR', 'MN', 'FE', 'CO', 'NR',
+        'CU', 'ZN', 'GA', 'GE', 'AS', 'SE', 'BR', 'KR', 'RB', 'SR', 'Y', 'ZR', 'NB', 'MO', 'TC',
+        'RU', 'RH', 'PD', 'AG', 'CD', 'IN', 'SN', 'SB', 'TE', 'I', 'XE', 'CS', 'BA', 'LA', 'CE',
+        'PR', 'ND', 'PM', 'SM', 'EU', 'GD', 'TB', 'DY', 'HO', 'ER', 'TM', 'YB', 'LU', 'HF', 'TA',
+        'W', 'RE', 'OS', 'IR', 'PT', 'AU', 'HG', 'TL', 'PB', 'BI', 'PO', 'AT', 'RN', 'FR', 'RA'
+    ]
 
 
 class Ctrl_Input:
+    # Class create the input panes to get Controll keywords: Chemical Formula (need to validate other inputs & create name of output file) 
+    # Number of Active orbitals, Number of Active Electrons, Multiplicity
     def __init__(self, root):
         self.root = root
         self.input_text=''
         self.insert = False
         self.orbital_button = None
         self.unit_type_entry = False
-        self.readgeo = None
         self.file_path = None
 
         Pmw.initialise(root)
@@ -81,23 +106,42 @@ class Ctrl_Input:
         self.create_ctrl_pans()
 
         # read geometry from a file
-        lebel = ttk.Label(self.frame1, text = "Brows to Upload Geometry File", style = "Colour_Label.TLabel")
-        lebel.grid(row = 0, column=0, sticky=tk.W, padx=5, pady=5)
-        button = ttk.Button(self.frame1, text = "Brows", command = self.read_geometry)
-        button.grid(row = 0, column = 1, sticky = tk.W, padx = 5, pady = 5)
+        brows_geo_lebel = ttk.Label(self.frame1, text = "Brows to Upload Geometry File", style = "Colour_Label.TLabel")
+        brows_geo_lebel.grid(row = 0, column=0, sticky=tk.W, padx=5, pady=5)
+        self.balloon.bind(brows_geo_lebel, "If you have the geometry saved in any dat file you can brows that file \n" 
+                          "and insert the geometry here using 'Brows' button; in the geometry file you \n" 
+                          "should have 4 or 5 columns first column: Atoms, second column: atomic numbers,\n" 
+                          "third column: x coordinates, fourth column: y coordinates, fifth column: z coordinates" )
+
+        brows_geo_button = ttk.Button(self.frame1, text = "Brows", command = self.read_geometry)
+        brows_geo_button.grid(row = 0, column = 1, sticky = tk.W, padx = 5, pady = 5)
+        self.balloon.bind(brows_geo_button, "If you have the geometry saved in any dat file you can brows that file \n" 
+                          "and insert the geometry here using 'Brows' button; in the geometry file you \n" 
+                          "should have 4 or 5 columns first column: Atoms, second column: atomic numbers,\n" 
+                          "third column: x coordinates, fourth column: y coordinates, fifth column: z coordinates" )
 
         # upload geometry manually
-        lebel = ttk.Label(self.frame1, text = "Insert Geometry Manually", style = "Colour_Label.TLabel")
-        lebel.grid(row = 2, column=0, sticky=tk.W, padx=5, pady=5)
-        button = ttk.Button(self.frame1, text = "Geometry", command = self.insert_geo_manually)
-        button.grid(row = 2, column = 1, sticky = tk.W, padx = 5, pady = 5)
+        manual_geo_lebel = ttk.Label(self.frame1, text = "Insert Geometry Manually", style = "Colour_Label.TLabel")
+        manual_geo_lebel.grid(row = 2, column=0, sticky=tk.W, padx=5, pady=5)
+        self.balloon.bind(manual_geo_lebel, "If you wish to insert the geometry manually please click 'Geometry' button \n" 
+                          " in the geometry file you should have 4 or 5 columns first column: Atoms, second column: atomic numbers,\n" 
+                          "third column: x coordinates, fourth column: y coordinates, fifth column: z coordinates" )
+
+        manual_geo_button = ttk.Button(self.frame1, text = "Geometry", command = self.insert_geo_manually)
+        manual_geo_button.grid(row = 2, column = 1, sticky = tk.W, padx = 5, pady = 5)
+        self.balloon.bind(manual_geo_button, "If you wish to insert the geometry manually please click 'Geometry' button \n" 
+                          " in the geometry file you should have 4 or 5 columns first column: Atoms, second column: atomic numbers,\n" 
+                          "third column: x coordinates, fourth column: y coordinates, fifth column: z coordinates" )
 
         insert_button = ttk.Button(self.frame4, text="Insert", command=self.validate_and_generate)
         insert_button.grid(row=4, column=1, padx=5, pady=10)
-        self.balloon.bind(insert_button, "Press Insert after providing all control keywords")
+        self.balloon.bind(insert_button, "Press Insert after providing all control keywords: Without inserting \n"
+                          "these control inputs you are not able to go to the next step")
 
 
     def create_geo_unit(self):
+        # Its creats the radio button to get the information about the units of geometry provided.
+        # there are only two options: Bohr or Angstrom. 
         units = ["Bohr", "Angs"]
         label = ttk.Label(self.frame1, text = "Unit of the Geometry Data", style = "Colour_Label.TLabel")
         label.grid(row = 3, column = 0, sticky = tk.W, padx = 10, pady = 10)
@@ -146,8 +190,8 @@ class Ctrl_Input:
                 molecule[element] = molecule.get(element, 0) + count
             total = 0
             for element, count in molecule.items():
-                if element in at_list_bold:
-                    atomic_number = at_list_bold.index(element) + 1  # Atomic number = index + 1
+                if element in GlobVar.at_list_bold:
+                    atomic_number = GlobVar.at_list_bold.index(element) + 1  # Atomic number = index + 1
                     total += atomic_number * count
                 else:
                     raise ValueError(f"Element {element} is not spelled Correctly.")
@@ -163,28 +207,28 @@ class Ctrl_Input:
 
     def read_geometry(self):
         # Open file dialog to select a file
-        global readgeo
+#        global readgeo
         self.file_path = filedialog.askopenfilename(title="Select Geometry File")
 
         if self.file_path:  # Check if a file is selected
-            readgeo = Read_Geo(self.file_path)  # Initialize the Read_Geo class
-            readgeo.read_geometry()       # Call the read_geometry method
+            GlobVar.readgeo = Read_Geo(self.file_path)  # Initialize the Read_Geo class
+            GlobVar.readgeo.read_geometry()       # Call the read_geometry method
 
             ttk.Button(
                 self.frame1,
                 text=f"View_Geometry",
-                command=readgeo.display_geometry
+                command=GlobVar.readgeo.display_geometry
             ).grid(row=0, column=2, columnspan=2)
 
 
 
     def insert_geo_manually(self):
         """Allows manual insertion of geometry data via Read_Geo."""
-        global readgeo
-        readgeo = Read_Geo(self.file_path)  # Initialize the Read_Geo class
-        readgeo.insert_geo(self.root)  # Call insert_geo method
-        if geometry_inserted == True:
-            button = ttk.Button(self.frame1, text = "View Geometry", command = self.readgeo.display_geometry)
+#        global readgeo
+        GlobVar.readgeo = Read_Geo(self.file_path)  # Initialize the Read_Geo class
+        GlobVar.readgeo.insert_geo(self.root)  # Call insert_geo method
+        if GlobVar.geometry_inserted == True:
+            button = ttk.Button(self.frame1, text = "View Geometry", command = GlobVar.readgeo.display_geometry)
             button.grid(row = 2, column = 2, sticky = tk.W, padx = 5, pady = 5)
 
 
@@ -200,9 +244,9 @@ class Ctrl_Input:
             self.entries[key] = entry
 
     def validate_and_generate(self):
-        global num_iao, geometry_inserted, num_orbital, num_electron, multiplicity
+#        global num_iao, geometry_inserted, num_orbital, num_electron, multiplicity
         self.ctrl_inputs = []
-        if geometry_inserted == False:
+        if GlobVar.geometry_inserted == False:
             messagebox.showerror("Geometry Error","Dont forget to insert the geometry of the system")
             
         try:
@@ -238,14 +282,14 @@ class Ctrl_Input:
                 entry.configure(background="white")  # Reset background color
             self.insert = True
             if self.orbital_button:  # Enable the Orbital button
-                num_orbital, num_electron, multiplicity = self.ctrl_inputs
-                num_orbital= int(num_orbital)
-                num_electron= int(num_electron)
-                multiplicity= int(multiplicity)
-                print('nao, nae, nmul',num_orbital, num_electron, multiplicity)
-                if (Total_Electrons- num_electron) % 2== 0:
-                    num_iao = int((Total_Electrons- num_electron)/2)
-                    print('num_iao',num_iao)
+                nao, nae, nmul = self.ctrl_inputs
+                GlobVar.num_orbital= int(nao)
+                GlobVar.num_electron= int(nae)
+                GlobVar.multiplicity= int(nmul)
+                print('nao, nae, nmul',GlobVar.num_orbital, GlobVar.num_electron, GlobVar.multiplicity)
+                if (Total_Electrons- GlobVar.num_electron) % 2== 0:
+                    GlobVar.num_iao = int((Total_Electrons- GlobVar.num_electron)/2)
+                    print('num_iao',GlobVar.num_iao)
                 else:
                     messagebox.showerror("Active Orbital Error","The number of Active Orbitals or \n"
                                          "Number of Active Electrons or Molecular Formula is not correct")
@@ -271,7 +315,7 @@ class Ctrl_Input:
 
 class Read_Geo:
     def __init__(self, file_path):
-        global geometry_inserted
+#        global geometry_inserted
         self.file_path = file_path
         self.geo_frame = None
         style_colour_label = ttk.Style()
@@ -297,7 +341,7 @@ class Read_Geo:
 
 
     def read_geometry(self):
-        global geometry_inserted
+#        global geometry_inserted
 #        Browse a file and read its lines to extract atom data.
 #        Handles two formats of geometry files:
 #        - 4 columns: atom name, x, y, z coordinates
@@ -356,8 +400,8 @@ class Read_Geo:
                 self.coordz.append(atom["z"])
 
             for element in self.symat:
-                if element in at_list_bold:
-                    atomic_number = at_list_bold.index(element) + 1  # Atomic number = index + 1
+                if element in GlobVar.at_list_bold:
+                    atomic_number = GlobVar.at_list_bold.index(element) + 1  # Atomic number = index + 1
                     self.symatno.append(float(atomic_number))
                 else:
                     raise ValueError(f"Element {element} is not spelled Correctly.\n"
@@ -367,7 +411,7 @@ class Read_Geo:
 
             print("self.symat, self.coordx, self.coordy, self.coordz, self.symatno",self.symat, self.coordx, self.coordy, self.coordz, self.symatno)
 
-            geometry_inserted = True
+            GlobVar.geometry_inserted = True
             return self.symat, self.coordx, self.coordy, self.coordz, self.symatno
 
         except Exception as e:
@@ -445,7 +489,7 @@ class Read_Geo:
                 entry_widgets.append((Atom, X_coord, Y_coord, Z_coord))
 
         def fetch_data():
-            global geometry_inserted
+#            global geometry_inserted
             for atom, x_entry, y_entry, z_entry in entry_widgets:
                 atom_name = atom.get().strip()
                 if atom:  # Only process if the atom field is not empty
@@ -468,8 +512,8 @@ class Read_Geo:
                self.coordz.append(atom["z"])
 
             for element in self.symat:
-                if element in at_list_bold:
-                    atomic_number = at_list_bold.index(element) + 1  # Atomic number = index + 1
+                if element in GlobVar.at_list_bold:
+                    atomic_number = GlobVar.at_list_bold.index(element) + 1  # Atomic number = index + 1
                     self.symatno.append(float(atomic_number))
                 else:
                     raise ValueError(f"Element {element} is not spelled Correctly.\n"
@@ -478,7 +522,7 @@ class Read_Geo:
 
 
             print("self.symat, self.coordx, self.coordy, self.coordz, self.symatno",self.symat, self.coordx, self.coordy, self.coordz, self.symatno)
-            geometry_inserted = True
+            GlobVar.geometry_inserted = True
 
             return self.symat, self.coordx, self.coordy, self.coordz, self.symatno
 
@@ -492,8 +536,8 @@ class Read_Geo:
         button.grid(row = 1, column = 3, padx = 10, pady = 10, sticky = tk.W )
 
     def display_geometry(self):
-        global geometry_inserted
-        if geometry_inserted == True:
+#        global geometry_inserted
+        if GlobVar.geometry_inserted == True:
             # Create a Toplevel window to display the file content
             geo_file_display = tk.Toplevel()
             geo_file_display.title("geometry File Content")
@@ -531,8 +575,7 @@ class Read_Geo:
 
 class Orb_Input:
     def __init__(self, root, keywd_button):
-        global num_orbital
-        self.num_orbital = num_orbital
+        self.num_orbital = GlobVar.num_orbital
 
         self.orbital_frame = None
         self.keywd_button = keywd_button
@@ -622,7 +665,6 @@ class Orb_Input:
 
 
     def validate_and_store_orbital_data(self):
-        global type_orb_count
         """Validate orbital inputs and store them in a list."""
         self.orbital_data.clear()  # Clear previous data
 
@@ -673,25 +715,25 @@ class Orb_Input:
             i=i+1
             if 's' in data["orbital_type"].lower():
                 sig_type = sig_type+1
-                sorbs.append(i+num_iao)
+                sorbs.append(i+GlobVar.num_iao)
             elif 'px' in data["orbital_type"].lower():
                 px_type = px_type + 1
-                pxorbs.append(i+num_iao)
+                pxorbs.append(i+GlobVar.num_iao)
             elif 'py' in data["orbital_type"].lower():
                 py_type = py_type + 1
-                pyorbs.append(i+num_iao)
+                pyorbs.append(i+GlobVar.num_iao)
             elif 'pz' in data["orbital_type"].lower():
                 pz_type = pz_type + 1
-                pzorbs.append(i+num_iao)
+                pzorbs.append(i+GlobVar.num_iao)
             elif 'pi1' in data["orbital_type"].lower():
                 px_type = px_type + 1
-                pxorbs.append(i+num_iao)
+                pxorbs.append(i+GlobVar.num_iao)
             elif 'pi2' in data["orbital_type"].lower():
                 py_type = py_type + 1
-                pyorbs.append(i+num_iao)
+                pyorbs.append(i+GlobVar.num_iao)
             elif 'pi3' in data["orbital_type"].lower():
                 pz_type = pz_type + 1
-                pzorbs.append(i+num_iao)
+                pzorbs.append(i+GlobVar.num_iao)
             else:
                 messagebox.showerror("Input Error",f"The type of the orbital {i} is unknown. \n"
                                      "Please put s, px, py or pz otherwise put sig or sigma,\n"
@@ -722,7 +764,7 @@ class Orb_Input:
         print('norbsym', self.norbsym_py)
         print('sig_type, px_type, py_type, pz_type',sig_type, px_type, py_type, pz_type )
         # Check how many types are non-zero
-        type_orb_count = sum(1 for count in [sig_type, px_type, py_type, pz_type] if count > 0)
+        GlobVar.type_orb_count = sum(1 for count in [sig_type, px_type, py_type, pz_type] if count > 0)
 
         self.atoset = self.create_matrix() 
         "atoset is matrix where each row represents an atom according to the geometry, if the atom ia an active atom,"
@@ -747,20 +789,15 @@ class Orb_Input:
         max_atom_number = max(atom_to_orbitals.keys())
         max_orbitals = max(len(orbitals) for orbitals in atom_to_orbitals.values())
 
-        # Step 3: Initialize the matrix
-#        matrix = np.zeros((max_atom_number, max_orbitals+1), dtype=int)
         matrix = np.zeros((200, 20), dtype=int)
 
         for atom_number, orbitals in atom_to_orbitals.items():
             matrix[atom_number - 1, 0] = 1  # Mark presence
             for col_index, orbital in enumerate(orbitals):
-                matrix[atom_number - 1, col_index + 1] = orbital + num_iao # num_iao = number of inactive orbitals
+                matrix[atom_number - 1, col_index + 1] = orbital + GlobVar.num_iao # num_iao = number of inactive orbitals
 
         active = np.where(matrix[:, 0] == 1)[0]+1
 
-#        self.activeatoms = [value[:2] for key, value in atom_to_orbitals.items() if isinstance(key, int)]
-#        for sublist in [value[:2] for key, value in atom_to_orbitals.items() if isinstance(key, int)]:
-#            active.append(sublist)
         self.activeatoms[:len(active)]= active
         print(active, self.activeatoms)
 
@@ -779,11 +816,11 @@ class Orb_Input:
 
 
 class Keywd_Input:
-    def __init__(self, root, multiplicity, type_orb_count, Run_Button):
+    def __init__(self, root, Run_Button):
         self.root = root
         self.Run_Button = Run_Button
-        self.multiplicity = multiplicity
-        self.type_orb_count = type_orb_count
+        self.multiplicity = GlobVar.multiplicity
+        self.type_orb_count = GlobVar.type_orb_count
         self.structure_type_entry = False
         self.rumer_set_num_entry = False
         self.method_type_entry = False
@@ -1647,11 +1684,11 @@ class Run_Fort:
 #                self.active_size, self.atn_size, self.orbsym_row, self.orbsym_col)
 
     def get_geometry(self):
-        global readgeo, geometry_inserted
-        if not geometry_inserted:
+#        global readgeo, GlobVar.geometry_inserted
+        if not GlobVar.geometry_inserted:
             messagebox.showerror("Invalid Geometry", "please insert the geometry")
             return
-        symat, coordx, coordy, coordz, symatno = readgeo.get_geometry_data()
+        symat, coordx, coordy, coordz, symatno = GlobVar.readgeo.get_geometry_data()
         # Convert each to a numpy array
         self.symat_py = np.zeros(20, dtype="U5")
         self.symat_py[:len(symat)]=symat
@@ -1738,8 +1775,8 @@ class class_manager:
         self.inputo=Orb_Input( self.root, keywd_button)
     
     def create_keywd(self, Run_button):
-        global multiplicity, type_orb_count
-        self.input_keywd = Keywd_Input(self.root, multiplicity, type_orb_count, Run_button)
+#        global multiplicity, type_orb_count
+        self.input_keywd = Keywd_Input(self.root, Run_button)
         self.input_keywd.create_keywd_pane()
     
     def Run_fort_subs(self):
