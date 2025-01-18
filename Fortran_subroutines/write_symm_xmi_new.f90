@@ -31,7 +31,7 @@ character(10)::dd,a
 character(len=100)::outfile
 
 
-print*,'enter_symm_xmi_new'
+print*,'enter_symm_xmi_new',strn, ncqs, nfset
 
 Rid=0 ! Rumer id; to varify the set is Rumer of not. Rid=1 call the Rumer sets
 
@@ -80,6 +80,7 @@ write(*,231)i,(str3(i,j),j=1,nae),q_fac2(i)
 !write(*,231),i,(str3(i,j),j=1,nae),q_fac2(i),str_quality_1(i),str_quality_2(i),bondq(i)
 group_num(i)=q_fac2(i)
 enddo
+
 231 format(30I3)
 
 jj=1

@@ -157,108 +157,117 @@ endif
 !!!!! for the symmetric system .. if user opted to take the symmetry calculations !!!!!!!!! 
 if(symm.ne.0)then
 do i=1,n
-print*,'i,qfac',i,q_fac(i),symq(i)
+  print*,'i,qfac',i,q_fac(i),symq(i)
 enddo
+
+mq_fac = 0
+msymq = 0
+mloopsymsc = 0
 
 print*,'check3'
-ind=0
-do i=1,n
-if(ind.lt.q_fac(i))ind=q_fac(i)
-enddo
-mq_fac=ind
 
 ind=0
 do i=1,n
-if(ind.lt.symq(i))ind=symq(i)
+  if(ind.lt.q_fac(i))ind=q_fac(i)
+enddo
+mq_fac=ind  ! mq_fac : maximum quality factor
+
+ind=0
+do i=1,n
+  if(ind.lt.symq(i))ind=symq(i)
 enddo
 msymq=ind
 
 ind=0
 do i=1,n
-if(ind.lt.loopsymsc(i))ind=loopsymsc(i)
+  if(ind.lt.loopsymsc(i))ind=loopsymsc(i)
 enddo
 mloopsymsc=ind
+
 print*,'mq_fac,msymq,mloopsymsc',mq_fac,msymq,mloopsymsc
+do i = 1,n
+  print*,'symq',symq(i), q_fac(i)
+enddo
+
 
 bnd=(nae-nl*2-nlast)/2
 m=0
 ll=0
 mm=0
 301 do i=1,mq_fac
-if(mloopsymsc.ne.0)then
-do k=1,mloopsymsc
-do j=1,msymq
-lll=1
-l=0
-ll=ll+1
-do i1=1,n
-do i2=1,mm
-if(str_cnt1(i2).eq.i1)goto 307
-enddo
-if(q_fac(i1).eq.i)then
-if(loopsymsc(i1).eq.k)then
-if(symq(i1).eq.j)then
-lll=0
-m=m+1
-mm=mm+1
-print*,'mmmmm',m,i1,i,j,ll,loopsymsc(i1)
-l=l+1
+  if(mloopsymsc.ne.0)then
+    do k=1,mloopsymsc
+      do j=1,msymq
+        lll=1
+        l=0
+        ll=ll+1
+        loop1:do i1=1,n
+          do i2=1,mm
+            if(str_cnt1(i2).eq.i1) cycle loop1
+          enddo
+          if (q_fac(i1).eq.i)then
+            if (loopsymsc(i1).eq.k)then
+              if (symq(i1).eq.j)then
+                lll=0
+                m=m+1
+                mm=mm+1
+                print*,'mmmmm',m,i1,i,j,ll,loopsymsc(i1)
+                l=l+1
 
-str_cnt1(mm)=i1
-sym_str_sl(ll,l)=i1
-sym_str_qual(ll)=q_fac(i1)
-sym_str_qual1(ll,l)=q_fac(i1)
-endif
-endif
-endif
-307 enddo
-if(lll.eq.0)sym_str_num(ll)=l
+                str_cnt1(mm)=i1
+                sym_str_sl(ll,l)=i1
+                sym_str_qual(ll)=q_fac(i1)
+                sym_str_qual1(ll,l)=q_fac(i1)
+              endif
+            endif
+          endif
+        enddo loop1
+        if(lll.eq.0)sym_str_num(ll)=l
 
-if(lll.eq.1)ll=ll-1
-if(m.eq.n)then
+        if(lll.eq.1)ll=ll-1
+        if(m.eq.n)then
+          nssym1=ll
+          goto 101
+        endif
+      enddo
+    enddo
+  endif
 
-nssym1=ll
-goto 101
-endif
-enddo
-enddo
-endif
-if(mloopsymsc.eq.0)then
-do j=1,msymq
-lll=1
-l=0
-ll=ll+1
-do i1=1,n
-do i2=1,mm
-if(str_cnt1(i2).eq.i1)goto 407
-enddo
-if(q_fac(i1).eq.i)then
-if(symq(i1).eq.j)then
-lll=0
-m=m+1
-mm=mm+1
-print*,'mmmmm',m,i1,i,j,ll,loopsymsc(i1)
-l=l+1
+  if (mloopsymsc.eq.0)then
+    do j=1,msymq
+      lll=1
+      l=0
+      ll=ll+1
+      loop2:do i1=1,n
+        do i2=1,mm
+          if(str_cnt1(i2).eq.i1) cycle loop2
+        enddo
+        if (q_fac(i1).eq.i)then
+          if (symq(i1).eq.j)then
+            lll=0
+            m=m+1
+            mm=mm+1
+            print*,'mmmmm',m,i1,i,j,ll,loopsymsc(i1)
+            l=l+1
 
-str_cnt1(mm)=i1
-sym_str_sl(ll,l)=i1
-sym_str_qual(ll)=q_fac(i1)
-sym_str_qual1(ll,l)=q_fac(i1)
-endif
-endif
-407 enddo
-if(lll.eq.0)sym_str_num(ll)=l
+            str_cnt1(mm)=i1
+            sym_str_sl(ll,l)=i1
+            sym_str_qual(ll)=q_fac(i1)
+            sym_str_qual1(ll,l)=q_fac(i1)
+          endif
+        endif
+      enddo loop2
+      if (lll.eq.0)sym_str_num(ll)=l
 
-if(lll.eq.1)ll=ll-1
-if(m.eq.n)then
-
-nssym1=ll
-goto 101
-endif
+      if (lll.eq.1)ll=ll-1
+      if (m.eq.n)then
+        nssym1=ll
+        goto 101
+      endif
+    enddo
+  endif
 enddo
-endif
-enddo
-print*,'check4',m,n
+print*,'check4:sourav looks',m,n
 goto 301
 
 101 do i2=1,nssym1
@@ -827,7 +836,7 @@ endif
 endif
 
 do m18=1,n
-Print*,'str1*******',m18,(str1(m18,m19),m19=1,nae),q_fac1(m18),bondq(m18)
+Print*,'str:quality_arrange',m18,(str1(m18,m19),m19=1,nae),q_fac1(m18),bondq(m18)
 !,str_quality_1(m18),str_quality_2(m18),bondq(m18),qulsym(m18),symq(m18)
 !print*,'q_fac1',q_fac1(m18)
 enddo

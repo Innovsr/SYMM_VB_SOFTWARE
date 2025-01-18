@@ -1,0 +1,31 @@
+ ******************************************************************************************
+* active orbs =    5   active electrons =    5   multiplicity =    2   inactive orbs =   15
+ ******************************************************************************************
+ ******************************************************************************************
+   
+                   covalent structures   
+                   -------------------   
+   
+   You have     15 covalent structures among
+  them      5 covalent structures are permissible
+  
+       [] and {} in front of the structures specifies the quality of the structures.
+ 1st number in [] specifies intra-atomic bond quality and 2nd number specifies 
+ symmetry breaking bond quality. Where {} specifies the overall quality of the structures
+ *************************************************************** 
+           5  structures are permisible among below           15
+str     1) [  1,  0 ]{  1 } R        16   17   18   19   20
+str     2) [  1,  0 ]{  3 } -        16   17   18   20   19
+str     3) [  1,  0 ]{  1 } R        16   17   19   20   18
+str     4) [  1,  0 ]{  5 } -        16   18   17   19   20
+str     5) [  1,  0 ]{  6 } -        16   18   17   20   19
+str     6) [  1,  0 ]{  2 } -        16   18   19   20   17
+str     7) [  1,  0 ]{  2 } R        16   19   17   18   20
+str     8) [  1,  0 ]{  6 } -        16   19   17   20   18
+str     9) [  1,  0 ]{  5 } -        16   19   18   20   17
+str    10) [  1,  0 ]{  1 } -        16   20   17   18   19
+str    11) [  1,  0 ]{  3 } -        16   20   17   19   18
+str    12) [  1,  0 ]{  1 } -        16   20   18   19   17
+str    13) [  1,  0 ]{  1 } R        17   18   19   20   16
+str    14) [  1,  0 ]{  7 } -        17   19   18   20   16
+str    15) [  1,  0 ]{  4 } R        17   20   18   19   16

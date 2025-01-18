@@ -16,52 +16,52 @@ character(len=5)::act_orb_typ(20,10),line
 print*,'enter geocal,key_frag',key_frag
 sig_sym_flg=0
 
-if(key_frag.eq.1)then
-  do i=1,200
-    do j=1,20
-      atoset(i,j)=0
-    enddo
-  enddo
-  k3=0
-  do i=1,tot_atom
-    ind(i)=1
-  enddo
-  loop1:do k=orbsl-nao+1,orbsl
-    if(frag_atn(orbs(k,1)).gt.1)then
-      write(*,990)'The orbital',k-1,'is a fragment orbital and we took the atom number'&
-      ,frag_at(orbs(k,1)+1,1),'as the central atom.'
-      write(*,*)'If it is not right please put the central atom number at first place &
-      in the row in the $frag section and run again.'
-    endif
-    if(atoset(frag_at(orbs(k,1)+1,1),ind(frag_at(orbs(k,1)+1,1))).ne.0)&
-    ind(frag_at(orbs(k,1)+1,1))=ind(frag_at(orbs(k,1)+1,1))+1
-    if(num_frag_cntr.ne.0)then
-      do j=1,frag_atn(orbs(k,1)+1)
-        do i=1,num_frag_cntr
-          if(frag_cntr(i).eq.frag_at(orbs(k,1)+1,j))then
-            frag_at(orbs(k,1)+1,1)=frag_cntr(i)
-          endif
-        enddo
-      enddo
-    endif
-
-    atoset(frag_at(orbs(k,1)+1,1),ind(frag_at(orbs(k,1)+1,1)))=k-1
-
-    do i=1,k3
-      if(active_atoms(i).eq.frag_at(orbs(k,1)+1,1)) cycle loop1
-    enddo
-    k3=k3+1
-    active_atoms(k3)=frag_at(orbs(k,1)+1,1)
-
-  enddo loop1
-  do i=1,k3
-  atn(active_atoms(i))=ind(active_atoms(i))
-  act_at_num(i)=symatno(active_atoms(i))
-  val_state_num(i)=valence_state(act_at_num(i))
-  val_state_num1(i)=val_state_num(i)
-  enddo
-  atom=k3
-endif
+!if(key_frag.eq.1)then
+!  do i=1,200
+!    do j=1,20
+!      atoset(i,j)=0
+!    enddo
+!  enddo
+!  k3=0
+!  do i=1,tot_atom
+!    ind(i)=1
+!  enddo
+!  loop1:do k=orbsl-nao+1,orbsl
+!    if(frag_atn(orbs(k,1)).gt.1)then
+!      write(*,990)'The orbital',k-1,'is a fragment orbital and we took the atom number'&
+!      ,frag_at(orbs(k,1)+1,1),'as the central atom.'
+!      write(*,*)'If it is not right please put the central atom number at first place &
+!      in the row in the $frag section and run again.'
+!    endif
+!    if(atoset(frag_at(orbs(k,1)+1,1),ind(frag_at(orbs(k,1)+1,1))).ne.0)&
+!    ind(frag_at(orbs(k,1)+1,1))=ind(frag_at(orbs(k,1)+1,1))+1
+!    if(num_frag_cntr.ne.0)then
+!      do j=1,frag_atn(orbs(k,1)+1)
+!        do i=1,num_frag_cntr
+!          if(frag_cntr(i).eq.frag_at(orbs(k,1)+1,j))then
+!            frag_at(orbs(k,1)+1,1)=frag_cntr(i)
+!          endif
+!        enddo
+!      enddo
+!    endif
+!
+!    atoset(frag_at(orbs(k,1)+1,1),ind(frag_at(orbs(k,1)+1,1)))=k-1
+!
+!    do i=1,k3
+!      if(active_atoms(i).eq.frag_at(orbs(k,1)+1,1)) cycle loop1
+!    enddo
+!    k3=k3+1
+!    active_atoms(k3)=frag_at(orbs(k,1)+1,1)
+!
+!  enddo loop1
+!  do i=1,k3
+!  atn(active_atoms(i))=ind(active_atoms(i))
+!  act_at_num(i)=symatno(active_atoms(i))
+!  val_state_num(i)=valence_state(act_at_num(i))
+!  val_state_num1(i)=val_state_num(i)
+!  enddo
+!  atom=k3
+!endif
 
 l3=0
 l2=0
@@ -82,10 +82,19 @@ enddo
 atom=l2
 nactorb=l3
 
-do i=1,nactorb
-  active_orb2(i)=active_orbs(i)
-  atm_nb_orbs1(i)=atm_nb_orbs(i)
-enddo
+!do i=1,nactorb
+!  active_orb2(i)=active_orbs(i)
+!  atm_nb_orbs1(i)=atm_nb_orbs(i)
+!enddo
+active_orb2=active_orbs
+atm_nb_orbs1=atm_nb_orbs
+
+!print*,'active_orbs',(active_orbs(i),i=1,nactorb)
+!print*,'atm_nb_orbs',(atm_nb_orbs(i),i=1,nactorb)
+!print*,'active_orb2',(active_orb2(i),i=1,nactorb)
+!print*,'atm_nb_orbs1',(atm_nb_orbs1(i),i=1,nactorb)
+!print*, atom, nactorb
+!stop
 
 k1=0
 k=0
@@ -136,6 +145,7 @@ enddo
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 990 format(a,x,I2,x,a,x,I2,x,a)
 
+print*,'active_atoms',(active_atoms(i),i=1,atom)
 j=0
 do ij=1,tot_atom-1
   do ii1=ij+1,tot_atom
@@ -185,6 +195,18 @@ do i=1,tot_atom-1
     dist_mat(i1,i)=dist_mat(i,i1)
   enddo
 enddo
+
+!do i = 1, tot_atom
+!print*,'dist_act_rel_mat',(dist_act_rel_mat(i, j), j=1, tot_atom)
+!enddo
+!do i = 1, tot_atom
+!print*,'dist_rel_mat',(dist_rel_mat(i, j), j=1, tot_atom)
+!enddo
+!do i = 1, tot_atom
+!print*,'dist_mat',(dist_mat(i, j), j=1, tot_atom)
+!enddo
+!
+!stop
 
 !!!!!!!!!!!! below active_atoms() moved to the regular order as
 !given in INFO ... for dist matrix formation it was (may be) necessary
@@ -308,35 +330,35 @@ print*,'read_info:nnat_bond_inact',nnatominact,(nnat_bond_inact(i,i1),i1=1,2)
 enddo
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-n=0
-n1=0
-do i=1,tot_atom
-if(atoset(i,1).eq.0)goto 189
-n1=n1+1
-do i3=1,88
-if(symat(i).eq.at_list(i3))then
-n=n+1
-actv_atom(n)=i
-at_num(n)=i3
-if(i3.le.54)val_st(n)=valence_state(i3)
-endif
-enddo
-189 enddo
-if(n1.ne.n)then
-n=0
-do i=1,tot_atom
-if(atoset(i,1).eq.0)goto 190
-do i3=1,88
-if(symat(i).eq.at_list_bold(i3))then
-n=n+1
-actv_atom(n)=i
-at_num(n)=i3
-if(i3.le.54)val_st(n)=valence_state(i3)
-endif
-enddo
-190 enddo
-
-endif
+!n=0
+!n1=0
+!do i=1,tot_atom
+!if(atoset(i,1).eq.0)goto 189
+!n1=n1+1
+!do i3=1,88
+!if(symat(i).eq.at_list(i3))then
+!n=n+1
+!actv_atom(n)=i
+!at_num(n)=i3
+!if(i3.le.54)val_st(n)=valence_state(i3)
+!endif
+!enddo
+!189 enddo
+!if(n1.ne.n)then
+!n=0
+!do i=1,tot_atom
+!if(atoset(i,1).eq.0)goto 190
+!do i3=1,88
+!if(symat(i).eq.at_list_bold(i3))then
+!n=n+1
+!actv_atom(n)=i
+!at_num(n)=i3
+!if(i3.le.54)val_st(n)=valence_state(i3)
+!endif
+!enddo
+!190 enddo
+!
+!endif
 
 do i=1,n
 print*,'at_num:geo',at_num(i),actv_atom(i),val_st(i)

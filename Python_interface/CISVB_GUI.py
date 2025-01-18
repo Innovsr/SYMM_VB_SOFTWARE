@@ -392,7 +392,7 @@ class Read_Geo:
                     continue
 
             print('atom',self.atoms)
-            total_atoms = len(self.atoms)
+            self.total_atoms = len(self.atoms)
             for atom in self.atoms:
                 self.symat.append(atom["atom"])
                 self.coordx.append(atom["x"])
@@ -504,12 +504,12 @@ class Read_Geo:
                         "z": z
                     })
 
-            total_atoms = self.atom_num
+            self.total_atoms = self.atom_num
             for atom in self.atoms:
-               self.symat.append(atom["atom"])
-               self.coordx.append(atom["x"])
-               self.coordy.append(atom["y"])
-               self.coordz.append(atom["z"])
+                self.symat.append(atom["atom"])
+                self.coordx.append(atom["x"])
+                self.coordy.append(atom["y"])
+                self.coordz.append(atom["z"])
 
             for element in self.symat:
                 if element in GlobVar.at_list_bold:
@@ -566,7 +566,7 @@ class Read_Geo:
             scrollbar.pack(side="right", fill="y")
 
     def get_geometry_data(self):
-        return self.symat, self.coordx, self.coordy, self.coordz, self.symatno
+        return self.symat, self.coordx, self.coordy, self.coordz, self.symatno, self.total_atoms
 
 
 ###################################################################################
@@ -792,13 +792,14 @@ class Orb_Input:
         matrix = np.zeros((200, 20), dtype=int)
 
         for atom_number, orbitals in atom_to_orbitals.items():
-            matrix[atom_number - 1, 0] = 1  # Mark presence
+#            matrix[atom_number - 1, 0] = 1  # Mark presence
             for col_index, orbital in enumerate(orbitals):
-                matrix[atom_number - 1, col_index + 1] = orbital + GlobVar.num_iao # num_iao = number of inactive orbitals
+                matrix[atom_number - 1, col_index] = orbital + GlobVar.num_iao # num_iao = number of inactive orbitals
 
-        active = np.where(matrix[:, 0] == 1)[0]+1
+        active = np.where(matrix[:, 0] != 0)[0]+1
 
         self.activeatoms[:len(active)]= active
+        self.nactiveatm = len(active)
         print(active, self.activeatoms)
 
         atn_vec = [sum(1 for x in row if x != 0) for row in matrix]
@@ -810,9 +811,10 @@ class Orb_Input:
         atoset_matrix = self.atoset
         norbsym_vector= self.norbsym_py
         active_atoms = self.activeatoms
+        active_atom_num = self.nactiveatm
         atn = self.atn_vector
         orbsym_matrix = self.orbsym
-        return (atoset_matrix, norbsym_vector, active_atoms, atn, orbsym_matrix)
+        return (atoset_matrix, norbsym_vector, active_atoms, atn, orbsym_matrix, active_atom_num)
 
 
 class Keywd_Input:
@@ -1183,6 +1185,7 @@ class Keywd_Input:
             for button in self.PDR_buttons:
                 button.config(state=tk.DISABLED)   
         if self.type_orb_count == 1:
+#            self.SBB_type = tk.StringVar(value="None")
             for button in self.SBB_buttons:
                 button.config(state=tk.DISABLED)   
 
@@ -1278,10 +1281,6 @@ class Keywd_Input:
         if set_type:
             self.ChemInst_set_type_entry = True
             print('set_type',set_type)
-           # if set_type == 'All Sets' or set_type =='Eq Bond' or set_type =='All Best Sets':
-
-           #     ovlp_close_button = ttk.Button(self.frame5, text = "Close", command = self.frame5.destroy)
-           #     ovlp_close_button.grid(row = 0, column= 4, padx = 10, pady = 10)
             return (set_type)
 
     def get_maximum_num_output(self, mout_entry):
@@ -1575,6 +1574,14 @@ class Keywd_Input:
         elif sotype == 'Big-to-Small':
             set_order = 2
 
+        str_type_py = self.Update_Str_Type()
+        if str_type_py == 'Both':
+            strtype = 1
+        elif str_type_py == 'Covalent':
+            strtype = 2
+        elif str_type_py == 'Ionic':
+            strtype = 3
+
 
         settype = self.ChemInst_set_type_read()
         if settype == 'Single Set':
@@ -1629,7 +1636,7 @@ class Keywd_Input:
             nmbond = self.bond_number
             main_bond = self.PDB_data
         
-        return (int(chinst), int(symm), int(checksym), 
+        return (int(chinst), int(symm), int(checksym), int(strtype), 
                 int(set_order), int(nset), int(mout), int(ovlp), int(itbp), 
                 int(nnbp), int(sybp), int(mnbondp), int(radicalp), int(nmbond))
 
@@ -1638,59 +1645,26 @@ class Run_Fort:
         self.root = root
         self.ctrl_class = ctrl_class
     def get_keywds(self, keywd_class):
-        self.chinst, self.symm, self.checksym, self.set_order, self.nset,\
+        self.chinst, self.symm, self.checksym, self.strtype, self.set_order, self.nset,\
                 self.mout, self.ovlp, self.itb, self.nnb, self.syb, self.mnbond, \
                 self.radical, self.nmbond=keywd_class.get_keywds()
-#        print('checksym_type',type(self.checksym))
-#        print('i am in get keywds',type(self.chinst), type(self.symm), type(self.checksym), type(self.set_order), type(self.nset), type(self.mout),\
-#                type(self.ovlp), type(self.itb), type(self.nnb), type(self.syb), type(self.mnbond), type(self.radical), type(self.nmbond))
-#        symm_str.get_splkeywds(self.chinst, self.symm, self.checksym, self.set_order, self.nset, self.mout, self.ovlp, self.itb, self.nnb,\
-#                self.syb, self.mnbond, self.radical, self.nmbond)
 
     def get_orbs(self, orb_class):
-        self.atoset, self.norbsym, self.active, self.atn, self.orbsym = orb_class.get_orbital_matrices()
+        self.atoset, self.norbsym, self.active, self.atn, self.orbsym, self.actv_atm_num = orb_class.get_orbital_matrices()
         print('orbs_datai,atoset',self.atoset)
         print('norbsym',self.norbsym)
         print('active',self.active)
         print('atn',self.atn)
         print('orbsym',self.orbsym)
 #        print('orbs_data_shape',self.atoset.shape, self.norbsym.shape, self.active.shape, self.atn.shape, self.orbsym.shape)
-        #try:
-        #    self.atoset_py = np.zeros((200,20), dtype=int)    
-        #    self.atoset_py[:len(atoset)]=atoset
-#       #     self.atoset_row, self.atoset_col = self.atoset.shape
-
-#       #     print('atoset_row, atoset_col',self.atoset_row, self.atoset_col)
-        #    self.norbsym_py = np.zeros(50, dtype=int)  
-        #    self.norbsym_py[:len(norbsym)] = norbsym  
-#       #     self.norbsym_size = len(self.norbsym)
-
-        #    self.active_py = np.zeros(30, dtype=int)    
-        #    self.active_py[:len(active)] = active
-#       #     self.active_size = len(self.active)
-
-        #    self.atn_py = np.zeros(50, dtype=int)         
-        #    self.atn_py[:len(atn)] = atn   
-#       #     self.atn_size = len(self.atn)
-
-        #    self.orbsym_py = np.zeros((20, 20), dtype=int)   
-        #    self.orbsym_py[:len(orbsym)] = orbsym
-#       #     self.orbsym_row, self.orbsym_col = self.orbsym.shape
-        #except ValueError as e:
-        #    raise ValueError(f"Error in input data conversion: {e}")
-        #print('orbs_data',self.atoset, self.norbsym, self.active, self.atn, self.orbsym)
-#        symm_str.get_orbs_info(self.atoset, self.norbsym, self.active, \
-#                self.atn, self.orbsym, self.atoset_row, self.atoset_col, self.norbsym_size, \
-#                self.active_size, self.atn_size, self.orbsym_row, self.orbsym_col)
 
     def get_geometry(self):
-#        global readgeo, GlobVar.geometry_inserted
         if not GlobVar.geometry_inserted:
             messagebox.showerror("Invalid Geometry", "please insert the geometry")
             return
-        symat, coordx, coordy, coordz, symatno = GlobVar.readgeo.get_geometry_data()
+        symat, coordx, coordy, coordz, symatno, self.totalatoms = GlobVar.readgeo.get_geometry_data()
         # Convert each to a numpy array
-        self.symat_py = np.zeros(20, dtype="U5")
+        self.symat_py = np.zeros(100, dtype="U5")
         self.symat_py[:len(symat)]=symat
         self.coordx_py = np.zeros(100, dtype=np.float64)
         self.coordx_py[:len(coordx)]=coordx
@@ -1698,7 +1672,7 @@ class Run_Fort:
         self.coordy_py[:len(coordy)]=coordy
         self.coordz_py = np.zeros(100, dtype=np.float64)
         self.coordz_py[:len(coordz)]=coordz
-        self.symatno_py = np.zeros(20, dtype=np.float64)
+        self.symatno_py = np.zeros(100, dtype=np.float64)
         self.symatno_py[:len(symatno)] = symatno
 
 #        self.size_array=len(self.symat)
@@ -1711,7 +1685,8 @@ class Run_Fort:
         symm_str.get_ctrl_inputs(self.geometry_unit, self.nao, self.nae, self.nmul, self.output_file_name, self.chinst, self.symm,\
                 self.checksym, self.set_order, self.nset, self.mout, self.ovlp, self.itb, self.nnb,\
                 self.syb, self.mnbond, self.radical, self.nmbond, self.symat_py, self.coordx_py, self.coordy_py,\
-                self.coordz_py, self.symatno_py, self.atoset, self.norbsym, self.active, self.atn, self.orbsym)
+                self.coordz_py, self.symatno_py, self.atoset, self.norbsym, self.active, self.atn, \
+                self.orbsym, self.strtype, self.totalatoms, GlobVar.num_iao, self.actv_atm_num)
 
 #        print(geometry_unit, nao, nae, nmul, output_file_name)
         

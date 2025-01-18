@@ -67,9 +67,12 @@ do i3=1,atom
 
 !! atomic number is a unique criteria of atoms
    score(i3,2)=lpna+at_num(i3)
+   print*,i3,score(i3,2),lpna,at_num(i3)
 enddo
 
-
+do i=1,nnnatom
+print*,'nnat_bond',(nnat_bond(i,j),j=1,2)
+enddo
 !! preparation of connetivity matrix 'nnat_bond' starts 
 n5=0
 loop1:do i2=1,nnnatom
@@ -84,7 +87,7 @@ loop1:do i2=1,nnnatom
   enddo loop2
 enddo loop1
 
-
+print*,'active_atoms',(active_atoms(i),i=1,atom)
 do i1=1,atom
  n1=0
   do i3=1,nnnatom
@@ -132,10 +135,25 @@ m19=0
  enddo
 fullgrp=m19
 
+do i1 =1,5
+print*,'atoset',(atoset(i1,j),j=1,5)
+enddo
+do i1 =1,5
+print*,'atsymset',(atsymset(i1,j),j=1,5)
+enddo
+print*,'full_nn_group',(full_nn_group(i1),i1=1,fullgrp)
+do i3=1,n5
+print*,'nn_group',nelimt(i3),(nn_group(i3, i4), i4 = 1, nelimt(i3))
+enddo
+do i3 = 1, n5
+print*,'sl_group',(sl_group(i3, i4), i4 = 1, nelimt(i3))
+enddo
 
+print*,'ncqs',ncqs,atom
 do i=1,ncqs
   do i3=1,atom
    new_score(i3,2)=score(i3,2)
+   print*,'score',i,i3,score(i3,2)
 enddo
 
 !! Scoring of the bonds of the structures started from here
@@ -144,6 +162,8 @@ enddo
 strscore=0.0
 ipnum=0
 numbond=0
+
+print*,'nl',nl,nae,nlast
 
 do i1=1+nl*2,nae-nlast,2
   tscore=0.0
@@ -205,6 +225,7 @@ do i1=1+nl*2,nae-nlast,2
   if(n6.eq.1)kkk=ipnum+2
   if(n6.eq.2)kkk=ipnum+1
     tscore=new_score(n1,2)+new_score(n2,2)+kkk/(new_score(n1,2)+new_score(n2,2))
+    print*,'tscore1',tscore
   endif
   
   
@@ -237,7 +258,9 @@ do i1=1+nl*2,nae-nlast,2
     endif
   endif
   tscore=new_score(n1,2)+new_score(n2,2)+kkk/(new_score(n1,2)+new_score(n2,2))
+  print*,'tscore2',tscore
   endif
+
   nnscore=0.0
   nd=0
   
@@ -250,6 +273,7 @@ do i1=1+nl*2,nae-nlast,2
     endif
   enddo
   tscore=tscore+dist_mat(k1,k2)
+  print*,'ttscore3',tscore
   do i3=1,atom
    do i4=1,atn(active_atoms(i3))
     if(b1.eq.atoset(active_atoms(i3),i4))then
@@ -367,7 +391,7 @@ enddo
 
 231 format(20I3)
 
-CALL SYSTEM ("rm sympi.temp")
+!CALL SYSTEM ("rm sympi.temp")
 
 200 return
 end subroutine symmetry_cal_pi

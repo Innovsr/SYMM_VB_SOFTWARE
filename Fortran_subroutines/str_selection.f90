@@ -285,10 +285,13 @@ call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bon
 if(sig_sym_flg.eq.1)call symmetry_cal_sig(nl,str1,str1_cnt,symsc,symq,nssym)
 if(sig_sym_flg.ne.1)call symmetry_cal_pi(nl,str1,str1_cnt,symsc,symq,nssym)
 call qult_str_arrange(nl,str1,str1_cnt,quality_fac,str2,q_fac)
+print*,'str1_cnt',str1_cnt
 do i=1,str1_cnt
 write(*,231)(str2(i,j),j=1,nae)
 enddo
-
+do i = 1, 15
+print*,'quality',str_quality_1(i),str_quality_2(i),bondq(i)
+enddo
 call vector_rep(nl,str2,str1_cnt,fvec)
 call write_symm_xmi_new(nl,wig2,str2,str1_cnt,q_fac)
 

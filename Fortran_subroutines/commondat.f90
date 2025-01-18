@@ -13,6 +13,7 @@ active_atoms(30),nnat_bond_inact(100,2),nnatominact,tot_atom,biasmat(100),sig_sy
 ,bond_count(1000,100),totrum,vacorb
 character(len=2),public ::at_list(88),at_list_bold(88),int_num(40)
 integer,public::atm_nb_sym(20),nalpha,nbeta,str_det_sec(15000,1000),num_norbsym1(100),qflg
+integer::qq11(15000),qq12(15000),qq10(15000),str12(2000,20),set_num8(100),col9(1000),bondq14(15000)
 !real,dimension(:,:),allocatable::ovlp_mat
 real*8::ovval,dist_rel_mat(20,20),biasval(20)&
 ,dist_nnat(20)

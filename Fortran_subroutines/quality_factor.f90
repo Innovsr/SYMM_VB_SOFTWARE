@@ -16,6 +16,7 @@ integer::atsymset(20,20),nsym,syn(50),at_sym(50),fchrgq(15000)
 
 
 print*,'itb,syb,nnb,radical,mnbond',itb,syb,nnb,radical,mnbond
+print*,'flg1, nsym, input_flg, prad, imbd, nlast, ncqs',flg1, nsym, input_flg, prad, imbd, nlast, ncqs
 
 if(qflg.eq.1)then 
   do j=1,ncqs
