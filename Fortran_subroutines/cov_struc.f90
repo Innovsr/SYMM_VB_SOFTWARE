@@ -12,7 +12,7 @@ common/quality/str_quality_1,str_quality_2,bondq,tqlty,bqlty,sqlty,tnqs,nssym,qu
 sigsym,tnqs_sig
 
 integer::ijk,ij,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,perm_nstr,nssym,totset,&
-i14,i15,i16,i17,i18,i19,i20,i21,k1,k2,k3,k4,k5,STDOUT,a,c,b,d,e,f,nnn,elporb,x,y
+i14,i15,i16,i17,i18,i19,i20,i21,k1,k2,k3,k4,k5,a,c,b,d,e,f,nnn,elporb,x,y
 integer::i,j,k,l,j1,m,j2,ii,jj,iii,n1,j3,j4,j5,wig2,tnqs,lonep,bonds,allp
 integer::alstr,fullcovstr(15000,20),symq(15000),sigsym(15000),tnqs_sig&
 ,qulsym(15000),str_quality_1(15000),str_quality_2(15000),bondq(15000),tqlty,bqlty,sqlty,symqq(15000)

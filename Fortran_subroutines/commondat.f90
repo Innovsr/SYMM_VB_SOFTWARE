@@ -21,7 +21,8 @@ real*8::prime_num(142),dist_mat(20,20),iab_length
 character(len=6),public::symtype,norbsym1(100,20)
 double precision::dist_act_rel_mat(20,20)
 integer::strdet(10000),detmnt(10000,15),det_sign(10000),Rumwrite,set_order
-
+character(len = 100)::STDOUT
+character(len = 300)::out_folder_path 
 
 DATA valence_state/1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,&
 4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5/

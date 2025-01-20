@@ -1,0 +1,11 @@
+ ******* CHEM. QUAL. STRUCTURES **************
+           5  covalent structures
+ IAB NNB SBB fqual
+  1   1   0   1 | 1: 15   17  18  19  20  16
+  1   1   0   2 | 1: 15   16  17  19  20  18
+  1   1   0   2 | 1: 15   16  20  17  18  19
+  1   1   0   3 | 1: 15   16  17  18  19  20
+  1   1   0   3 | 1: 15   16  20  18  19  17
+quality value 11
+ Set_number=           1
+     

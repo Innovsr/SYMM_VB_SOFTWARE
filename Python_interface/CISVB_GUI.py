@@ -47,6 +47,9 @@ class GlobVar:
     num_iao = None              # number of inactive orbitals in the system.
     geometry_inserted = False   # This indicates that the geometry has not been provided.
     readgeo = None              # Instance of ReadGeo class, it indicates if the instance has been created or not.
+    molecule_string = None
+    orbital_input = False
+    orbital_data = []
     at_list_bold = [                                                                                       
         'H', 'HE', 'LI', 'BE', 'B', 'C', 'N', 'O', 'F', 'NE', 'NA', 'MG', 'AL',                   # List of Atoms according to periodic table
         'SL', 'P', 'S', 'CL', 'AR', 'K', 'CA', 'SC', 'TI', 'V', 'CR', 'MN', 'FE', 'CO', 'NR',
@@ -64,7 +67,6 @@ class Ctrl_Input:
         self.root = root
         self.input_text=''
         self.insert = False
-        self.orbital_button = None
         self.unit_type_entry = False
         self.file_path = None
 
@@ -244,20 +246,17 @@ class Ctrl_Input:
             self.entries[key] = entry
 
     def validate_and_generate(self):
-#        global num_iao, geometry_inserted, num_orbital, num_electron, multiplicity
         self.ctrl_inputs = []
         if GlobVar.geometry_inserted == False:
             messagebox.showerror("Geometry Error","Dont forget to insert the geometry of the system")
             
         try:
-            molecule_string = self.molecule_entry.get()
-            if not molecule_string:
+            GlobVar.molecule_string = self.molecule_entry.get()
+            if not GlobVar.molecule_string:
                 messagebox.showerror("Molecule Error","Please enter molecular Formula")
                 return
-            end_name = "_structures.dat"
-            self.output_file_name =f"{molecule_string}{end_name}"
 
-            Total_Electrons = self.count_Total_Electron(molecule_string)
+            Total_Electrons = self.count_Total_Electron(GlobVar.molecule_string)
             print('Total Number of Electrons', Total_Electrons)
         except ValueError:
             messagebox.showerror("Molecule Error","Please enter molecular Formula Properly ")
@@ -281,20 +280,19 @@ class Ctrl_Input:
             for entry in self.entries.values():
                 entry.configure(background="white")  # Reset background color
             self.insert = True
-            if self.orbital_button:  # Enable the Orbital button
-                nao, nae, nmul = self.ctrl_inputs
-                GlobVar.num_orbital= int(nao)
-                GlobVar.num_electron= int(nae)
-                GlobVar.multiplicity= int(nmul)
-                print('nao, nae, nmul',GlobVar.num_orbital, GlobVar.num_electron, GlobVar.multiplicity)
-                if (Total_Electrons- GlobVar.num_electron) % 2== 0:
-                    GlobVar.num_iao = int((Total_Electrons- GlobVar.num_electron)/2)
-                    print('num_iao',GlobVar.num_iao)
-                else:
-                    messagebox.showerror("Active Orbital Error","The number of Active Orbitals or \n"
+            nao, nae, nmul = self.ctrl_inputs
+            GlobVar.num_orbital= int(nao)
+            GlobVar.num_electron= int(nae)
+            GlobVar.multiplicity= int(nmul)
+            print('nao, nae, nmul',GlobVar.num_orbital, GlobVar.num_electron, GlobVar.multiplicity)
+            if (Total_Electrons- GlobVar.num_electron) % 2== 0:
+                GlobVar.num_iao = int((Total_Electrons- GlobVar.num_electron)/2)
+                print('num_iao',GlobVar.num_iao)
+            else:
+                messagebox.showerror("Active Orbital Error","The number of Active Orbitals or \n"
                                          "Number of Active Electrons or Molecular Formula is not correct")
-                    return
-                self.orbital_button.config(state=tk.NORMAL)
+                return
+            orbital_button.config(state=tk.NORMAL)
             return True  # Validation successful
 
 #    def generate_ctrl_input(self):
@@ -307,7 +305,7 @@ class Ctrl_Input:
     def get_ctrl_keywds(self):
         geometry_unit = self.update_geo_unit()
         nao, nae, nmul= self.ctrl_inputs
-        return(geometry_unit, nao, nae, nmul, self.output_file_name)
+        return(geometry_unit, nao, nae, nmul)
 
 ####################################################################################
 ######## Reading geometry starts here :
@@ -315,7 +313,6 @@ class Ctrl_Input:
 
 class Read_Geo:
     def __init__(self, file_path):
-#        global geometry_inserted
         self.file_path = file_path
         self.geo_frame = None
         style_colour_label = ttk.Style()
@@ -519,8 +516,6 @@ class Read_Geo:
                     raise ValueError(f"Element {element} is not spelled Correctly.\n"
                                      " or maybe it's above 88 elements of the periodic table \n"
                                      "we only consider fistr 88 elements of the periodic table")
-
-
             print("self.symat, self.coordx, self.coordy, self.coordz, self.symatno",self.symat, self.coordx, self.coordy, self.coordz, self.symatno)
             GlobVar.geometry_inserted = True
 
@@ -576,7 +571,6 @@ class Read_Geo:
 class Orb_Input:
     def __init__(self, root, keywd_button):
         self.num_orbital = GlobVar.num_orbital
-
         self.orbital_frame = None
         self.keywd_button = keywd_button
         self.atm_entry = []
@@ -586,87 +580,92 @@ class Orb_Input:
         self.orbsym = np.zeros((20, 20), dtype = int)
         self.activeatoms = np.zeros(30, dtype = int)
         self.atn_vector = np.zeros(200, dtype = int)
-#       self.assoatm_entries = []
-#       self.assotyp_entries = []
-        self.orbital_data = []
+#        self.orbital_data = []
         self.description_orb = ""
         self.create_orbital_section()
                 
-#        style_colour_label1 = ttk.Style()
-#        style_colour_label1.configure("Colour_Label1.TLabel", foreground="black", background="lightblue", relief="flat", font=("Arial", 16))
-
 
                 # Insert button to validate and save inputs
-        insert_button = ttk.Button(
-            self.orbital_frame, text="Insert", command=self.validate_and_store_orbital_data
-        )
-        insert_button.grid(row=3, column=0, columnspan=2, pady=10)
-        close_button = ttk.Button(self.orbital_frame, text = "Close", command = self.orbital_frame.destroy)
-        close_button.grid(row = 4, column = 0, pady = 10, columnspan=2 )
 
     def create_orbital_section(self):
         # Create a new frame for orbital inputs if it doesn't exist
-        if self.orbital_frame is None:
+#        if self.orbital_frame is None:
+        if GlobVar.orbital_input == False:
             self.orbital_frame = tk.Toplevel(root, padx=10, pady=10)
             self.orbital_frame.title("orbital inputs")
             self.orbital_frame.geometry("560x560")
             self.orbital_frame.configure(background="lightblue")
+            GlobVar.orbital_input = True
 
-        for widget in self.orbital_frame.winfo_children():
-            widget.destroy()
+            for widget in self.orbital_frame.winfo_children():
+                widget.destroy()
 
-        frame = ttk.Frame(self.orbital_frame, style = "Colour_Frame.TFrame")
-        frame.grid(row = 0, column = 0)
-        frame0 = ttk.Frame(self.orbital_frame, style = "Colour_Frame.TFrame")
-        frame0.grid(row = 1, column = 0)
+            frame = ttk.Frame(self.orbital_frame, style = "Colour_Frame.TFrame")
+            frame.grid(row = 0, column = 0)
+            frame0 = ttk.Frame(self.orbital_frame, style = "Colour_Frame.TFrame")
+            frame0.grid(row = 1, column = 0)
 
-         # Scrollable container
-        container = ttk.Frame(self.orbital_frame)
-        container.grid(row=2, column=0, sticky=tk.W+tk.E)
+             # Scrollable container
+            container = ttk.Frame(self.orbital_frame)
+            container.grid(row=2, column=0, sticky=tk.W+tk.E)
 
-        canvas = tk.Canvas(container, background="lightblue", height=370, width=510)
-        scrollbar = ttk.Scrollbar(container, orient=tk.VERTICAL, command=canvas.yview)
-        canvas.configure(yscrollcommand=scrollbar.set)
+            canvas = tk.Canvas(container, background="lightblue", height=370, width=510)
+            scrollbar = ttk.Scrollbar(container, orient=tk.VERTICAL, command=canvas.yview)
+            canvas.configure(yscrollcommand=scrollbar.set)
 
-        frame1 = ttk.Frame(canvas, style = "Colour_Frame.TFrame")
-        canvas.create_window((0, 0), window=frame1, anchor="nw")
+            frame1 = ttk.Frame(canvas, style = "Colour_Frame.TFrame")
+            canvas.create_window((0, 0), window=frame1, anchor="nw")
 
-        # Configure scrollable area
-        frame1.bind(
-            "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
-        )
-        canvas.create_window((0, 0), window=frame1, anchor="nw")
-        canvas.configure(yscrollcommand=scrollbar.set)
+            # Configure scrollable area
+            frame1.bind(
+                "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            )
+            canvas.create_window((0, 0), window=frame1, anchor="nw")
+            canvas.configure(yscrollcommand=scrollbar.set)
 
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-        # Create input panes for each active orbitals
-        ttk.Label(frame, text=f"Number of active orbitals: {self.num_orbital}", style = "Colour_Label.TLabel" ).grid(row=0, column=0, columnspan=3, pady=15)
+            # Create input panes for each active orbitals
+            ttk.Label(frame, text=f"Number of active orbitals: {self.num_orbital}", style = "Colour_Label.TLabel" ).grid(row=0, column=0, columnspan=3, pady=15)
 
-        #creating the pane for getting orbital numbers
-        ttk.Label(frame0, text=f"     Atom Number", style = "Colour_Label1.TLabel").grid(row=0, column=3, padx=3, sticky=tk.E)
-        ttk.Label(frame0, text=f"Orbital type", style = "Colour_Label1.TLabel").grid(row=0, column=4, padx=5,  sticky=tk.E)
+            #creating the pane for getting orbital numbers
+            ttk.Label(frame0, text=f"     Atom Number", style = "Colour_Label1.TLabel").grid(row=0, column=3, padx=3, sticky=tk.E)
+            ttk.Label(frame0, text=f"Orbital type", style = "Colour_Label1.TLabel").grid(row=0, column=4, padx=5,  sticky=tk.E)
 
-#        ttk.Label(frame1, text=f"--------------------", style = "Colour_Label1.TLabel").grid(row=2, column=1, padx=5, pady=5, sticky=tk.W)
-#        ttk.Label(frame1, text=f"--------------------", style = "Colour_Label1.TLabel").grid(row=2, column=2, padx=5, pady=5, sticky=tk.W)
+            insert_button = ttk.Button(self.orbital_frame, text="Insert", command=self.validate_and_store_orbital_data)
+            insert_button.grid(row=3, column=0, columnspan=2, pady=10)
 
-        for i in range(self.num_orbital):
-            ttk.Label(frame1, text=f"active orbital {i+1} ", style = "Colour_Label.TLabel" ).grid(row=i+3, column=0, padx=30, pady=10, sticky=tk.W)
-#       creating the pane for getting associated atom number
-            self.assoatm_entry = ttk.Entry(frame1, width=10)
-            self.assoatm_entry.grid(row=i+3, column=1, padx=30, pady=10)
-            self.atm_entry.append(self.assoatm_entry)
+            close_button = ttk.Button(self.orbital_frame, text = "Close", command = self.destroy_orbs)
+            close_button.grid(row = 4, column = 0, pady = 10, columnspan=2 )
 
-#       creating the pane for getting associated atom number
-            self.assotyp_entry = ttk.Entry(frame1, width=10)
-            self.assotyp_entry.grid(row=i+3, column=2, padx=30, pady=10, sticky = tk.E)
-            self.typ_entry.append(self.assotyp_entry)
+
+            for i in range(self.num_orbital):
+                ttk.Label(frame1, text=f"active orbital {i+1} ", style = "Colour_Label.TLabel" ).grid(row=i+3, column=0, padx=30, pady=10, sticky=tk.W)
+#           creating the pane for getting associated atom number
+
+                # Get atom number from self.orbital_data if available
+                atom_number = GlobVar.orbital_data[i]["atom_number"] if i < len(GlobVar.orbital_data) else ""
+                self.assoatm_entry = ttk.Entry(frame1, width=10)
+                self.assoatm_entry.grid(row=i+3, column=1, padx=30, pady=10)
+                self.assoatm_entry.insert(0, atom_number)
+                self.atm_entry.append(self.assoatm_entry)
+
+#           creating the pane for getting associated atom number
+                orbital_type = GlobVar.orbital_data[i]["orbital_type"] if i < len(GlobVar.orbital_data) else ""
+                self.assotyp_entry = ttk.Entry(frame1, width=10)
+                self.assotyp_entry.grid(row=i+3, column=2, padx=30, pady=10, sticky = tk.E)
+                self.assotyp_entry.insert(0, orbital_type)
+                self.typ_entry.append(self.assotyp_entry)
+
+    def destroy_orbs(self):
+        self.orbital_frame.destroy()
+        GlobVar.orbital_input = False
 
 
     def validate_and_store_orbital_data(self):
         """Validate orbital inputs and store them in a list."""
-        self.orbital_data.clear()  # Clear previous data
+#        self.orbital_data.clear()  # Clear previous data
 
         for i in range(self.num_orbital):
             atom_number = self.atm_entry[i].get().strip()
@@ -696,7 +695,7 @@ class Orb_Input:
             self.typ_entry[i].configure(background="white")
 
             # Store the data
-            self.orbital_data.append({
+            GlobVar.orbital_data.append({
                 "atom_number": atom_number,
                 "orbital_type": orbital_type
             })
@@ -711,7 +710,7 @@ class Orb_Input:
         px_type = 0
         py_type = 0
         pz_type = 0
-        for data in self.orbital_data:
+        for data in GlobVar.orbital_data:
             i=i+1
             if 's' in data["orbital_type"].lower():
                 sig_type = sig_type+1
@@ -772,13 +771,15 @@ class Orb_Input:
         "numbers associated with that atom."
         print('atoset',self.atoset)
         self.keywd_button.config(state=tk.NORMAL)  
+#        self.orbital_button.config(state=tk.DISABLED)  # Initially disable the button
+#        GlobVar.orbital_button.config(state = tk.DISABLED)
 
     def create_matrix(self):
         # Step 1: Gather atom numbers and their orbitals
-        print('self.orbital_data',self.orbital_data)
+        print('self.orbital_data',GlobVar.orbital_data)
         atom_to_orbitals = {}
         active=[]
-        for orbital_number, entry in enumerate(self.orbital_data, start=1):
+        for orbital_number, entry in enumerate(GlobVar.orbital_data, start=1):
             atom_number = entry["atom_number"] 
             if atom_number not in atom_to_orbitals:
                 atom_to_orbitals[atom_number] = []
@@ -818,9 +819,9 @@ class Orb_Input:
 
 
 class Keywd_Input:
-    def __init__(self, root, Run_Button):
+    def __init__(self, root):
         self.root = root
-        self.Run_Button = Run_Button
+#        self.Run_Button = Run_Button
         self.multiplicity = GlobVar.multiplicity
         self.type_orb_count = GlobVar.type_orb_count
         self.structure_type_entry = False
@@ -857,7 +858,6 @@ class Keywd_Input:
         self.balloon = Pmw.Balloon(self.root)
         self.mout_number = 1
         self.bond_number = 0
-        self.Run_Button.config(state=tk.NORMAL)  
 
     def create_keywd_pane(self):
         if self.keywd_window is None:
@@ -1636,6 +1636,7 @@ class Keywd_Input:
             nmbond = self.bond_number
             main_bond = self.PDB_data
         
+        Run_button.config(state=tk.NORMAL)  
         return (int(chinst), int(symm), int(checksym), int(strtype), 
                 int(set_order), int(nset), int(mout), int(ovlp), int(itbp), 
                 int(nnbp), int(sybp), int(mnbondp), int(radicalp), int(nmbond))
@@ -1674,63 +1675,87 @@ class Run_Fort:
         self.coordz_py[:len(coordz)]=coordz
         self.symatno_py = np.zeros(100, dtype=np.float64)
         self.symatno_py[:len(symatno)] = symatno
-
-#        self.size_array=len(self.symat)
-
-#        symm_str.get_geometry_info(self.symat, self.coordx, self.coordy, self.coordz, self.symatno, self.size_array)
         print('geometry:',self.symat_py, self.coordx_py, self.coordy_py, self.coordz_py, self.symatno_py)
     
     def get_ctrl_keywds(self, ctrl_keywds):
-        self.geometry_unit, self.nao, self.nae, self.nmul, self.output_file_name = ctrl_keywds.get_ctrl_keywds()
-        symm_str.get_ctrl_inputs(self.geometry_unit, self.nao, self.nae, self.nmul, self.output_file_name, self.chinst, self.symm,\
-                self.checksym, self.set_order, self.nset, self.mout, self.ovlp, self.itb, self.nnb,\
-                self.syb, self.mnbond, self.radical, self.nmbond, self.symat_py, self.coordx_py, self.coordy_py,\
-                self.coordz_py, self.symatno_py, self.atoset, self.norbsym, self.active, self.atn, \
-                self.orbsym, self.strtype, self.totalatoms, GlobVar.num_iao, self.actv_atm_num)
-
-#        print(geometry_unit, nao, nae, nmul, output_file_name)
+        self.geometry_unit, self.nao, self.nae, self.nmul = ctrl_keywds.get_ctrl_keywds()
         
-    def share_input_data(self):
-        symm_str.get_input_data(
-                str(self.geometry_unit), 
-                int(self.nao), 
-                int(self.nae), 
-                int(self.nmul), 
-                str(self.output_file_name),
-                int(self.atoset_row), 
-                int(self.atoset_col), 
-                int(self.norbsym_size),
-                int(self.active_size), 
-                int(self.atn_size), 
-                int(self.orbsym_row), 
-                int(self.orbsym_col), 
+    def share_input_data(self, output_folder):
+        symm_str.get_ctrl_inputs(
+                self.geometry_unit, 
+                self.nao, 
+                self.nae, 
+                self.nmul, 
+                GlobVar.molecule_string, 
+                self.chinst, self.symm,
+                self.checksym, 
+                self.set_order, 
+                self.nset, 
+                self.mout, 
+                self.ovlp, 
+                self.itb, 
+                self.nnb,
+                self.syb, 
+                self.mnbond, 
+                self.radical, 
+                self.nmbond, 
+                self.symat_py, 
+                self.coordx_py, 
+                self.coordy_py,
+                self.coordz_py, 
+                self.symatno_py, 
                 self.atoset, 
                 self.norbsym, 
                 self.active, 
-                self.atn, 
+                self.atn,
                 self.orbsym, 
-                self.symat, 
-                self.coordx, 
-                self.coordy, 
-                self.coordz,
-                self.symatno, 
-                int(self.size_array), 
-                int(self.chinst), 
-             #   int(self.symm), 
-             #   int(self.checksym), 
-             #   int(self.set_order), 
-             #   int(self.nset),
-             #   int(self.mout), 
-             #   int(self.ovlp), 
-             #   int(self.itb), 
-             #   int(self.nnb), 
-             #   int(self.syb), 
-             #   int(self.mnbond), 
-             #   int(self.radical), 
-             #   int(self.nmbond)
-            )
+                self.strtype, 
+                self.totalatoms, 
+                GlobVar.num_iao, 
+                self.actv_atm_num,
+                output_folder
+                )
 
-
+#class Output:
+#    def __init__(self, root, output_path):
+#
+#    # Function to read data from a file and split it into sets
+#    def load_data_from_file(file_name):
+#        sets = []
+#        current_set = []
+#        with open(file_name, "r") as file:
+#            for line in file:
+#                line = line.strip()
+#                if "Set_number" in line:
+#                    if current_set:  # If there's an existing set, save it
+#                        sets.append(current_set)
+#                        current_set = []
+#                elif line.startswith("1:"):  # Look for lines starting with "1:"
+#                    current_set.append(line)
+#            if current_set:  # Append the last set if any
+#                sets.append(current_set)
+#        return sets
+#
+#    def update_display():
+#        """Update the displayed set based on the current_set_index."""
+#        text_box.delete(1.0, tk.END)  # Clear existing text
+#        for line in data_sets[current_set_index]:
+#            text_box.insert(tk.END, line + "\n")  # Insert new lines
+#
+#    # Navigate to the next set of data
+#    def next_set():
+#        global current_set_index
+#        if current_set_index < len(data_sets) - 1:
+#            current_set_index += 1
+#            update_display()
+#    
+#    # Navigate to the previous set of data
+#    def prev_set():
+#        global current_set_index
+#        if current_set_index > 0:
+#            current_set_index -= 1
+#            update_display()
+#
 
 
 
@@ -1750,17 +1775,33 @@ class class_manager:
         self.inputo=Orb_Input( self.root, keywd_button)
     
     def create_keywd(self, Run_button):
-#        global multiplicity, type_orb_count
-        self.input_keywd = Keywd_Input(self.root, Run_button)
+        self.input_keywd = Keywd_Input(self.root)
         self.input_keywd.create_keywd_pane()
-    
+        self.Run_button = Run_button
+
     def Run_fort_subs(self):
         self.runfort = Run_Fort(self.root, self.inputc)
         self.runfort.get_keywds(self.input_keywd)
         self.runfort.get_orbs(self.inputo)
         self.runfort.get_geometry()
         self.runfort.get_ctrl_keywds(self.inputc)
-#        self.runfort.share_input_data()
+
+        cwd = os.getcwd()
+        last_part = '_output'
+        end_name = f"{GlobVar.molecule_string}{last_part}"
+#        output_folder =f"{cwd}{end_name}"
+        self.output_folder = os.path.join(cwd, end_name)
+        print(f"Current Working Directory:{self.output_folder}")
+        try:
+            os.makedirs(self.output_folder, exist_ok=True)  # `exist_ok=True` avoids error if the folder already exists
+        except OSError as e:
+            tk.messagebox.showerror("Error", f"{e}")
+            return
+
+        self.runfort.share_input_data(self.output_folder)
+
+#    def show_output(self):
+#        out = Output(self.root, outfile_path)
 
     
 
@@ -1782,12 +1823,10 @@ if __name__ == "__main__":
     Run_button = ttk.Button(frame1, text="RUN", command=lambda:manager.Run_fort_subs())
     Run_button.grid(row=1, column=0, padx=5, pady=10)
     Run_button.config(state=tk.DISABLED)  # Initially disable the button
-    inputc.Run_button = Run_button
 
-    keywd_button = ttk.Button(frame1, text="KEYWDS", command=lambda:manager.create_keywd( Run_button))
+    keywd_button = ttk.Button(frame1, text="KEYWDS", command=lambda:manager.create_keywd(Run_button))
     keywd_button.grid(row=0, column=1, padx=5, pady=10)
-#    keywd_button.config(state=tk.DISABLED)  # Initially disable the button
-    inputc.keywd_button = keywd_button
+    keywd_button.config(state=tk.DISABLED)  # Initially disable the button
 
     orbital_button = ttk.Button(frame1, text="ORBITALS", command=lambda:manager.create_orb( keywd_button))
     orbital_button.grid(row=0, column=0, padx=5, pady=10)

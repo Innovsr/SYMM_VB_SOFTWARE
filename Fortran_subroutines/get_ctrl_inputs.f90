@@ -3,7 +3,7 @@ subroutine get_ctrl_inputs(geometry_unit, nao_py, nae_py, nmul, output_file_name
                 chinst, symm_py, symtype_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py, nnb_py,&
                 syb_py, mnbond_py, radical_py, nmbond_py, symat_array, coordx, coordy, coordz, symatno_array,&
                 atoset_array, norbsym_array, active_atom_array, atn_array, orbsym_array, flgst_py, total_atoms,&
-                niao_py, active_atm_num) 
+                niao_py, active_atm_num, output_folder) 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 use commondat
 use commondat1
@@ -13,6 +13,7 @@ common/ats/atsymset,nsym,syn,at_sym
 
 integer:: nao_py, nae_py, nmul, flgst_py, total_atoms, niao_py, active_atm_num
 character(len = 100)::geometry_unit, output_file_name
+character(len = 300)::output_folder, outfile
 integer::chinst, symm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py
 integer::nnb_py, syb_py, mnbond_py, radical_py, nmbond_py!, main_bond_py
 character(len = 6)::symtype_py
@@ -49,6 +50,8 @@ norbsym = norbsym_array
 active_atoms = active_atom_array
 atn = atn_array
 orbsym = orbsym_array
+STDOUT = output_file_name
+out_folder_path = output_folder
 
 print*,'nao, nae, nmul',nao, nae, mult
 print*,'geometry_unit',geometry_unit
@@ -80,7 +83,8 @@ enddo
 ! quality_str.dat:: all structures arranged according to their qualities                                  !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 open(unit=7,file='structures.dat',status='unknown')
-open(unit=10,file='structure_set_1.dat',status='unknown')
+outfile=trim(out_folder_path)//trim('/')//trim(STDOUT)//trim('_1.out')
+open(unit=10,file=outfile,status='unknown')
 open(unit=23,file='Rumer_Sets_all.dat',status='unknown')
 open(unit=35,file='quality_str.dat',status='unknown')
 

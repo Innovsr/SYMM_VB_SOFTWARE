@@ -27,7 +27,7 @@ integer::j1,j2,grp(30)
 real*8::ovlp
 Double Precision::D(1000)
 character(10)::dd,a
-character(len=100)::outfile
+character(len=300)::outfile
 
 print*,'*****************************'
 print*,'enter write_symm_xmi_1'
@@ -248,8 +248,8 @@ print*,'i am here',mns,max_set,u1,mset,mset-1
    sf2=1
    return
   endif
-  outfile='structure_set_'//trim(a)//trim('.dat')
-  open(unit=9+u1,file=outfile,status='unknown')
+  outfile=trim(out_folder_path)//trim('/')//trim(STDOUT)//trim('_')//trim(a)//trim('.dat')
+  open(unit=9+u1,file=trim(outfile),status='unknown')
  endif
 
 !sf2=1
