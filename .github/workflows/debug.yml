@@ -1,0 +1,6 @@
+- name: Debug file locations
+    run: |
+      echo "Listing all files in Python_interface/"
+      ls -l Python_interface/
+      echo "Listing all files in Python_interface/Tests/"
+      ls -l Python_interface/Tests/
