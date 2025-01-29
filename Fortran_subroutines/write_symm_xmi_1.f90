@@ -213,6 +213,7 @@ print*,'i7***********',i7,m21,nfset
    bqlty=0
    write(9+u1,*)'Set_number=',set_number
    write(9+u1,*)'    '
+   write(5,913),'Set_number',set_number,(col9(m19),m19=1,i7)
   endif
 
   if(nfset.eq.0.and.ttqlty.le.ttqlty0)then 
@@ -248,7 +249,7 @@ print*,'i am here',mns,max_set,u1,mset,mset-1
    sf2=1
    return
   endif
-  outfile=trim(out_folder_path)//trim('/')//trim(STDOUT)//trim('_')//trim(a)//trim('.dat')
+  outfile=trim(out_folder_path)//trim('/')//trim(STDOUT)//trim('_')//trim(a)//trim('.out')
   open(unit=9+u1,file=trim(outfile),status='unknown')
  endif
 
@@ -263,6 +264,7 @@ endif
 920 format(a,2x,I5,2x,a,2x,100I5)
 911 format(15x,I3,7x,I3,7x,I3)
 912 format(a,3x,F10.3)
+913 format(a,2x,I0,4x,30I5)
 
 return
 end subroutine write_symm_xmi_1

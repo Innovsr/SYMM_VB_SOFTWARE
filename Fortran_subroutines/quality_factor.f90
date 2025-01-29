@@ -2,7 +2,7 @@
 !! calling different quality calculations as opted and marging them into one score 
 !! for each structue. 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine quality_factor(nl,str1,ncqs,q_fac,str_quality_1,str_quality_2,bondq)
+subroutine quality_factor(nl,str1,ncqs,q_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 use commondat
 implicit none
@@ -24,6 +24,14 @@ if(qflg.eq.1)then
   enddo
   return
 endif
+
+do i = 1, 15000
+str_quality_1(i)=0
+str_quality_2(i)=0
+bondq(i)=0
+pref_radical(i)=0
+mbondq(i)=0
+enddo
 
 if(itb.ne.1.or.flg1.eq.1) call intra_bond_factor(nl,str1,ncqs,str_quality_1)
 if(syb.ne.1.and.nsym.ne.1) call symm_break_factor(nl,str1,ncqs,str_quality_2)

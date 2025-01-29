@@ -8,14 +8,14 @@ common/quality/str_quality_1,str_quality_2,bondq,tqlty,bqlty,sqlty,tnqs,nssym,qu
 sigsym,tnqs_sig
 
 integer::i,j,i1,i2,i3,i4,i5,i6,i7,ii,nl,str1_cnt,cnt,m4,m8,m9,m10,lp_cnt,tnqs,&
-wig2,elporb,perm_nstr,total_str,mbondq(15000),q_fac(15000),q_fac1(15000),ijk,n,nssym,rep
+wig2,elporb,perm_nstr,total_str,q_fac(15000),q_fac1(15000),ijk,n,nssym,rep
 integer::str_cnt(15000),astr(15000,20),str1(15000,20),str2(15000,20),lps(50),sigsym(15000),tnqs_sig&
 ,quality_fac(15000),str_quality_1(15000),str_quality_2(15000),strno(1000)&
 ,rumer(15000),rumer_rad(15000),bondq(15000),fvec(15000,1000),qulsymm(15000),&
-symq(15000),symqq(15000),&
+symq(15000),symqq(15000),pref_radical(15000),mbondq(15000),&
 tndet,tqlty,tqlty1,bqlty,sqlty,bqlty1,sqlty1,qulsym(15000)
 real*8::factorial,symsc(15000)
-character(5)::rumstr
+character(10)::rumstr
 
 
 print*,'enter str_selection'
@@ -23,10 +23,6 @@ print*,'ovopt',ovopt,nfset
 tqlty1=0
 bqlty1=0
 sqlty1=0
-!do i1=1,m4
-!write(*,305),i1,(astr(i1,i2),i2=1,nae)
-!enddo
-!print*,perm_nstr,nl,m4
 
 !**********************************************************************************************************
 !!!!!!!!!!!!!!!! If number of permisible structures and available structures are same START !!!!!!!!!!!!!!!
@@ -34,26 +30,24 @@ sqlty1=0
 
 if(perm_nstr.eq.m4)then
 call rumer_structures(nl,astr,m4,rumer,rumer_rad)
-call quality_factor(nl,astr,m4,quality_fac,str_quality_1,str_quality_2,bondq)
+call quality_factor(nl,astr,m4,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
 
 
-write(7,*)'all',m4,' structures are permisible among below '
-!n=0
-!do ijk=nssym,1,-1
 do m8=1,m4
-!if(symq(m8).eq.ijk)then
-!n=n+1
-if(rumer(m8)*rumer_rad(m8).eq.1)rumstr='R'
+if(rumer(m8)*rumer_rad(m8).eq.1)rumstr='Rumer'
 if(rumer(m8)*rumer_rad(m8).eq.0)rumstr='-'
-write(7,301)'str',m8,')','[',str_quality_1(m8),',',str_quality_2(m8),']','{',quality_fac(m8),'}',&
-rumstr,(astr(m8,m9),m9=1,nae)
-!write(7,305)(fvec(m8,m9),m9=1,ndet)
-!write(*,305)(str1(m8,m9),m9=1,nae)
-!endif
+!write(7,301)'str',m8,')','[',str_quality_1(m8),',',str_quality_2(m8),']','{',quality_fac(m8),'}',&
+!rumstr,(astr(m8,m9),m9=1,nae)
+if(niao.ne.0)write(7,301),'structure',m8,'[',str_quality_1(m8),bondq(m8),str_quality_2(m8),&
+   mbondq(m8),pref_radical(m8),']','{',quality_fac(m8),'}',rumstr,'1:',niao,(astr(m8,m9),m9=1,nae)
+if(niao.eq.0)write(7,302),'structure',m8,'[',str_quality_1(m8),bondq(m8),str_quality_2(m8),&
+   mbondq(m8),pref_radical(m8),']','{',quality_fac(m8),'}',rumstr,(astr(m8,m9),m9=1,nae)
 enddo
-!enddo
+write(7,*)'----------------------------  END FILE  ----------------------------'
 
-301 format(a,x,I5,a,x,a,I3,a,I3,x,a,a,I3,x,a,x,a,x,30I5)
+301 format(a,2x,I5,3x,a,2x,I3,2x,I3,2x,I3,2x,I3,2x,I3,2x,a,3x,a,2x,I0,2x,a,14x,a,14x,a,I0,1x,30I3)
+302 format(a,2x,I5,3x,I3,2x,I3,2x,I3,2x,I3,2x,I3,3x,a,I0,a,14x,a,14x,30I3)
+!301 format(a,x,I5,a,x,a,I3,a,I3,x,a,a,I3,x,a,x,a,x,30I5)
 305 format(30I5)
 
 !if(nnnatom.ne.0)then
@@ -218,29 +212,23 @@ endif
 
 !elporb=nae-nl*2
 375 call wigner(elporb,wig2)
-write(7,*)wig2,' structures are permisible among below ',str1_cnt
+!write(7,*)wig2,' structures are permisible among below ',str1_cnt
 if(nl.ne.0)write(7,*)'                 lone pair =',(lps(i3),i3=1,lp_cnt)
 
 call rumer_structures(nl,str1,str1_cnt,rumer,rumer_rad)
-call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq)
+call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
 
 
-!n=0
-!do ijk=nssym,1,-1
 do m8=1,str1_cnt
-!if(symq(m8).eq.ijk)then
-!n=n+1
-!write(7,*),rumer(m8),rumer_rad(m8),rumer(m8)*rumer_rad(m8)
-if(rumer(m8)*rumer_rad(m8).eq.1)rumstr='R'
+if(rumer(m8)*rumer_rad(m8).eq.1)rumstr='Rumer'
 if(rumer(m8)*rumer_rad(m8).eq.0)rumstr='-'
-write(7,301)'str',m8,')','[',str_quality_1(m8),',',str_quality_2(m8),']','{',quality_fac(m8),'}',&
-rumstr,(str1(m8,m9),m9=1,nae)
-!write(7,305)(fvec(m8,m9),m9=1,ndet)
-!write(*,305)(str1(m8,m9),m9=1,nae)
-!endif
+if(niao.ne.0)write(7,301),'structure',m8,'[',str_quality_1(m8),bondq(m8),str_quality_2(m8),&
+   mbondq(m8),pref_radical(m8),']','{',quality_fac(m8),'}',rumstr,'1:',niao,(astr(m8,m9),m9=1,nae)
+if(niao.eq.0)write(7,302),'structure',m8,'[',str_quality_1(m8),bondq(m8),str_quality_2(m8),&
+   mbondq(m8),pref_radical(m8),']','{',quality_fac(m8),'}',rumstr,(astr(m8,m9),m9=1,nae)
+
 enddo
-!write(7,*)
-!enddo
+write(7,*)'----------------------------  END FILE  ----------------------------'
 
 
 !***********************************************************************
@@ -249,7 +237,7 @@ enddo
 
 if(flg1.eq.1)then
 
-call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq)
+call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
 
 !do i=1,str1_cnt
 !write(*,231),(str1(i,j),j=1,nae),str_quality_1(i),str_quality_2(i),bondq(i),quality_fac(i)
@@ -279,7 +267,7 @@ if(flg1.eq.0.and.flg_cov.eq.1.and.flg_ion.eq.0)then
 !print*,'sourav1'
 
 if(symm.eq.1) then
-call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq)
+call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
 
 
 if(sig_sym_flg.eq.1)call symmetry_cal_sig(nl,str1,str1_cnt,symsc,symq,nssym)
@@ -299,7 +287,7 @@ endif
 
 if(symm.eq.0)then
 if(nfset.ne.4)then
-call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq)
+call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
 
 call qult_str_arrange(nl,str1,str1_cnt,quality_fac,str2,q_fac)
 
@@ -313,7 +301,7 @@ endif
 if(nfset.eq.4)then
 print*,'str1_cnt',str1_cnt
 !stop
-call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq)
+call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
 
 call qult_str_arrange(nl,str1,str1_cnt,quality_fac,str2,q_fac)
 print*,'ovopt',ovopt,niao

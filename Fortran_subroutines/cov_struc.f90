@@ -19,6 +19,7 @@ integer::alstr,fullcovstr(15000,20),symq(15000),sigsym(15000),tnqs_sig&
 real*8::factorial,symsc(15000),T1,T2
 integer,dimension(:,:),allocatable::strc,fstr,strct,num
 integer,dimension(:),allocatable::n,nn
+character(len=10)::alstr_string,allowed_string
 !!! memory allocation !!!!!!!
 x=100000
 y=100
@@ -691,20 +692,30 @@ deallocate(n)
 deallocate(nn)
 
 !!! header of the 'structures.dat' file is written here
+write(7,*)'**********************************************************'
+write(7,*)'*      All possible structures with their qualities      *'
+write(7,*)'**********************************************************'
 write(7,*)'  '
-write(7,*)'                  covalent structures   '
-write(7,*)'                  -------------------   '
-write(7,*)'  '
+write(7,*)'----------------------------------------------------------------------------------------------'
+write(7,309)'*','active orbs =',nao,'active electrons =',nae,'multiplicity =',mult,'inactive orbs =',niao
+write(7,*)'----------------------------------------------------------------------------------------------'
+write(7,*)
 
-write(7,307)' You have',alstr,' covalent structures among'
-write(7,307)'them',wig2*c,' covalent structures are permissible'
+WRITE(alstr_string, '(I0)') alstr
+!    string_value = ADJUSTL(atstr_string)
+
+WRITE(allowed_string, '(I0)') wig2*c
+!    string_value = ADJUSTL(atstr_string)
+
+write(7,307)'Total number of covalent structure of the system = ',trim(alstr_string)
+write(7,307)'Total number of allowed covalent structres are = ',trim(allowed_string)
 write(7,*)' '
-write(7,*)'      [] and {} in front of the structures specifies the quality of the structures.'
-write(7,*)'1st number in [] specifies intra-atomic bond quality and 2nd number specifies ' 
-write(7,*)'symmetry breaking bond quality. Where {} specifies the overall quality of the structures'
-write(7,*)'*************************************************************** '
-307 format(2x,a,I7,a)
-
+write(7,308)'Sl No.','various qualities','Overall qualities','Rumer/Non Rumer', 'Structures'
+write(7,306)'IAB','NAB','SBB','PDB','PDR'
+307 format(10x,a,a)
+308 format(2x,a,5x,a,5x,a,3x,a,10x,a)
+306 format(8x,a,1x,a,1x,a,1x,a,1x,a)
+309 format(a,1x,a,1x,I4,3x,a,1x,I4,3x,a,1x,I4,3x,a,1x,I4)
 
 do i=1,alstr
 do i1=1,nae

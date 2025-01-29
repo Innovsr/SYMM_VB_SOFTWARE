@@ -12,7 +12,7 @@ implicit none
 common/ats/atsymset,nsym,syn,at_sym
 
 integer:: nao_py, nae_py, nmul, flgst_py, total_atoms, niao_py, active_atm_num
-character(len = 100)::geometry_unit, output_file_name
+character(len = 100)::geometry_unit, output_file_name,tempoutfile,all_struc_file
 character(len = 300)::output_folder, outfile
 integer::chinst, symm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py
 integer::nnb_py, syb_py, mnbond_py, radical_py, nmbond_py!, main_bond_py
@@ -82,9 +82,12 @@ enddo
 ! Rumer_Sets_all.dat:: unique Rumer sets for all possible permutations of orbitals                        !
 ! quality_str.dat:: all structures arranged according to their qualities                                  !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-open(unit=7,file='structures.dat',status='unknown')
 outfile=trim(out_folder_path)//trim('/')//trim(STDOUT)//trim('_1.out')
 open(unit=10,file=outfile,status='unknown')
+tempoutfile=trim(out_folder_path)//trim('/')//trim('out.temp')
+open(unit=5,file=tempoutfile,status='unknown')
+all_struc_file=trim(out_folder_path)//trim('/')//trim('structures.dat')
+open(unit=7,file=all_struc_file,status='unknown')
 open(unit=23,file='Rumer_Sets_all.dat',status='unknown')
 open(unit=35,file='quality_str.dat',status='unknown')
 
@@ -119,11 +122,6 @@ nnb=nnb+1
 radical=radical+1
 mnbond=mnbond+1
 
-write(7,*)'******************************************************************************************'
-write(7,900)'*','active orbs =',nao,'active electrons =',nae,'multiplicity =',mult,'inactive orbs =',niao
-write(7,*)'******************************************************************************************'
-write(7,*)'******************************************************************************************'
-900 format(a,1x,a,1x,I4,3x,a,1x,I4,3x,a,1x,I4,3x,a,1x,I4)
 
 if (geometry_unit.eq.'Bohr') then
 coordx=coordx*0.529177
@@ -189,5 +187,6 @@ endif
 !call ion_struc
 !endif
 
-stop
+!stop
+!return
 end subroutine get_ctrl_inputs

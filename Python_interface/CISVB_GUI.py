@@ -37,6 +37,8 @@ import sys
 import numpy as np
 import Pmw
 import symm_str
+import tkinter.font as tkFont
+import math
 
 class GlobVar:
     "Class Contains Global Variables"
@@ -50,6 +52,7 @@ class GlobVar:
     molecule_string = None
     orbital_input = False
     orbital_data = []
+    set_id = None
     at_list_bold = [                                                                                       
         'H', 'HE', 'LI', 'BE', 'B', 'C', 'N', 'O', 'F', 'NE', 'NA', 'MG', 'AL',                   # List of Atoms according to periodic table
         'SL', 'P', 'S', 'CL', 'AR', 'K', 'CA', 'SC', 'TI', 'V', 'CR', 'MN', 'FE', 'CO', 'NR',
@@ -1715,12 +1718,155 @@ class Run_Fort:
                 self.actv_atm_num,
                 output_folder
                 )
+        return(self.mout)
 
-#class Output:
-#    def __init__(self, root, output_path):
+class Output:
+    def __init__(self, root):
+        self.root = root
+
+    def load_structure_file(self, filename):
+        Output_window = tk.Toplevel(self.root)
+        Output_window.title("All Structures")
+        Output_window.geometry("1000x800")
+        Output_window.configure(background="lightblue")
+
+        frame = tk.Frame(Output_window, bg = "lightblue")
+        frame.grid(row=0, column=0, padx = 5, pady = 5)
+
+        text_frame = tk.Frame(Output_window, bg = "white")
+        text_frame.grid(row=1, column=0, padx = 5 , pady= 5)
+
+        button_frame = tk.Frame(Output_window, bg = "lightblue")
+        button_frame.grid(row=2, column=0, padx = 5 , pady= 5)
+
+        text_widget = tk.Text(text_frame, wrap=tk.WORD, bg="white", fg="black")
+        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        v_scrollbar = tk.Scrollbar(text_frame, orient=tk.VERTICAL, command=text_widget.yview)
+        v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+#        h_scrollbar = tk.Scrollbar(text_frame, orient=tk.HORIZONTAL, command=text_widget.xview)
+#        h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        font = tkFont.Font(family="Helvetica", size=16)  
+        text_widget.configure(yscrollcommand=v_scrollbar.set, font = font)
+
+        nlp = GlobVar.num_orbital - GlobVar.num_electron
+        nao = GlobVar.num_orbital
+        nmult = GlobVar.multiplicity
+        sets, tot_perm_str, all_str = self.wigner(nlp, nao, nmult)
+
+        if not os.path.exists(filename):
+            text_widget.insert(tk.END, "No Structures are available\n")
+            return 
+        else:
+            i=0
+            with open(filename, "r") as file:
+                lines = file.readlines()
+                for line in lines:
+                    if line.startswith("structure"):
+                        print('line',line)
+                        cols = line.strip().split()
+                        various_qualities = " ".join(cols[3:8]) 
+                        overall_qualities = cols[10] 
+                        rumer = cols[12]
+                        if rumer == 'Rumer':
+                            rumer = 'R'
+                        structure = " ".join(cols[13:])
+                        sw = len(structure) + 10
+                        i+=1
+                        result = (
+                            f"{i:<16} {structure:^{sw}} {various_qualities:^30} {overall_qualities:^22} {rumer:^20}\n\n"
+                        )
+                        if i == 1:
+                            header1 = f"{'Sl. No.':<16} {'Structure':^{sw}} {'Various Qualities':^30} {'Overall Quality':^22} {'Rumer':^20}\n\n"
+                            header2 = f"{'-------':<16} {'---------':^{sw}} {'IAB NAB SBB PDB PDR':^30} {'---------------':^22} {'-----':^20}\n\n"
+                            text_widget.insert(tk.END, header1)
+                            text_widget.insert(tk.END, header2)
+                        text_widget.insert(tk.END, result)
+                label_tot_cov_str = ttk.Label(frame, text = f'Total number of covalent structure of the system = {all_str}', style = "Colour_Label.TLabel")
+                label_tot_cov_str.grid(row = 0, column = 0, padx = 5, pady = 5)
+                label_tot_all_cov_str = ttk.Label(frame, text = f'Total number of allowed covalent structure = {tot_perm_str}', style = "Colour_Label.TLabel")
+                label_tot_all_cov_str.grid(row = 0, column = 1, padx = 5, pady = 5)
+        text_widget.config(state=tk.DISABLED)
+
+        
+        view_set_button = tk.Button(button_frame, text = 'View Set', command =lambda:self.view_first_set(GlobVar.set_id))
+        view_set_button.grid(row = 0, column = 2, padx = 10, pady = 10)
+        view_nextset_button = tk.Button(button_frame, text = 'Next Set', command =lambda:self.view_next_set(GlobVar.set_id))
+        view_nextset_button.grid(row = 0, column = 3, padx = 10, pady = 10)
+        view_prevtset_button = tk.Button(button_frame, text = 'Prev Set', command =lambda:self.view_prev_set(GlobVar.set_id))
+        view_prevtset_button.grid(row = 0, column = 1, padx = 10, pady = 10)
+
+    def view_first_set(self, set_id):
+        set_id =0
+
+    def wigner(self, nlp, nao, nmult):
+        ''' none = number of one electron orbital
+            nlp = number of lone paires
+            nao = number of active electrons
+            nmult = multiplicity
+        '''
+        wigner = 0
+        sets = 1
+
+        # calculate permissible number of structre with Wigner's theorem
+        noeo = nao - nlp
+        spin = (nmult - 1)/2
+        neum = nmult*math.factorial(noeo)
+        denom1 = math.factorial(int((noeo/2) + spin+1))
+        denom2 = math.factorial(int((noeo/2) - spin))
+        wigner = int(neum/(denom1*denom2))
+
+        # Number of sets depending on lone pairs
+        if nlp != 0:
+            sets = math.comb(nao, nlp)
+
+        # Calculate total number of structures
+        term1 = math.comb(nao, nao - noeo)
+        term2 = math.comb(noeo, int(2*spin))
+
+        product_term = np.prod([(math.comb(noeo - int(2*spin) - 2*i, 2)) for i in range(int((noeo / 2)-spin))])
+        denom = math.factorial(int((noeo / 2) - spin))
+
+        totstr = int((term1 * term2 * product_term) / denom)
+
+        return (sets, wigner, totstr)
+        
+
+#    def read_next_set(self, filename):
+#        """Read new data after the last processed set_number."""
+#        if not os.path.exists(filename):
+#            return None, "File not found."
 #
-#    # Function to read data from a file and split it into sets
-#    def load_data_from_file(file_name):
+#        with open(filename, "r") as file:
+#            lines = file.readlines()
+#
+#        new_data = []
+#        found_new_set = False
+#        for line in lines:
+#            if line.startswith("Set_number"):
+#                set_number = int(line.split()[1])
+#                if set_number > self.last_set_number:
+#                    self.last_set_number = set_number
+#                    found_new_set = True
+#                    new_data = []
+#            elif found_new_set:
+#                new_data.append(line.strip())
+#
+#        return new_data, None if found_new_set else "No new data."
+#
+#    def load_next_set(self):
+#        data, error = self.reader.read_next_set()
+#        if error:
+#            self.result_display.insert(tk.END, f"{error}\n")
+#        else:
+#            self.result_display.insert(tk.END, f"Set {self.reader.last_set_number}:\n")
+#            self.result_display.insert(tk.END, "\n".join(data) + "\n")
+#        self.result_display.see(tk.END)
+
+    # Function to read data from a file and split it into sets
+#    def load_output_file(self, file_name):
 #        sets = []
 #        current_set = []
 #        with open(file_name, "r") as file:
@@ -1730,32 +1876,33 @@ class Run_Fort:
 #                    if current_set:  # If there's an existing set, save it
 #                        sets.append(current_set)
 #                        current_set = []
-#                elif line.startswith("1:"):  # Look for lines starting with "1:"
+#                elif line.startswith("|"):  # Look for lines starting with "1:"
 #                    current_set.append(line)
 #            if current_set:  # Append the last set if any
 #                sets.append(current_set)
+#        print('sets',sets)
 #        return sets
 #
-#    def update_display():
+#    def update_display(self):
 #        """Update the displayed set based on the current_set_index."""
 #        text_box.delete(1.0, tk.END)  # Clear existing text
 #        for line in data_sets[current_set_index]:
 #            text_box.insert(tk.END, line + "\n")  # Insert new lines
 #
 #    # Navigate to the next set of data
-#    def next_set():
+#    def next_set(self):
 #        global current_set_index
 #        if current_set_index < len(data_sets) - 1:
 #            current_set_index += 1
 #            update_display()
 #    
 #    # Navigate to the previous set of data
-#    def prev_set():
+#    def prev_set(self):
 #        global current_set_index
 #        if current_set_index > 0:
 #            current_set_index -= 1
 #            update_display()
-#
+
 
 
 
@@ -1798,11 +1945,20 @@ class class_manager:
             tk.messagebox.showerror("Error", f"{e}")
             return
 
-        self.runfort.share_input_data(self.output_folder)
+        self.mout=self.runfort.share_input_data(self.output_folder)
+        print('self.output_folder',self.output_folder)
+        self.show_output()
 
-#    def show_output(self):
-#        out = Output(self.root, outfile_path)
-
+    def show_output(self):
+        end1 = 'out.temp'
+        end2 = 'structures.dat'
+        slash = '/'
+        outfpath = f"{self.output_folder}{slash}{end1}"
+        strfpath = f"{self.output_folder}{slash}{end2}"
+        out = Output(self.root)
+        out.load_structure_file(strfpath)
+        #out.load_output_file()
+        #print('strset',strset)
     
 
 if __name__ == "__main__":
