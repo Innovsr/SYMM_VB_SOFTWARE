@@ -5,10 +5,12 @@ on:
     branches:
       - main
     paths:
-      - 'src/**'
+      - 'Python_interface'
   pull_request:
     branches:
       - main
+    paths:
+      - 'Python_interface'
 
 jobs:
   build:
