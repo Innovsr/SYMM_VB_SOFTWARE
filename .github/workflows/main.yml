@@ -22,8 +22,10 @@ jobs:
         
       - name: Set up PYTHONPATH
         run: |
-          export PYTHONPATH=$PYTHONPATH:/home/runner/work/SYMM_VB_SOFTWARE/Python_interface
+          export PYTHONPATH=$PYTHONPATH:/home/runner/work/SYMM_VB_SOFTWARE/SYMM_VB_SOFTWARE/Python_interface
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/runner/work/SYMM_VB_SOFTWARE/SYMM_VB_SOFTWARE/Python_interface
           echo "PYTHONPATH is $PYTHONPATH"
+          echo "LD_LIBRARY_PATH is $LD_LIBRARY_PATH"
           
       - name: Set up Python (if needed)
         uses: actions/setup-python@v4
