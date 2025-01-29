@@ -19,6 +19,10 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        
+      - name: Set up PYTHONPATH
+        run: |
+          export PYTHONPATH=$PYTHONPATH:/home/runner/work/SYMM_VB_SOFTWARE/Python_interface
 
       - name: Set up Python (if needed)
         uses: actions/setup-python@v4
@@ -31,7 +35,8 @@ jobs:
 
       - name: Run tests
         run: |
-          run: |
-          export PYTHONPATH=$PYTHONPATH:$(pwd)/Python_interface
-          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/Python_interface
           pytest Python_interface/Tests
+   #       run: |
+  #        export PYTHONPATH=$PYTHONPATH:$(pwd)/Python_interface
+  #        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/Python_interface
+          
