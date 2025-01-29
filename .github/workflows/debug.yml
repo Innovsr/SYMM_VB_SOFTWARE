@@ -1,6 +1,23 @@
-- name: Debug file locations
-    run: |
-      echo "Listing all files in Python_interface/"
-      ls -l Python_interface/
-      echo "Listing all files in Python_interface/Tests/"
-      ls -l Python_interface/Tests/
+name: Debug file locations
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Debug file locations
+        run: |
+          echo "Listing all files in Python_interface/"
+          ls -l Python_interface/
+          echo "Listing all files in Python_interface/Tests/"
+          ls -l Python_interface/Tests/
