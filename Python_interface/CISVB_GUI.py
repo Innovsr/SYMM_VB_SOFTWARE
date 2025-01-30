@@ -1724,7 +1724,7 @@ class Output:
     def __init__(self, root):
         self.root = root
 
-    def load_structure_file(self, filename):
+    def load_structure_file(self, fname):
         Output_window = tk.Toplevel(self.root)
         Output_window.title("All Structures")
         Output_window.geometry("1000x800")
@@ -1756,6 +1756,8 @@ class Output:
         nmult = GlobVar.multiplicity
         sets, tot_perm_str, all_str = self.wigner(nlp, nao, nmult)
 
+        filename = fname + '/' + 'structures.dat'
+
         if not os.path.exists(filename):
             text_widget.insert(tk.END, "No Structures are available\n")
             return 
@@ -1786,20 +1788,70 @@ class Output:
                         text_widget.insert(tk.END, result)
                 label_tot_cov_str = ttk.Label(frame, text = f'Total number of covalent structure of the system = {all_str}', style = "Colour_Label.TLabel")
                 label_tot_cov_str.grid(row = 0, column = 0, padx = 5, pady = 5)
-                label_tot_all_cov_str = ttk.Label(frame, text = f'Total number of allowed covalent structure = {tot_perm_str}', style = "Colour_Label.TLabel")
+                labe;l_tot_all_cov_str = ttk.Label(frame, text = f'Total number of allowed covalent structure = {tot_perm_str}', style = "Colour_Label.TLabel")
                 label_tot_all_cov_str.grid(row = 0, column = 1, padx = 5, pady = 5)
         text_widget.config(state=tk.DISABLED)
 
-        
-        view_set_button = tk.Button(button_frame, text = 'View Set', command =lambda:self.view_first_set(GlobVar.set_id))
+        self.tempfname = fname + '/' + 'out.temp'
+        flag1 =1
+        flag2 =2
+        flag3 =3
+        view_set_button = tk.Button(button_frame, text = 'View Set', command =lambda:self.view_set(flag1))
         view_set_button.grid(row = 0, column = 2, padx = 10, pady = 10)
-        view_nextset_button = tk.Button(button_frame, text = 'Next Set', command =lambda:self.view_next_set(GlobVar.set_id))
+        view_nextset_button = tk.Button(button_frame, text = 'Next Set', command =lambda:self.view_set(flag2))
         view_nextset_button.grid(row = 0, column = 3, padx = 10, pady = 10)
-        view_prevtset_button = tk.Button(button_frame, text = 'Prev Set', command =lambda:self.view_prev_set(GlobVar.set_id))
+        view_prevtset_button = tk.Button(button_frame, text = 'Prev Set', command =lambda:self.view_set(flag3))
         view_prevtset_button.grid(row = 0, column = 1, padx = 10, pady = 10)
 
-    def view_first_set(self, set_id):
-        set_id =0
+    def view_set(self, flag):
+        Output_window = tk.Toplevel(self.root)
+        Output_window.title("Independent Set")
+        Output_window.geometry("500x800")
+        Output_window.configure(background="lightblue")
+
+        frame = tk.Frame(Output_window, bg = "lightblue")
+        frame.grid(row=0, column=0, padx = 5, pady = 5)
+
+        text_frame = tk.Frame(Output_window, bg = "white")
+        text_frame.grid(row=1, column=0, padx = 5 , pady= 5)
+
+        button_frame = tk.Frame(Output_window, bg = "lightblue")
+        button_frame.grid(row=2, column=0, padx = 5 , pady= 5)
+
+        text_widget = tk.Text(text_frame, wrap=tk.WORD, bg="white", fg="black")
+        text_widget.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        v_scrollbar = tk.Scrollbar(text_frame, orient=tk.VERTICAL, command=text_widget.yview)
+        v_scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            
+#            h_scrollbar = tk.Scrollbar(text_frame, orient=tk.HORIZONTAL, command=text_widget.xview)
+#            h_scrollbar.pack(side=tk.BOTTOM, fill=tk.X)
+
+        font = tkFont.Font(family="Helvetica", size=16)  
+        text_widget.configure(yscrollcommand=v_scrollbar.set, font = font)
+
+        if flag == 1:
+            GlobVar.set_id =1
+            if not os.path.exists(filename):
+                text_widget.insert(tk.END, "No Structures are available\n")
+                return 
+            else:
+                with open(self.tempfname, "r") as file:
+                    try:
+                        lines = file.readlines()
+                    except ValueError:
+                        messagebox.showerror('Error','No independent has been found, try after few munits')
+                        return
+                for line in lines:
+                    if line.startswith('Set_number'):
+                        linear_indset=line.strip().split()
+                        if linear_indset[0]==GlobVar.set_id:
+                            for entry in linear_indset:
+                                print('entry',entry)
+
+
+
+
 
     def wigner(self, nlp, nao, nmult):
         ''' none = number of one electron orbital
@@ -1833,75 +1885,6 @@ class Output:
 
         return (sets, wigner, totstr)
         
-
-#    def read_next_set(self, filename):
-#        """Read new data after the last processed set_number."""
-#        if not os.path.exists(filename):
-#            return None, "File not found."
-#
-#        with open(filename, "r") as file:
-#            lines = file.readlines()
-#
-#        new_data = []
-#        found_new_set = False
-#        for line in lines:
-#            if line.startswith("Set_number"):
-#                set_number = int(line.split()[1])
-#                if set_number > self.last_set_number:
-#                    self.last_set_number = set_number
-#                    found_new_set = True
-#                    new_data = []
-#            elif found_new_set:
-#                new_data.append(line.strip())
-#
-#        return new_data, None if found_new_set else "No new data."
-#
-#    def load_next_set(self):
-#        data, error = self.reader.read_next_set()
-#        if error:
-#            self.result_display.insert(tk.END, f"{error}\n")
-#        else:
-#            self.result_display.insert(tk.END, f"Set {self.reader.last_set_number}:\n")
-#            self.result_display.insert(tk.END, "\n".join(data) + "\n")
-#        self.result_display.see(tk.END)
-
-    # Function to read data from a file and split it into sets
-#    def load_output_file(self, file_name):
-#        sets = []
-#        current_set = []
-#        with open(file_name, "r") as file:
-#            for line in file:
-#                line = line.strip()
-#                if "Set_number" in line:
-#                    if current_set:  # If there's an existing set, save it
-#                        sets.append(current_set)
-#                        current_set = []
-#                elif line.startswith("|"):  # Look for lines starting with "1:"
-#                    current_set.append(line)
-#            if current_set:  # Append the last set if any
-#                sets.append(current_set)
-#        print('sets',sets)
-#        return sets
-#
-#    def update_display(self):
-#        """Update the displayed set based on the current_set_index."""
-#        text_box.delete(1.0, tk.END)  # Clear existing text
-#        for line in data_sets[current_set_index]:
-#            text_box.insert(tk.END, line + "\n")  # Insert new lines
-#
-#    # Navigate to the next set of data
-#    def next_set(self):
-#        global current_set_index
-#        if current_set_index < len(data_sets) - 1:
-#            current_set_index += 1
-#            update_display()
-#    
-#    # Navigate to the previous set of data
-#    def prev_set(self):
-#        global current_set_index
-#        if current_set_index > 0:
-#            current_set_index -= 1
-#            update_display()
 
 
 
@@ -1950,13 +1933,13 @@ class class_manager:
         self.show_output()
 
     def show_output(self):
-        end1 = 'out.temp'
-        end2 = 'structures.dat'
-        slash = '/'
-        outfpath = f"{self.output_folder}{slash}{end1}"
-        strfpath = f"{self.output_folder}{slash}{end2}"
+#        end1 = 'out.temp'
+#        end2 = 'structures.dat'
+#        slash = '/'
+#        outfpath = f"{self.output_folder}{slash}{end1}"
+#        strfpath = f"{self.output_folder}{slash}{end2}"
         out = Output(self.root)
-        out.load_structure_file(strfpath)
+        out.load_structure_file(self.output_folder)
         #out.load_output_file()
         #print('strset',strset)
     
