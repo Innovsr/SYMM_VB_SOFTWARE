@@ -34,7 +34,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pytest Python_interface/Tests
+          pytest Python_interface
    #       run: |
   #        export PYTHONPATH=$PYTHONPATH:$(pwd)/Python_interface
   #        export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(pwd)/Python_interface
