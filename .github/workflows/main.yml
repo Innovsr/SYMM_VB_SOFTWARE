@@ -1,7 +1,6 @@
 name: CI Pipeline
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
@@ -12,6 +11,7 @@ on:
       - main
     paths:
       - 'Python_interface'
+  workflow_dispatch:
 
 jobs:
   build:
