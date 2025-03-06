@@ -2,48 +2,59 @@
 !! All possible sets containg various linearly independent symmetric structures groups generated here.!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine write_symm_xmi_new(nl,strn,str3,ncqs,q_fac2)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+module write_symm
 use commondat
+use quality
+use rumer_struc
+use write_rumer
+use write_symm_1
+use infosymm
 implicit none
 
-common/quality/str_quality_1,str_quality_2,bondq,tqlty,bqlty,sqlty,tnqs,nssym,qulsym,symq,&
-sigsym,tnqs_sig
-common/infosymm/set_number,hqlty,ttqlty0,ttqlty1,ttqlty2,ttqlty3,ncqss,qul,Rid&
-,mns,u1,max_set,rumset,nqset,strset,strnn,totstr,strno,incmplt,mincmplt,mincmplt_set,group_num
-common/str/str5,nstr7
-
-integer::nl,strn,strnn,ncqs,ncqss,tostr,initstr,i,i1,i2,i3,i4,i5,i6,i7,i8,i9,m119,m18,m19,m20,m21,m23,m24,count&
-,qul(100),nqul,j,jj,jjj,fg,flg,ii5,m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14,m15,m16,m17,x,y,strs
-integer::i5up16,i16i7,m16m21,i5up15,i15i7,m15m21,i5up14,i14i7,m14m21,i5up13,i13i7,m13m21,i5up12,i12i7,m12m21,&
-i5up11,i11i7,m11m21,i5up10,i10i7,m10m21,i5up9,i9i7,m9m21,i5up8,i8i7,m8m21,i5up7,i7i7,m7m21,i5up6,i6i7,m6m21,&
-i5up5,i5i7,m5m21,i5up4,i4i7,m4m21,i5up3,i3i7,m3m21,i5up2,i2i7,m2m21,i5up1,i1i7,m1m21,i5up17,i17i7,m17m21
-integer::str3(15000,20),q_fac2(15000),finalvec(15000),strset(1000),col(1000),sigsym(15000),tnqs_sig,&
-ffvec2(15000,1000),bondq(15000),bondq4(15000),nqset(15000),str5(2000,20),nstr7,qfac3(15000),group_num(15000)&
-,tndet,totstr,Ifail,indpnt,strno(1000),str_quality_1(15000),str_quality_2(15000),ttqlty0,ttqlty&
-,tqlty,bqlty,sqlty,hqlty,tnqs,nssym,qulsym(15000),symq(15000),set_number,ttqlty1,det_inv,ttqlty2,ttqlty3
-integer::rumer(15000),rumer_rad(15000),quality_fac(15000),rumset,u1,max_set,mns,mincmplt,mincmplt_set(500)
-!integer,dimension(:),allocatable::qq1,qq2,qq
-integer::qq1(5000),qq2(5000),qq(5000),str2(2000,20),Rid,set_num(100),sf1,sf2,incmplt
-real*8::ovlp
-Double Precision::D(1000)
-character(10)::dd,a
-character(len=100)::outfile
-
+contains
+subroutine write_symm_xmi_new(nl,strn,str3,ncqs,q_fac2)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+integer::nl,strn,ncqs,i,i3,i7,m19,m20,m21,indpnt,nqul,j,jj,jjj,flg
+integer::m1,m2,m3,m4,m5,m6,m7,m8,m9,m10,m11,m12,m13,m14,m15,m16,x
+integer::i16i7,m16m21,i15i7,m15m21,i14i7,m14m21,i13i7,m13m21,i12i7
+integer::m12m21,i11i7,m11m21,i10i7,m10m21,i9i7,m9m21,i8i7,m8m21,i7i7,sf1,sf2
+integer::m7m21,i6i7,m6m21,i5i7,m5m21,i4i7,m4m21,i3i7,m3m21,i2i7,m2m21,i1i7,m1m21
+integer, allocatable::qq1(:),qq2(:),qq(:),bondq4(:)
+character(10)::a
+integer, pointer::q_fac2(:), str3(:,:)
+integer, allocatable::rumer(:),rumer_rad(:)
 
 print*,'enter_symm_xmi_new',strn, ncqs, nfset
+
+if (.not. allocated(nqset))then
+   allocate(nqset(MaxStrOepo))
+   nqset = 0
+endif
+if (.not. allocated(strset))then
+   allocate(strset(MaxStrOepo))
+   strset = 0
+endif
+if (.not. allocated(group_num)) then
+   allocate(group_num(MaxStrOepo))
+   group_num = 0
+endif
+if (.not. allocated(qul)) then
+  allocate(qul(MaxStrOepo))
+  qul = 0
+endif
+if (.not. allocated(mincmplt_set)) then
+allocate(mincmplt_set(MaxStrOepo))
+endif
 
 Rid=0 ! Rumer id; to varify the set is Rumer of not. Rid=1 call the Rumer sets
 
 ! if the loops could not able to find out a set it will provide the biggest incomplete set
 ! which is counted and stored with 'mincmplt' and mincmplt_set array.
 mincmplt=0
-do i=1,500
-mincmplt_set(i)=0
-enddo
+mincmplt_set=0
 
-ncqss=ncqs ! total number of permiissible structures in a set
-strnn=strn ! total number of structures
+ncqss=ncqs ! total number of structures
+strnn=strn ! total number of permiissible structures in a set
 
 incmplt=1 ! running variable to count maximum number of independent structures in each set
 mns=0
@@ -52,36 +63,35 @@ u1=1
 max_set=75000 ! maximum number of set will be written in one file
 
 if(nfset.eq.3.or.nfset.eq.5)then
-rumset=0
-call rumer_structures(nl,str3,ncqss,rumer,rumer_rad)
-call write_rumer_xmi(nl,str3,ncqss,rumer,rumer_rad,quality_fac)
+   rumset=0
+   call rumer_structures(nl,str3,ncqss,rumer,rumer_rad)
+   call write_rumer_xmi(nl,str3,ncqss,rumer,rumer_rad)
 endif
 
-!various keywds
 set_number=0
 bqlty=0
 tqlty=0
 sqlty=0
 hqlty=0
 indpnt=2
-!ovlpval=1.0
 if(noq0.gt.strnn)then
-ttqlty0=noq0
+   ttqlty0=noq0
 else
-ttqlty0=strnn+noq0
+   ttqlty0=strnn+noq0
 endif
 ttqlty1=strnn+noq1
 ttqlty2=strnn+noq2
 ttqlty3=strnn+noq3
 
+
 write(*,*)'sl  structures           group_numbers'
 do i=1,ncqss
-write(*,231)i,(str3(i,j),j=1,nae),q_fac2(i)
-!write(*,231),i,(str3(i,j),j=1,nae),q_fac2(i),str_quality_1(i),str_quality_2(i),bondq(i)
-group_num(i)=q_fac2(i)
+   write(*,231)i,(str3(i,j),j=1,nae),q_fac2(i)
+   group_num(i)=q_fac2(i)
 enddo
 
 231 format(30I3)
+
 
 jj=1
 loop1:do m19=1,ncqss
@@ -96,22 +106,19 @@ loop1:do m19=1,ncqss
     qul(i)=q_fac2(m19)
 enddo loop1
 nqul=jj
-!print*,'nqul',nqul
 
 ! counting of groups and the number of structures in each group
 do i=1,nqul
-jjj=0
-jj=0
-do m19=1,ncqss
-!print*,qul(i),q_fac2(m19)
-if(qul(i).eq.q_fac2(m19))then
-jjj=jjj+1
-jj=m19
-endif
-enddo
-nqset(i)=jjj
-strset(i)=jj
-!print*,'i,nqset(i),strset(i)',i,nqset(i),strset(i)
+   jjj=0
+   jj=0
+   do m19=1,ncqss
+      if(qul(i).eq.q_fac2(m19))then
+         jjj=jjj+1
+         jj=m19
+      endif
+   enddo
+   nqset(i)=jjj
+   strset(i)=jj
 enddo
 
 flg=0
@@ -129,6 +136,7 @@ m1m21=m21
 do m1=1,nqul
    i7=0
    m21=0
+   print*,'m1m1',m1
 
 !p rint*,'loop1'
    call write_symm_xmi_1(i7,m21,m1,sf1,sf2,str3,q_fac2)
@@ -141,6 +149,7 @@ do m1=1,nqul
    do m2=m1+1,nqul
       i7=i2i7
       m21=m2m21
+      print*,'m2m2',m2
 
       call write_symm_xmi_1(i7,m21,m2,sf1,sf2,str3,q_fac2)
       if (sf1.eq.1) cycle
@@ -152,6 +161,7 @@ do m1=1,nqul
       do m3=m2+1,nqul
          i7=i3i7
          m21=m3m21
+         print*,'m3m3',m3
          
          call write_symm_xmi_1(i7,m21,m3,sf1,sf2,str3,q_fac2)
          if (sf1.eq.1) cycle
@@ -163,6 +173,7 @@ do m1=1,nqul
          do m4=m3+1,nqul
             i7=i4i7
             m21=m4m21
+            print*,'m4m4',m4
             
             call write_symm_xmi_1(i7,m21,m4,sf1,sf2,str3,q_fac2)
             if (sf1.eq.1) cycle
@@ -174,6 +185,7 @@ do m1=1,nqul
             do m5=m4+1,nqul
                i7=i5i7
                m21=m5m21
+               print*,'m5m5',m5
                
                call write_symm_xmi_1(i7,m21,m5,sf1,sf2,str3,q_fac2)
                if (sf1.eq.1) cycle
@@ -344,6 +356,10 @@ do m1=1,nqul
 enddo
 
 
+deallocate(nqset)
+deallocate(strset)
+deallocate(qul)
+deallocate(group_num)
 close(21)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -352,6 +368,22 @@ close(21)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 if(incmplt.eq.1)then
+if (.not. allocated(qq)) then
+  allocate(qq(MaxStrOepo))
+  qq = 0
+endif
+if (.not. allocated(qq1)) then
+  allocate(qq1(MaxStrOepo))
+  qq1 = 0
+endif
+if (.not. allocated(qq2)) then
+  allocate(qq2(MaxStrOepo))
+  qq2 = 0
+endif
+if (.not. allocated(bondq4)) then
+  allocate(bondq4(MaxStrOepo))
+  bondq4 = 0
+endif
 write(10,*)'----------- incomplete set -----------'
 do i=1,mincmplt
  qq(i)=q_fac2(mincmplt_set(i))
@@ -378,6 +410,7 @@ endif
 CALL SYSTEM ("rm Rumer_Sets.dat")
 
 
-100 return
+return
 end subroutine write_symm_xmi_new
+end module write_symm
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

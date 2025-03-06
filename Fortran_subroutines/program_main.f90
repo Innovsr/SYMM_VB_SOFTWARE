@@ -11,55 +11,185 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 program main
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-use commondat
-use commondat1
 implicit none
 
-integer :: ierr, rank, size 
-integer::wig1,nnae,STDOUT,argnum,nstr7,str5(2000,20)
-logical :: fileexists
-character(len=35)::inputfilename
-common/str/str5,nstr7
+integer:: nao_py, nae_py, nmul, flgst_py, total_atoms, niao_py, active_atm_num,i, j
+character(len = 100)::geometry_unit, output_file_name
+character(len = 300)::output_folder
+integer::chinst, symm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py
+integer::nnb_py, syb_py, mnbond_py, radical_py, nmbond_py, flg!, symtype_py
+!character(len = 6)::symtype_py
+real*8, target::coordx(100), coordy(100), coordz(100), symatno_array(100)
+character(len=5), target::symat_array(100)
+integer, target::atoset_array(200, 20), norbsym_array(50), atn_array(200)
+integer, target::orbsym_array(20, 20), active_atom_array(30)
+!integer, allocatable, intent(out)::atsymset(:,:),nsym,syn(:),at_sym(:)
+integer, pointer::sub_atoset_array(:), sub_norbsym_array(:), sub_atn_array(:)
+integer, pointer::sub_orbsym_array(:), sub_active_atom_array(:)
+integer, pointer::sub_atoset_array1(:,:),sub_orbsym_array1(:,:)
+real*8, pointer::sub_coordx(:), sub_coordy(:), sub_coordz(:), sub_symatno_array(:)
+character(len=5), pointer::sub_symat_array(:)
 
+print*,'write your input choice'
+read(*,*) flg
 
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    Output files   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! structures.dat:: stores all possible structures with identifications of rumer structurs                 !
-! structure_set_i.dat:: output file, i=1, 2, .... depeding on volume of sets; one file contain 75000 sets !
-! Rumer_Sets_all.dat:: unique Rumer sets for all possible permutations of orbitals                        !
-! quality_str.dat:: all structures arranged according to their qualities                                  !
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-open(unit=7,file='structures.dat',status='unknown')
-open(unit=10,file='structure_set_1.dat',status='unknown')
-open(unit=23,file='Rumer_Sets_all.dat',status='unknown')
-open(unit=35,file='quality_str.dat',status='unknown')
+print*,'i am here1'
+symat_array = ''
+atoset_array = 0
+print*,'i am here1'
+norbsym_array = 0
+atn_array = 0
+orbsym_array = 0
+active_atom_array = 0
+coordx = 0.0 
+coordy = 0.0 
+coordz = 0.0 
+symatno_array = 0.0
+print*,'i am here2'
 
-serial=0
-input_flg=0
-nstr7=0
-Rumwrite=0
+if(flg.eq.1) then
+geometry_unit = 'Bohr'
+nao_py = 5
+nae_py = 5
+nmul = 2
+output_file_name = 'C5H5'
+chinst = 1
+symm_py = 1
+!symtype_py = 0
+set_order_py = 0
+nset_py = 2
+mout_py = 1
+ovlp_py = 0
+itb_py = 0
+nnb_py = 1
+syb_py = 0
+mnbond_py = 0
+radical_py = 0
+nmbond_py = 0
+print*,'i am here3'
 
-!!! code takes inputfile (.xmi) as command line arguments
-argnum=iargc()
-if(argnum.eq.0)then
-  write(*,*)'probably you forget to put .xmi file put it in commandline and rerun symmstr code'
-  stop
-else
-  call read_xmi
+allocate(sub_symat_array(10))
+allocate(sub_coordx(10)) 
+allocate(sub_coordy(10)) 
+allocate(sub_coordz(10)) 
+allocate(sub_symatno_array(10))
+!allocate(sub_atoset_array(5))
+allocate(sub_norbsym_array(4))
+allocate(sub_active_atom_array(5))
+allocate(sub_atn_array(5))
+allocate(sub_orbsym_array(5))
+
+sub_symat_array => symat_array(1:10)
+sub_coordx => coordx(1:10)
+sub_coordy => coordy(1:10)
+sub_coordz => coordz(1:10)
+sub_symatno_array => symatno_array(1:10)
+sub_atoset_array => atoset_array(1:5, 1)
+sub_norbsym_array => norbsym_array(1:4)
+sub_active_atom_array => active_atom_array(1:5)
+sub_atn_array => atn_array(1:5)
+sub_orbsym_array => orbsym_array(3 ,1:5)
+
+sub_symat_array = (/'C', 'C', 'C', 'C', 'C', 'H', 'H', 'H', 'H', 'H'/)
+sub_coordx = (/0.0, 2.2, 1.4, -1.4, -2.2, 0.0, 4.1, 2.5, -2.5, -4.1/)
+sub_coordy = (/2.2, 0.6, -1.7, -1.7, 0.6, 4.2, 1.3, -3.4, -3.4, 1.3/)
+sub_coordz = (/0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0/)
+sub_symatno_array = (/6, 6, 6, 6, 6, 1, 1, 1, 1, 1/)
+sub_atoset_array = [16, 17, 18, 19, 20]
+sub_norbsym_array = (/0, 0, 5, 0/)
+sub_active_atom_array = (/1, 2, 3, 4, 5/)
+sub_atn_array = (/1,1,1,1,1/)
+sub_orbsym_array = [16, 17, 18, 19, 20]
+flgst_py = 2
+total_atoms = 10
+niao_py = 15
+active_atm_num = 5
+output_folder = '/home/sourav/Desktop/SYMM_VB_SOFTWARE/Python_interface/C5H5_output'
 endif
 
-!flgst: user input for 'str' keyword; 1: covalent (cov), 2: ionic (ion), 3: both (full)
-if(flgst.eq.1.or.flgst.eq.2) then
-  call cov_struc
+if(flg.eq.2)then
+geometry_unit = 'Bohr'
+nao_py = 8
+nae_py = 10
+nmul = 1
+output_file_name = 'NCN'
+chinst = 1
+symm_py = 1
+!symtype_py = 0
+set_order_py = 0
+nset_py = 0
+mout_py = 1
+ovlp_py = 0
+itb_py = 1
+nnb_py = 2
+syb_py = 3
+mnbond_py = 0
+radical_py = 0
+nmbond_py = 0
+print*,'i am here3'
+
+allocate(sub_symat_array(3))
+allocate(sub_coordx(3)) 
+allocate(sub_coordy(3)) 
+allocate(sub_coordz(3)) 
+allocate(sub_symatno_array(3))
+allocate(sub_atoset_array1(3, 3))
+allocate(sub_norbsym_array(4))
+allocate(sub_active_atom_array(3))
+allocate(sub_atn_array(3))
+allocate(sub_orbsym_array1(4, 4))
+
+sub_symat_array => symat_array(1:3)
+sub_coordx => coordx(1:3)
+sub_coordy => coordy(1:3)
+sub_coordz => coordz(1:3)
+sub_symatno_array => symatno_array(1:3)
+sub_atoset_array1 => atoset_array(1:3, 1:3)
+sub_norbsym_array => norbsym_array(1:4)
+sub_active_atom_array => active_atom_array(1:3)
+sub_atn_array => atn_array(1:3)
+sub_orbsym_array1 => orbsym_array(1:4 ,1:4)
+
+sub_symat_array = (/'N', 'C', 'N'/)
+sub_coordx = (/0.0, 0.0, 0.0/)
+sub_coordy = (/0.0, 0.0, 0.0/)
+sub_coordz = (/-2.3, 0.0, 2.3/)
+sub_symatno_array = (/7, 6, 7/)
+sub_atoset_array1 = transpose(reshape([6, 7, 8, 9, 10, 0, 11, 12, 13],[3,3]))
+sub_norbsym_array = (/3, 3, 0, 2/)
+sub_active_atom_array = (/1, 2, 3/)
+sub_atn_array = (/3,2,3/)
+sub_orbsym_array1 =  transpose(reshape([7, 9, 11, 0, 8, 10, 12, 0, 0, 0, 0, 0,  6, 13, 0, 0],[4,4]))
+flgst_py = 2
+total_atoms = 3
+niao_py = 5
+active_atm_num = 3
+output_folder = '/home/sourav/Desktop/SYMM_VB_SOFTWARE/Python_interface/C5H5_output'
+
 endif
+print*,'i am here4'
 
-!!! ionic str calculation has been stopped for this version
-
-!if(flgst.eq.1.or.flgst.eq.3) then
-!call ion_struc
-!endif
-
-
-call close_file
+print*,'symat_array',symat_array
+print*,'coordx',coordx
+print*,'coordy',coordy
+print*,'coordz',coordz
+print*,'symatno_array',symatno_array
+do i=1, 10
+print*,'atoset_array',(atoset_array(i, j), j=1,10)
+enddo
+print*,'norbsym_array',norbsym_array
+print*,'active_atom_array',active_atom_array
+print*,'atn_array',atn_array
+do i=1, 10
+print*,'orbsym_array',(orbsym_array(i, j), j= 1,10)
+enddo
+!stop
+print*,'i am here5'
+call get_ctrl_inputs(geometry_unit, nao_py, nae_py, nmul, output_file_name, &
+                chinst, symm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py, nnb_py,&
+                syb_py, mnbond_py, radical_py, nmbond_py, symat_array, coordx, coordy, coordz, symatno_array,&
+                atoset_array, norbsym_array, active_atom_array, atn_array, orbsym_array, flgst_py, total_atoms,&
+                niao_py, active_atm_num, output_folder)
 
 stop
 end program main

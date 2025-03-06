@@ -2,14 +2,18 @@
 ! checking the bonds of the structures how many are presented there which!
 ! helps to identify most effective equally distributed sets.             !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine check_str_bond(nl,strn,str3,ncqs)
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+module check_str_bd
 use commondat
+use check_mod
 implicit none
 
-integer::i,i1,i2,i3,j,j1,j2,nl,strn,ncqs,str3(15000,20),num_orb(20),num_orb1(20),&
-totbnd,totseorb,str_bnd(15000,1000),str_rad(500,20),bond_sl(10000,2),least
-common /chek/totbnd,totseorb,str_bnd,str_rad,bond_sl,num_orb
+contains
+subroutine check_str_bond(nl,strn,str3,ncqs)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+integer::i, i1, i2, i3, j, j1, j2, nl, strn, ncqs, num_orb1(20), least
+!totbnd,totseorb,str_bnd(15000,1000),str_rad(500,20),bond_sl(10000,2),num_orb(20)
+integer, pointer::str3(:,:)
+!common /chek/totbnd,totseorb,str_bnd,str_rad,bond_sl,num_orb
 
 
 print*,'enter check_str_bond'
@@ -103,4 +107,5 @@ endif
 !print*,'exit check_str_bond'
 return
 end subroutine check_str_bond
+end module check_str_bd
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

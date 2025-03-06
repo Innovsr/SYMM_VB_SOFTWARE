@@ -1,29 +1,38 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine get_ctrl_inputs(geometry_unit, nao_py, nae_py, nmul, output_file_name, &
-                chinst, symm_py, symtype_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py, nnb_py,&
+                chinst, symm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py, nnb_py,&
                 syb_py, mnbond_py, radical_py, nmbond_py, symat_array, coordx, coordy, coordz, symatno_array,&
                 atoset_array, norbsym_array, active_atom_array, atn_array, orbsym_array, flgst_py, total_atoms,&
                 niao_py, active_atm_num, output_folder) 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 use commondat
 use commondat1
+use covalent_str
 implicit none
 
-common/ats/atsymset,nsym,syn,at_sym
+!common/ats/atsymset,nsym,syn,at_sym
 
 integer:: nao_py, nae_py, nmul, flgst_py, total_atoms, niao_py, active_atm_num
 character(len = 100)::geometry_unit, output_file_name,tempoutfile,all_struc_file
 character(len = 300)::output_folder, outfile
 integer::chinst, symm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py
 integer::nnb_py, syb_py, mnbond_py, radical_py, nmbond_py!, main_bond_py
-character(len = 6)::symtype_py
+integer::noeo, spin, term1, term2, product_term, denom, factorial, comb
+!character(len = 6)::symtype_py
 real*8::coordx(100), coordy(100), coordz(100), symatno_array(100)
 character(len=5)::symat_array(100)
 !integer::atoset_row, atoset_col,norbsym_size,atn_size,orbsym_row, orbsym_col,active_size
 integer::atoset_array(200, 20), norbsym_array(50), atn_array(200)
 integer::orbsym_array(20, 20), active_atom_array(30), i, j, k, k5, k6
-integer::atsymset(20,20),nsym,syn(50),at_sym(50)
+!integer, intent(in)::atsymset, syn, at_sym
 
+allocate(atsymset(nao_py, nao_py))
+allocate(syn(nao_py))
+allocate(at_sym(nao_py))
+!allocate(atsymset(20, 20))
+!allocate(syn(50))
+!allocate(at_sym(50))
+!
 nfset = nset_py
 niao = niao_py
 tot_atom = total_atoms
@@ -42,7 +51,7 @@ mnbond = mnbond_py
 radical = radical_py
 nmbond = nmbond_py
 !main_bond = main_bond_py
-symtype = symtype_py
+!symtype = symtype_py
 symat=symat_array
 symatno = symatno_array
 atoset = atoset_array
@@ -58,7 +67,7 @@ print*,'geometry_unit',geometry_unit
 print*,'file_name',output_file_name
 print*,'chinst, symm, set_order, nset, mout, ovlp, itb',chinst, symm, set_order, nset_py, mset, ovlp_int, itb
 print*,'nnb, syb, mnbond, radical, mnbond, main_bond',nnb, syb, mnbond, radical, mnbond!, main_bond
-print*,'symtype',symtype
+!print*,'symtype',symtype
 do i = 1,10 
 print*,'from_fortran:symat, coordx, coordy, coordz, symatno ',symat(i), coordx(i), coordy(i), coordz(i), symatno(i)
 enddo
@@ -109,10 +118,10 @@ nlast=(mult-1)
 
 if(ovlp_py.eq.0)ovopt=0
 if(ovlp_py.eq.1)ovopt=1
-#if(ovlp.eq.1.and.nfset.eq.0)ovopt=0
-#if(ovlp.eq.1.and.nfset.eq.1)ovopt=1
-#if(ovlp.eq.1.and.nfset.eq.2)ovopt=1
-#if(ovlp.eq.1.and.nfset.eq.3)ovopt=1
+!if(ovlp.eq.1.and.nfset.eq.0)ovopt=0
+!if(ovlp.eq.1.and.nfset.eq.1)ovopt=1
+!if(ovlp.eq.1.and.nfset.eq.2)ovopt=1
+!if(ovlp.eq.1.and.nfset.eq.3)ovopt=1
 !!!!!!!!! "vpt" is the option for user specifying overlap value "ovval". It will work
 !!!!!!!!!!!!!only for vpt=1. To lock it please put any other value
 vpt=1
@@ -166,13 +175,26 @@ endif
 enddo
 nsym=k5
 
+print*,'atsymset'
 do i=1,nsym
 print*,'atsymset',nsym,at_sym(i),(atsymset(i,j),j=1,syn(i))
 enddo
-!do i=1,atom
-!act_at_num(i)=symatno(active_atoms(i))
-!val_state_num(i)=valence_state(act_at_num(i))
-!enddo
+
+!!!! calculate the maximum available structures
+noeo = nao - nlp
+spin = (mult - 1)/2
+term1 = comb(nao, nao - noeo)
+term2 = comb(noeo, int(2*spin))
+
+product_term = 1  ! Start with 1 for product computation
+
+do i = 0, (noeo / 2) - spin - 1
+   product_term = product_term * comb(noeo - 2 * spin - 2 * i, 2)
+end do
+
+denom = factorial(int((noeo / 2) - spin))
+MaxStrOepo = int((term1 * term2 * product_term) / denom) !total structure one electron per orbital
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 call geocal(coordx,coordy,coordz)
 
@@ -190,3 +212,6 @@ endif
 !stop
 !return
 end subroutine get_ctrl_inputs
+
+
+

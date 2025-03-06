@@ -15,9 +15,9 @@
 !     | Aji Ajj |       |  0  Ajj~ |
 !
       Implicit none
-      Double Precision A(N,N),U(N,N),D(N),VT(N,N)
-      Double Precision t1,c1,s1
-      Double Precision t2,c2,s2
+      Double Precision A(N,N),U(N,N),VT(N,N)
+      Double Precision c1,s1
+      Double Precision c2,s2
       Double Precision tp,cp,sp
       Double Precision tm,cm,sm
       Double Precision Aii,Ajj,Aij,Aji,tt,Aod,Adif,tmp

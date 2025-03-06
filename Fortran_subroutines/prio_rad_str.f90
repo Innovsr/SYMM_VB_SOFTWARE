@@ -1,15 +1,17 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+module prio_rad
+use commondat
+implicit none
+contains
 subroutine prio_rad_str(nl,str1,ncqs,pref_radical)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! this subroutine calculate the scores for priority radical provided by the users
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-use commondat
-implicit none
-
 integer::i,j,i3,i4,i5,i6,i7,ii,m16,m17,m18,m19,m23,nl,ncqs,qual2(15000),qul1(15000),&
 qul2(15000),jj,nqul1,nqul2,qt,qual3(15000),qual4(15000),k6,k7,k8,pref_radical(15000)
-integer::str1(15000,20),qual1(15000),qcs_serial(15000),q_fac(15000)
+integer::qual1(15000),qcs_serial(15000),q_fac(15000)
+integer, pointer::str1(:,:)
 
 !!!!! starting the arrangement of the structures according to priority radicles!!!
 
@@ -88,4 +90,5 @@ print*,'exit prio_rad_str'
 
 101 return
 end subroutine prio_rad_str
+end module prio_rad
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

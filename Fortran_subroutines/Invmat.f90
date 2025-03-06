@@ -6,20 +6,27 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 use commondat
 use commondat1
-      Implicit DOUBLE PRECISION(A-H,O-Z)
-      Dimension A(1000,1000),B(1000,1000)
-      integer::ndim,ifail
+Implicit none
+!DOUBLE PRECISION:: (C-H,O-Z)
+INTEGER :: Ndim, Ifail, i, j, k, n, nmax
+DOUBLE PRECISION :: Xdet, Amax, Aij, Atmp
+Double precision, allocatable:: A(:,:), B(:,:)
 
 
+allocate(A(ndim, ndim))
+allocate(B(ndim, ndim))
 
-!print*,'enter Invmat'
+A = 0.0
+B = 0.0
+
+print*,'enter Invmat'
 do i=1,ndim
   do j=1,ndim
     A(i,j)=ind_mat(i,j)
   enddo
 enddo
 
-111 format(a,30I5)
+!111 format(a,30I5)
 
       N=Ndim
       Ifail = 0
@@ -101,5 +108,9 @@ enddo
         B(J,I) = B(J,I)/Atmp
        Enddo
       Enddo
-      End
+      
+deallocate(A)
+deallocate(B)
+      
+End subroutine Invmat
 

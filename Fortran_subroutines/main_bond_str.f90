@@ -1,11 +1,11 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine main_bond_str(nl,str1,ncqs,qual1,qual2,str2,q_fac)
+subroutine main_bond_str(str1,ncqs,qual1,qual2,str2,q_fac)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 use commondat
 implicit none
 
-integer::jj,nl,str1(15000,15),str2(15000,15),ncqs,qual1(15000),qual2(15000),i,j,k,l &
-,qul2(15000),qul1(15000),q_fac(15000),nqul,m19,k6,k7,k8,nqul1,nqul2,qt,qtg &
+integer::jj,str1(15000,15),str2(15000,15),ncqs,qual1(15000),qual2(15000),i,j,k,l &
+,qul2(15000),qul1(15000),q_fac(15000),m19,k6,k7,k8,nqul1,nqul2,qt,qtg &
 ,qual3(15000),qual4(15000)
 
 print*,'enter main_bond_str'
@@ -115,7 +115,7 @@ enddo
 !write(*,231)(str2(i,j),j=1,nae)
 !enddo
 
-231 format(20I3)
+!231 format(20I3)
 print*,'exit main_bond_str'
 
 return

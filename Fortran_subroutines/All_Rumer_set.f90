@@ -7,12 +7,15 @@ subroutine All_Rumer_set(rumstr,setno,nlonep)
 !!!!!!!! N! number of Runmer set generates here 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 use commondat
+use print_rumer
 implicit none
 
 common/orb1/orbs1,rstr,nlpr
-integer::j,i,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,n1,k,nlpr
-integer::setno,nlonep,rstr(500,20),permutation(100),orbs1(20),orbs2(20),rumstr(500,20)
+integer::j,i,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,n1,k,nlpr
+integer::setno,nlonep,rstr(500,20),orbs1(20),orbs2(20),rumstr(500,20)
+integer, allocatable::permutation(:)
 
+print*,'enter All_Rumer_set'
 nlpr=nlonep
 do i=1,setno
   do i1=1,nae
@@ -27,6 +30,7 @@ do j=nlonep*2+1,nae
 enddo
 n1=i
 
+allocate(permutation(nao))
 
 i=100
 do j=1,n1
@@ -55,7 +59,8 @@ do i1=1,n1
       permutation(2)=orbs1(i2)
     if(n1.eq.2)then
       j=j+1
-      call rumer(permutation,n1,j,setno,nlpr)
+      print*,'jjjj',j
+      call rumer(permutation,n1,j,setno)
       cycle
     endif
 
@@ -68,7 +73,8 @@ do i1=1,n1
       permutation(3)=orbs1(i3)
       if(n1.eq.3)then
         j=j+1
-        call rumer(permutation,n1,j,setno,nlpr)
+        print*,'jjjj',j
+        call rumer(permutation,n1,j,setno)
         cycle
       endif
 
@@ -81,7 +87,8 @@ do i1=1,n1
         permutation(4)=orbs1(i4)
         if(n1.eq.4)then
           j=j+1
-          call rumer(permutation,n1,j,setno,nlpr)
+          print*,'jjjj',j
+          call rumer(permutation,n1,j,setno)
           cycle
         endif
 
@@ -94,7 +101,8 @@ do i1=1,n1
           permutation(5)=orbs1(i5)
           if(n1.eq.5)then
             j=j+1
-            call rumer(permutation,n1,j,setno,nlpr)
+            print*,'jjjj',j
+            call rumer(permutation,n1,j,setno)
             cycle
           endif
 
@@ -106,8 +114,9 @@ do i1=1,n1
             enddo
             permutation(6)=orbs1(i6)
             if(n1.eq.6)then
-            j=j+1
-              call rumer(permutation,n1,j,setno,nlpr)
+              j=j+1
+              print*,'jjjj',j
+              call rumer(permutation,n1,j,setno)
               cycle
             endif
 
@@ -120,7 +129,8 @@ do i1=1,n1
               permutation(7)=orbs1(i7)
               if(n1.eq.7)then
                 j=j+1
-                call rumer(permutation,n1,j,setno,nlpr)
+                print*,'jjjj',j
+                call rumer(permutation,n1,j,setno)
                 cycle
               endif
 
@@ -133,7 +143,8 @@ do i1=1,n1
                   permutation(8)=orbs1(i8)
                 if(n1.eq.8)then
                   j=j+1
-                  call rumer(permutation,n1,j,setno,nlpr)
+                  print*,'jjjj',j
+                  call rumer(permutation,n1,j,setno)
                   cycle
                 endif
 
@@ -146,7 +157,7 @@ do i1=1,n1
                   permutation(9)=orbs1(i9)
                   if(n1.eq.9)then
                     j=j+1
-                    call rumer(permutation,n1,j,setno,nlpr)
+                    call rumer(permutation,n1,j,setno)
                     cycle
                   endif
 
@@ -159,7 +170,7 @@ do i1=1,n1
                     permutation(10)=orbs1(i10)
                     if(n1.eq.10)then
                       j=j+1
-                      call rumer(permutation,n1,j,setno,nlpr)
+                      call rumer(permutation,n1,j,setno)
                       cycle
                     endif
 
@@ -172,7 +183,7 @@ do i1=1,n1
                         permutation(11)=orbs1(i11)
                       if(n1.eq.11)then
                         j=j+1
-                        call rumer(permutation,n1,j,setno,nlpr)
+                        call rumer(permutation,n1,j,setno)
                         cycle
                       endif
                     enddo

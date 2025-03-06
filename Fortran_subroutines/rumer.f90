@@ -1,17 +1,26 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine rumer(permutation,n,j,setno,nl)
+module print_rumer
+use commondat
+use Rum_set_id
+implicit none
+contains
+subroutine rumer(permutation,n,j,setno)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! All the Rumer sets are written in the file "Rumer_Sets.dat" varified
 !! with the subroutine "Rumer_set_id" and then written in the file
 !! "Rumer_Sets_all.dat" with full format of the output.
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-use commondat
-implicit none
 common/orb1/orbs1,rstr,nlonep
 
-integer::permutation(100),n,i,i1,i2,j,orbs1(20),rstr(500,20),setno,m20,m19,rstr1(2000,20),nlonep
-Double Precision::bond_rum(10000,100),bond_rum1(10000,100),k1,k2
-integer::l,ll,jj,nl,rum_count(10000),set_num(100),Rid
+integer::n,i,i1,i2,j,orbs1(20),rstr(500,20),setno,m20,m19,nlonep
+integer::jj,set_num(100),Rid
+integer, allocatable, intent(in)::permutation(:)
+integer, allocatable, save::rstr1(:,:)
+
+if (.not. allocated(rstr1)) then
+allocate(rstr1(MaxStrOepo, nae))
+rstr1 = 0
+endif
 
 print*,'enter rumer'
 Rumwrite=0
@@ -59,15 +68,16 @@ endif
 enddo
 if(nfset.eq.5)write(10,*)'set number',jj
 
-900 format(a,I3,10I5)
+!:900 format(a,I3,10I5)
 
 914 format(x,25I4)
 915 format(x,I1,a,I3,x,25I4)
-916 format(x,I3,I3,x,25I4)
+!916 format(x,I3,I3,x,25I4)
 print*,'exit rumer'
 totrum=jj
 !print*,'totrum',totrum
 return
 end subroutine rumer
 
+end module print_rumer
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

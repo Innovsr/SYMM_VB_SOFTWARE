@@ -1,18 +1,34 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+module eq_dst_ch
+use commondat
+use quality
+use vec_rep
+use check_mod
+use ind_matrix
+implicit none
+contains
 subroutine eq_dst_check(nts,strsln,fail,nl,str2)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-use commondat
-implicit none
-integer::totbnd,totseorb,str_bnd(15000,1000),str_rad(500,20),bond_sl(10000,2),num_orb(20)
-integer::i,i1,j,m,m1,l,add_edst(500),n1,n2,n3,quality_fac(15000),str_quality_1(15000),&
-str_quality_2(15000),nssym,qulsym(15000),symq(15000),tqlty,bqlty,sqlty,tnqs,sigsym(15000)&
-,tnqs_sig,fail,strsln(1000),nl,tnbd,nts,nbd,str2(15000,20),bondq(15000),strflg,num_str,numpstr,det_inv
-integer::str3(15000,20),fvec(15000,1000),strsln1(1000)
-real*8::factorial
-common /chek/totbnd,totseorb,str_bnd,str_rad,bond_sl,num_orb
-common/quality/str_quality_1,str_quality_2,bondq,tqlty,bqlty,sqlty,tnqs,nssym,qulsym,symq,&
-sigsym,tnqs_sig
+!integer::totbnd,totseorb,str_bnd(15000,1000),str_rad(500,20),bond_sl(10000,2),num_orb(20)
+integer::i,i1,m,m1,l,add_edst(500),n1,n2,n3
+!integer::str_quality_1(15000),str_quality_2(15000),nssym,qulsym(15000),symq(15000),
+!integer::tqlty,bqlty,sqlty,tnqs,sigsym(15000),tnqs_sig,bondq(15000)
+integer::fail,strsln(1000),nl,tnbd,nts,nbd,num_str,numpstr
+integer::factorial
+integer, pointer::str2(:,:), str3(:,:), fvec(:,:)
+integer, allocatable::strsln1(:)
+!integer, pointer::strsln1(:)
+!common /chek/totbnd,totseorb,str_bnd,str_rad,bond_sl,num_orb
+!common/quality/str_quality_1,str_quality_2,bondq,tqlty,bqlty,sqlty,tnqs,nssym,qulsym,symq,&
+!sigsym,tnqs_sig
 common/nst/num_str,numpstr
+
+!if (.not. associated(strsln1)) then
+
+if (.not. allocated(strsln1)) then
+allocate(strsln1(1000))
+!strsln1 = 0
+endif
 
 
 fail=0
@@ -20,8 +36,10 @@ do l=1,totbnd
    add_edst(l)=0
    do i=1,nts
       add_edst(l)=add_edst(l)+str_bnd(strsln(i),l)
+      print*,'str_bnd',i,l,':',strsln(i), str_bnd(strsln(i),l)
    enddo
 enddo
+
 
 nbd=((nao-nl-nlast)/2)*numpstr
 n1=nao-nl
@@ -46,7 +64,7 @@ if(nts.eq.numpstr.and.fail.eq.0)then
 
    call vector_rep(nl,str3,numpstr,fvec)
    
-   if(tnbd.ne.nbd)call mat_ind(nl,nts,numpstr,strsln1,fail,det_inv)
+   if(tnbd.ne.nbd)call mat_ind(nts,numpstr,strsln1,fail)
    
    if(fail.eq.0)then
       num_str=num_str+1
@@ -81,10 +99,11 @@ endif
 900 format(I3,2x,I3,2x,I3,2x,a,x,25I4)
 901 format(I3,2x,I3,2x,I3,2x,a,x,I2,a,I2,x,25I4)
 909 format(I3,2x,I3,2x,I3,2x,a,x,I3,I3,x,25I4)
-231 format(a,2x,50I3)
-102 format (50I5)
+!231 format(a,2x,50I3)
+!102 format (50I5)
 
 print*,'exit eq_dstr_set'
 return
 end subroutine eq_dst_check
+end module eq_dst_ch
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

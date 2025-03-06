@@ -5,7 +5,7 @@
 function lowercase(line)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 implicit none
-integer::i,j,k,l
+integer::i,j,l
 character(len=200)::line,lowercase
 character(len=2)::line1,lower(26),upper(26)
 data upper/'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q'&

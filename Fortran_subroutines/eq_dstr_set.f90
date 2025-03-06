@@ -2,14 +2,18 @@
 !! creating equally distributed structure sets : the sets contains the structures !
 !! bearing bonds wich cover space of bods symmetrycally.                          !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+module eq_dstr
+use commondat
+use eq_dst_ch
+implicit none
+contains
 subroutine eq_dstr_set(tns,lnp,npstr,str2)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-use commondat
-implicit none
+integer::i,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16,&
+l1,l2,l3,l4,l5,l6,l7,l8,l9,l10,l11,l12,l13,l14,l15,l16,j
+integer::tns,lnp,npstr,fail,strsln(1000),num_str,numpstr
+integer, pointer::str2(:,:)
 
-integer::i,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,i11,i12,i13,i14,i15,i16,i17,i18,i19,&
-l1,l2,l3,l4,l5,l6,l7,l8,l9,l10,l11,l12,l13,l14,l15,l16,l17,l18,l19,l20,j
-integer::tns,lnp,npstr,fail,strsln(1000),str2(15000,20),num_str,numpstr
 common/nst/num_str,numpstr
 
 numpstr=npstr
@@ -267,4 +271,5 @@ enddo
 print*,'exit eq_dstr_set'
 return
 end subroutine eq_dstr_set
+end module eq_dstr
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

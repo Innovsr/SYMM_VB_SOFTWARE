@@ -1,0 +1,3 @@
+Python_interface/CISVB_GUI.py:677:5: C901 'Orb_Input.validate_and_store_orbital_data' is too complex (13)
+Python_interface/CISVB_GUI.py:868:5: C901 'Keywd_Input.create_keywd_pane' is too complex (14)
+Python_interface/CISVB_GUI.py:1579:5: C901 'Keywd_Input.get_keywds' is too complex (23)
