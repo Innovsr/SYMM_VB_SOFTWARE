@@ -65,7 +65,7 @@ class GlobVar:
     molecule_string = None      # string of atoms present in the molecule or reaction.
     orbital_input = False       # specify if orbitals are inserted or not.
     orbital_data = []           #
-    set_id = None               # output set id to store present (on show) set number
+    set_id = 0               # output set id to store present (on show) set number
     symm_key = 0
     at_list_bold = [            # List of Atoms according to periodic table
         'H', 'HE', 'LI', 'BE', 'B', 'C', 'N', 'O', 'F', 'NE', 'NA', 'MG', 'AL',
@@ -83,7 +83,7 @@ class GlobVar:
             
         style_colour_label = ttk.Style()
         style_colour_label.configure(
-                "Colour_Label.TLabel", foreground="black", background="Ivory", relief="flat",
+                "Colour_Label.TLabel", foreground="black", background="ivory", relief="flat",
                 font=("Arial", 14)
                 )
             
@@ -95,6 +95,11 @@ class GlobVar:
         style_colour_label2 = ttk.Style()
         style_colour_label2.configure(
                 "Colour_Label2.TLabel", foreground="black", background="deepskyblue", font=("Arial", 14)
+                )
+
+        style_colour_label3 = ttk.Style()
+        style_colour_label3.configure(
+                "Colour_Label3.TLabel", foreground="darkblue", background="lightblue", font=("Arial", 16)
                 )
             
         style = ttk.Style()
@@ -136,8 +141,8 @@ class Ctrl_Input:
             frame.grid(row=row, column=column, sticky=tk.W)
             self.frames[frame_name] = frame
 
-        self.rect_border = ttk.Frame(self.frames["frame2"], relief="solid", borderwidth=2, padding=5)
-        self.rect_border.grid(row=0, column=1)
+        #self.rect_border = ttk.Frame(self.frames["frame"], relief="solid", borderwidth=2, padding=5)
+        #self.rect_border.grid(row=0, column=2)
 
         self.unit_type = tk.StringVar(value="None")
         # read prefered file name
@@ -146,21 +151,30 @@ class Ctrl_Input:
 
         # Input Fields
         self.entries = {}
-        self.keywords = [
-                " Number of Active Orbitals (nao) : ", " Number of Active Electrons (nae) : ",
-                " Multiplicity of Active Part (nmul) : "
-                ]
-        self.create_ctrl_pans()
+
+        
+        group_label_info = {
+                "Top_label":("frame","Basic Informations About The Molecular System",0,16),
+                "bottom_label":("frame4","Input Orbital Informations & Other Keywords",5,16),
+                "geometry_label":("frame2","Geometry of the Molecular System",0,12),
+                "Active_space_label":("frame3","Define Active Space of the System",0,12)
+                }
+
+        for label_name, (frame, text, row, font) in group_label_info.items():
+            if frame in frame_info:
+                label = ttk.Label(self.frames[frame], text=text, style="Colour_Label3.TLabel",
+                                  font=("Airtel", font))
+                label.grid(row=row, column=0, columnspan=3, padx=25, pady=25)
 
         # create Labels
         label_info ={
-                "brows_geo_label":("frame1","Brows to Upload Geometry File", 0, 0, 
+                "brows_geo_label":("frame2","Brows to Upload Geometry", 1, 0, 
                                    "If you have the geometry saved in any dat file you can brows\n"
                                    "that file and insert the geometry here using 'Brows' button; in\n" 
                                    "the geometry file you should have 4 or 5 columns first column: \n"
                                    "Atoms, second column: atomic numbers,third column: x coordinates,\n"
                                    "fourth column: y coordinates, fifth column: z coordinates"),
-                "manual_geo_label":("frame1", "Insert Geometry Manually", 1, 0,
+                "manual_geo_label":("frame2", "Insert Geometry Manually", 2, 0,
                                     "If you wish to insert the geometry manually please click\n"
                                     "'Geometry' button in the geometry file you should have 4 or 5 \n"
                                     "columns first column: Atoms, second column: atomic numbers,third\n" 
@@ -171,23 +185,23 @@ class Ctrl_Input:
         for label_name, (frame, text, row, column, tooltip) in label_info.items():
             if frame in frame_info:
                 label = ttk.Label(self.frames[frame], text=text, style="Colour_Label.TLabel")
-                label.grid(row=row, column=column, sticky=tk.W, padx=5, pady=5)
+                label.grid(row=row, column=column, sticky=tk.W, padx=15, pady=5)
                 self.balloon.bind(label, tooltip)
 
         # create buttons
         buttons_info = {
-                "brows_geo_button":("frame1", "Brows", self.read_geometry, 0, 1,
+                "brows_geo_button":("frame2", "Brows", self.read_geometry, 1, 1,
                                     "If you have the geometry saved in any dat file you can brows\n"
                                     "that file and insert the geometry here using 'Brows' button; in the \n"
                                     "geometry file you should have 4 or 5 columns first column: Atoms, \n"
                                     "second column: atomic numbers, third column: x coordinates, fourth\n" 
                                     "column: y coordinates, fifth column: z coordinates"),
-                "manual_geo_button":("frame1", "Geometry", self.insert_geo_manually, 1, 1, 
+                "manual_geo_button":("frame2", "Geometry", self.insert_geo_manually, 2, 1, 
                                      "If you wish to insert the geometry manually please click \n"
                                      "'Geometry' button in the geometry file you should have 4 or 5 columns\n"
                                      "first column: Atoms, second column: atomic numbers,third column: x \n"
                                      "coordinates, fourth column: y coordinates, fifth column: z coordinates"),
-                "insert_button":("frame4", "Insert", self.validate_and_generate, 4, 1, 
+                "insert_button":("frame3", "Insert", self.validate_and_generate, 4, 1, 
                                  "Press Insert after providing all control keywords: Without\n"
                                  " inserting these control inputs you are not able to go to the next step")
                 }
@@ -198,17 +212,20 @@ class Ctrl_Input:
                 button.grid(row=row, column=column, sticky=tk.W, padx=5, pady=5)
                 self.balloon.bind(button, tooltip)
 
+        self.create_ctrl_pans()
+
+
     def create_geo_unit(self):
         '''
         Its creats the radio button to get the information about the units of geometry provided.
         there are only two options: Bohr or Angstrom.
         '''
         units = ["Bohr", "Angs"]
-        label = ttk.Label(self.frames["frame1"], text="Unit of the Geometry Data", style="Colour_Label.TLabel")
-        label.grid(row=3, column=0, sticky=tk.W, padx=10, pady=10)
+        label = ttk.Label(self.frames["frame2"], text="Unit of the Geometry Data", style="Colour_Label.TLabel")
+        label.grid(row=3, column=0, sticky=tk.W, padx=15, pady=5)
         for i, unit in enumerate(units, start=1):
             button = ttk.Radiobutton(
-                self.frames["frame1"],
+                self.frames["frame2"],
                 text=unit,
                 value=unit,
                 variable=self.unit_type,
@@ -225,14 +242,14 @@ class Ctrl_Input:
             return (geo_unit)
 
     def read_filename(self):
-        label1 = ttk.Label(self.frames["frame"], text="Please enter the chemical formula", style="Colour_Label.TLabel")
-        label1.grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
-        label2 = ttk.Label(self.frames["frame"], text="(e.g.: C6H6)", style="Colour_Label1.TLabel")
-        label2.grid(row=0, column=3, sticky=tk.W, padx=5, pady=5)
+        label1 = ttk.Label(self.frames["frame1"], text="Please enter the chemical formula", style="Colour_Label.TLabel")
+        label1.grid(row=0, column=0, sticky=tk.W, padx=15, pady=5)
+        label2 = ttk.Label(self.frames["frame1"], text="(e.g.: C6H6)", style="Colour_Label1.TLabel")
+        label2.grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
         self.balloon.bind(label1, "Enter a sequence of element symbols followed by numbers \n"
                           "to specify the amounts of desired elements (e.g., C6H6, N2O,) \n"
                           "For reaction use 'under_score' in between two reactants (e.g., O_H2)")
-        self.molecule_entry = ttk.Entry(self.frames["frame"], width=15)
+        self.molecule_entry = ttk.Entry(self.frames["frame1"], width=15)
         self.molecule_entry.grid(row=0, column=1, padx=5, pady=5)
 
     def count_Total_Electron(self, mol_entry):
@@ -272,10 +289,10 @@ class Ctrl_Input:
             GlobVar.readgeo.read_geometry()       # Call the read_geometry method
 
             ttk.Button(
-                self.frames["frame1"],
+                self.frames["frame2"],
                 text="View_Geometry",
                 command=GlobVar.readgeo.display_geometry
-            ).grid(row=0, column=2, columnspan=2)
+            ).grid(row=1, column=2, columnspan=2)
 
     def insert_geo_manually(self):
         """Allows manual insertion of geometry data via Read_Geo."""
@@ -288,12 +305,14 @@ class Ctrl_Input:
             button.grid(row=2, column=2, sticky=tk.W, padx=5, pady=5)
 
     def create_ctrl_pans(self):
-        lebel2 = ttk.Label(self.rect_border, text="Enter Control (ctrl) Keywords", font=("Arial", 14))
-        lebel2.grid(row=2, column=0, columnspan=2, pady=5)
+        self.keywords = [
+                " Number of Active Orbitals (nao) : ", " Number of Active Electrons (nae) : ",
+                " Multiplicity of Active Part (nmul) : "
+                ]
         for idx, key in enumerate(self.keywords):
-            label = ttk.Label(self.frames["frame4"], text=key, style="Colour_Label.TLabel")
-            label.grid(row=idx + 1, column=0, sticky=tk.W, padx=5, pady=5)
-            entry = ttk.Entry(self.frames["frame4"], width=20)
+            label = ttk.Label(self.frames["frame3"], text=key, style="Colour_Label.TLabel")
+            label.grid(row=idx + 1, column=0, sticky=tk.W, padx=15, pady=5)
+            entry = ttk.Entry(self.frames["frame3"], width=20)
             entry.grid(row=idx + 1, column=1, padx=5, pady=5)
             self.entries[key] = entry
 
@@ -562,30 +581,47 @@ class Read_Geo:
         ''' Create a Toplevel window to display the file geometry '''
         if GlobVar.geometry_inserted is True:
             geo_file_display = tk.Toplevel()
-            geo_file_display.title("geometry File Content")
-            geo_file_display.geometry("600x400")  # Optional: Set the size of the Toplevel window
+            if (GlobVar.molecule_string):
+                geo_file_display.title(f"{GlobVar.molecule_string}-geometry")
+            else:
+                geo_file_display.title("-Geometry-")
+            geo_file_display.geometry("700x500")  # Optional: Set the size of the Toplevel window
 
             style = ttk.Style()
-            style.configure("Treeview", font=("Helvetica", 14))
+            style.configure("Treeview", font=("Helvetica", 12))
             # Define the Treeview widget with columns
             columns = ("atom", "x", "y", "z")
             tree = ttk.Treeview(geo_file_display, columns=columns, show="headings")
-            tree.pack(expand=True, fill="both")
+            #tree.pack(expand=True, fill="both")
 
             # Define headings
-            tree.heading("atom", text="Atom")
-            tree.heading("x", text="X")
-            tree.heading("y", text="Y")
-            tree.heading("z", text="Z")
+            tree.heading("atom", text="Atom", anchor="center")
+            tree.heading("x", text="X", anchor="center")
+            tree.heading("y", text="Y", anchor="center")
+            tree.heading("z", text="Z", anchor="center")
 
+            tree.column("atom", width=60, anchor="center")
+            tree.column("x", width=120, anchor="center")
+            tree.column("y", width=120, anchor="center")
+            tree.column("z", width=120, anchor="center")
             # Insert rows from self.atoms
-            for atom in self.atoms:
-                tree.insert("", tk.END, values=(atom["atom"], atom["x"], atom["y"], atom["z"]))
 
-            # Add a scrollbar for better usability
-            scrollbar = ttk.Scrollbar(geo_file_display, orient="vertical", command=tree.yview)
-            tree.configure(yscrollcommand=scrollbar.set)
-            scrollbar.pack(side="right", fill="y")
+            tree.insert("", tk.END, values=(" ", " ", " ", " "))
+            for atom in self.atoms:
+                formatted_values = (
+                        atom["atom"],
+                        f"{float(atom['x']):.10f}",
+                        f"{float(atom['y']):.10f}",
+                        f"{float(atom['z']):.10f}"
+                )
+                tree.insert("", tk.END, values=formatted_values)
+        tree.pack(expand=True, fill="both")
+
+
+        # Add a scrollbar for better usability
+        scrollbar = ttk.Scrollbar(geo_file_display, orient="vertical", command=tree.yview)
+        tree.configure(yscrollcommand=scrollbar.set)
+        scrollbar.pack(side="right", fill="y")
 
     def get_geometry_data(self):
         return self.symat, self.coordx, self.coordy, self.coordz, self.symatno, self.total_atoms
@@ -613,8 +649,8 @@ class Orb_Input:
 
     def create_orbital_section(self):
         if GlobVar.orbital_input is False:
-            self.orbital_frame = tk.Toplevel(root, padx=10, pady=10)
-            self.orbital_frame.title("orbital inputs")
+            self.orbital_frame = tk.Toplevel(root, padx=5, pady=5)
+            self.orbital_frame.title(f"{GlobVar.molecule_string} orbital info")
             self.orbital_frame.geometry("560x560")
             self.orbital_frame.configure(background="lightblue")
             GlobVar.orbital_input = True
@@ -622,14 +658,25 @@ class Orb_Input:
             for widget in self.orbital_frame.winfo_children():
                 widget.destroy()
 
-            frame = ttk.Frame(self.orbital_frame, style="Colour_Frame.TFrame")
-            frame.grid(row=0, column=0)
-            frame0 = ttk.Frame(self.orbital_frame, style="Colour_Frame.TFrame")
-            frame0.grid(row=1, column=0)
+            top_label = ttk.Label(
+                    self.orbital_frame, text=f"Number of active orbitals: {self.num_orbital}",
+                    style="Colour_Label.TLabel"
+                    )
+            top_label.grid(row=0, column=0, columnspan=3, pady=15)
+
+            label_info={
+                    'label1':("Active Orbital",0),
+                    'label2':("Atom Number",1),
+                    'label3':("Orbital Type",2)
+                }
+
+            for label, (text, col) in label_info.items():
+                label = ttk.Label(self.orbital_frame, text=text, style='Colour_Label1.TLabel')
+                label.grid(row=1, column=col, padx=5, sticky='ew')
 
             # Scrollable container
             container = ttk.Frame(self.orbital_frame)
-            container.grid(row=2, column=0, sticky=tk.W+tk.E)
+            container.grid(row=2, column=0, columnspan=3, sticky=tk.W+tk.E)
 
             canvas = tk.Canvas(container, background="lightblue", height=370, width=510)
             scrollbar = ttk.Scrollbar(container, orient=tk.VERTICAL, command=canvas.yview)
@@ -648,27 +695,14 @@ class Orb_Input:
             canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
             scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
 
-            label1 = ttk.Label(
-                    frame, text=f"Number of active orbitals: {self.num_orbital}", style="Colour_Label.TLabel"
-                    )
-            label1.grid(row=0, column=0, columnspan=3, pady=15)
-
-            label2 = ttk.Label(
-                    frame0, text="     Atom Number", style="Colour_Label1.TLabel"
-                    )
-            label2.grid(row=0, column=3, padx=3, sticky=tk.E)
-            label3 = ttk.Label(
-                    frame0, text="Orbital type", style="Colour_Label1.TLabel"
-                    )
-            label3.grid(row=0, column=4, padx=5, sticky=tk.E)
 
             insert_button = ttk.Button(
                     self.orbital_frame, text="Insert", command=self.validate_and_store_orbital_data
                     )
-            insert_button.grid(row=3, column=0, columnspan=2, pady=10)
+            insert_button.grid(row=3, column=0, columnspan=3, pady=10)
 
             close_button = ttk.Button(self.orbital_frame, text="Close", command=self.destroy_orbs)
-            close_button.grid(row=4, column=0, pady=10, columnspan=2)
+            close_button.grid(row=4, column=0, pady=10, columnspan=3)
 
             for i in range(self.num_orbital):
                 label4 = ttk.Label(
@@ -1590,7 +1624,8 @@ class Run_Fort:
                 self.nae,
                 self.nmul,
                 GlobVar.molecule_string,
-                self.chinst, self.symm,
+                self.chinst, 
+                self.symm,
 #                self.checksym,
                 self.set_order,
                 self.nset,
@@ -1763,31 +1798,52 @@ class Output:
 #        self.frames["set_frame"].grid(row=3, column=0, sticky="w")
 #        self.frames["info_frame"].grid(row=3, column=1, sticky="ew")
 
+        print('out.temp file path', self.tempfname)
+        if not os.path.exists(self.tempfname):
+            messagebox.showerror(
+                    'Error', 'No Output File has been found'
+                    )
+            #set_text_wt.insert(tk.END, "No Structures are available\n")
+            return
+        else:
+            with open(self.tempfname, "r") as file:
+                try:
+                    lines = file.readlines()
+                    print('lines',lines)
+                except: 
+                    messagebox.showerror(
+                            'Error', 'No independent set has been found, try after few munits'
+                            )
+                    return
+
         flag1 = 1
         flag2 = 2
         flag3 = 3
         view_set_button = tk.Button(
                 self.frames["button_frame"], 
                 text='View Set', 
-                command=lambda: self.view_set(flag1, structures, various_qualities, overall_qualities, rumers, sls, set_text_wt)
+                command=lambda: self.view_set(flag1, structures, various_qualities, overall_qualities,
+                                              rumers, sls, set_text_wt, lines)
                 )
         view_set_button.grid(row=0, column=2, padx=10, pady=10)
 
         view_nextset_button = tk.Button(
                 self.frames["button_frame"], text='Next Set', 
-                command=lambda: self.view_set(flag2, structures, various_qualities, overall_qualities, rumers, sls, set_text_wt)
+                command=lambda: self.view_set(flag2, structures, various_qualities, overall_qualities,
+                                              rumers, sls, set_text_wt, lines)
                 )
         view_nextset_button.grid(row=0, column=3, padx=10, pady=10)
 
         view_prevtset_button = tk.Button(
                 self.frames["button_frame"], text='Prev Set', 
-                command=lambda: self.view_set(flag3, structures, various_qualities, overall_qualities, rumers, sls, set_text_wt)
+                command=lambda: self.view_set(flag3, structures, various_qualities, overall_qualities,
+                                              rumers, sls, set_text_wt, lines)
                 )
         view_prevtset_button.grid(row=0, column=1, padx=10, pady=10)
 
 
-    def view_set(self, flag, structure, various_qualities, overall_qualities, rumers, sls, set_text_wt):
-#        print('structure', structure)
+    def view_set(self, flag, structure, various_qualities, overall_qualities, rumers, sls, set_text_wt, lines):
+        print('inside view_set',flag)
         if flag == 1:
             GlobVar.set_id = 1
             self.set_info_wt.delete("1.0", "end")
@@ -1797,52 +1853,55 @@ class Output:
         elif flag == 3:
             GlobVar.set_id -= 1
             self.set_info_wt.delete("1.0", "end")
+        print('flag',GlobVar.set_id)
 
         set_text_wt.tag_configure("right", justify="right")
-        if not os.path.exists(self.tempfname):
-            set_text_wt.insert(tk.END, "No Structures are available\n")
-            return
-        else:
-            with open(self.tempfname, "r") as file:
-                try:
-                    lines = file.readlines()
-                except: 
-                    messagebox.showerror(
-                            'Error', 'No independent set has been found, try after few munits'
-                            )
-                    return
-            for line in lines:
-                if line.startswith('Set_number'):
-                    linear_indset = line.strip().split()
+        #print('out.temp file path', self.tempfname)
+        #if not os.path.exists(self.tempfname):
+        #    set_text_wt.insert(tk.END, "No Structures are available\n")
+        #    return
+        #else:
+        #    with open(self.tempfname, "r") as file:
+        #        try:
+        #            lines = file.readlines()
+        #        except: 
+        #            messagebox.showerror(
+        #                    'Error', 'No independent set has been found, try after few munits'
+        #                    )
+        #            return
+        print('lines',lines)
+        for line in lines:
+            if line.startswith('Set_number'):
+                linear_indset = line.strip().split()
 
-                    if linear_indset[1] == str(GlobVar.set_id):
-                        indset = []
-                        set_text_wt.delete("1.0", "end")
+                if linear_indset[1] == str(GlobVar.set_id):
+                    indset = []
+                    set_text_wt.delete("1.0", "end")
+                    set_text_wt.insert(
+                            tk.END, "\n           Independent Set of structures  \n\n"
+                            )
+                    set_text_wt.insert(
+                            tk.END, "\n           Set number::  " + f"{linear_indset[1]}\n\n"
+                            )
+                    for index in linear_indset[2:]:
+                        indset.append(int(index))
                         set_text_wt.insert(
-                                tk.END, "\n           Independent Set of structures  \n\n"
+                                tk.END, f"   {sls[int(index) - 1]}:        " + structure[int(index) - 1] + "\n"
                                 )
-                        set_text_wt.insert(
-                                tk.END, "\n           Set number::  " + f"{linear_indset[1]}\n\n"
+                    info_button = tk.Button(self.frames["info_button_frame"], text="Set Info", 
+                           command=lambda: self.set_info(
+                                various_qualities, overall_qualities, rumers, indset
                                 )
-                        for index in linear_indset[2:]:
-                            indset.append(int(index))
-                            set_text_wt.insert(
-                                    tk.END, f"   {sls[int(index) - 1]}:        " + structure[int(index) - 1] + "\n"
-                                    )
-                        info_button = tk.Button(self.frames["info_button_frame"], text="Set Info", 
-                               command=lambda: self.set_info(
-                                    various_qualities, overall_qualities, rumers, indset
-                                    )
-                                )
-                        info_button.grid(row=0, column=0, sticky=tk.W, padx=10)
-                        if GlobVar.symm_key == 1:
-                            symm_grp_button = tk.Button(self.frames["info_button_frame"], text="Symmetry groups",
-                                                        command=lambda:self.show_symm_groups(
-                                                            overall_qualities, structure
-                                                            )
+                            )
+                    info_button.grid(row=0, column=0, sticky=tk.W, padx=10)
+                    if GlobVar.symm_key == 1:
+                        symm_grp_button = tk.Button(self.frames["info_button_frame"], text="Symmetry groups",
+                                                    command=lambda:self.show_symm_groups(
+                                                        overall_qualities, structure
                                                         )
-                            symm_grp_button.grid(row=0, column=1, sticky=tk.W, padx=10)
-                        print('linear_indset', linear_indset)
+                                                    )
+                        symm_grp_button.grid(row=0, column=1, sticky=tk.W, padx=10)
+                    print('linear_indset', linear_indset)
 
     def show_symm_groups(self, overall_qualities, structure):
         strpergrp = Counter(overall_qualities)
@@ -1876,7 +1935,7 @@ class Output:
         else:
             self.set_info_wt.insert(tk.END, "\n The set is a Chemical Insight Set \n")
 
-        return oqt
+        return #oqt
 
     def wigner(self, nlp, nao, nmult):
         ''' none = number of one electron orbital
@@ -1961,8 +2020,8 @@ class class_manager:
 
 if __name__ == "__main__":
     root = tk.Tk()
-    root.title("Input File Creator")
-    root.geometry("550x750")
+    root.title("Chemical Insight & Symmetric VB (CISVB) Structures Generation Software")
+    root.geometry("600x920")
     root.configure(background="lightblue")
     GlobVar.configure_styles()
     inputc = Ctrl_Input(root)
@@ -1975,20 +2034,24 @@ if __name__ == "__main__":
     frame2 = ttk.Frame(root, style="Colour_Frame.TFrame", padding="10")
     frame2.grid(row=6, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
 
+    Run_label = ttk.Label(frame1, text='Run Calculation:', style='Colour_Label3.TLabel')
+    Run_label.grid(row=1, column=0, padx=15, pady=10)
     Run_button = ttk.Button(frame1, text="RUN", command=lambda: manager.Run_fort_subs())
-    Run_button.grid(row=1, column=0, padx=5, pady=10)
+    Run_button.grid(row=2, column=3, columnspan=3, padx=50, pady=10)
     Run_button.config(state=tk.DISABLED)  # Initially disable the button
 
     keywd_button = ttk.Button(frame1, text="KEYWDS", command=lambda: manager.create_keywd(Run_button))
-    keywd_button.grid(row=0, column=1, padx=5, pady=10)
+    keywd_button.grid(row=0, column=3, padx=15, pady=10)
     keywd_button.config(state=tk.DISABLED)  # Initially disable the button
 
     orbital_button = ttk.Button(frame1, text="ORBITALS", command=lambda: manager.create_orb(keywd_button))
-    orbital_button.grid(row=0, column=0, padx=5, pady=10)
+    orbital_button.grid(row=0, column=4, padx=15, pady=10)
     orbital_button.config(state=tk.DISABLED)  # Initially disable the button
     inputc.orbital_button = orbital_button
 
+    close_label = ttk.Label(frame2, text='Finish Calculation:', style='Colour_Label3.TLabel')
+    close_label.grid(row=0, column=1, padx=15, pady=10)
     close_button = ttk.Button(frame2, text="FINISH", command=manager.finish)
-    close_button.grid(row=0, column=1, pady=10)
+    close_button.grid(row=1, column=2, columnspan=3, padx=20, pady=10)
 
     root.mainloop()

@@ -1,18 +1,22 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine geocal(coordx,coordy,coordz)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-use commondat
-use commondat1
+use commondat_mod
+use commondat1_mod
 implicit none
 
-integer:: i,j,ij,j1,k,ii1,i1,i2,i3,i4,k1,k2,nland,nncatm,ncatm
-integer::nnact(100),nnact_1(100),active_orb2(20),active_orb1(20),l,l1,l2,l3
-integer::active_atoms_sort(10000),nisland(50),islands(20,50)
-real*8::least,bond_dist,ddist,kk,island_mat(20,20)
+integer:: i,j,ij,j1,k,ii1,i1,i2,i3,i4,k1,k2,l,l1,l2,l3,nland,nncatm,ncatm
+real*8::least,bond_dist,ddist,kk
+integer, allocatable::active_orb2(:),active_orb1(:)
+integer, allocatable::nisland(:),islands(:,:)
 real*8::coordx(100),coordy(100),coordz(100)
+real*8, allocatable::island_mat(:,:)
+integer, allocatable::active_atoms_sort(:),nnact_1(:),nnact(:)
 !character(len=5)::line
 
 print*,'enter geocal,key_frag',key_frag
+
+allocate(active_orb2(nactorb))
 sig_sym_flg=0
 
 
@@ -39,6 +43,7 @@ nactorb=l3
 !  active_orb2(i)=active_orbs(i)
 !  atm_nb_orbs1(i)=atm_nb_orbs(i)
 !enddo
+
 active_orb2=active_orbs
 atm_nb_orbs1=atm_nb_orbs
 
@@ -49,24 +54,27 @@ atm_nb_orbs1=atm_nb_orbs
 !print*, atom, nactorb
 !stop
 
+allocate(active_orb1(nactorb))
 k1=0
 k=0
-436 least=100
-loop2:do i=1,nactorb
-  do j=1,k1
-    if(active_orb1(j).eq.i) then
-      cycle loop2
+do
+  least=100
+  loop2:do i=1,nactorb
+    do j=1,k1
+      if(active_orb1(j).eq.i) then
+        cycle loop2
+      endif
+    enddo
+    if(active_orbs(i).lt.least)then
+      least=active_orbs(i)
+      k=i
     endif
-  enddo
-  if(active_orbs(i).lt.least)then
-    least=active_orbs(i)
-    k=i
-  endif
-enddo loop2
-
-k1=k1+1
-active_orb1(k1)=k
-if(k1.lt.nactorb)goto 436
+  enddo loop2
+  
+  k1=k1+1
+  active_orb1(k1)=k
+  if(k1.eq.nactorb) exit
+enddo
 
 do i=1,nactorb
   active_orbs(i)=0
@@ -165,20 +173,24 @@ enddo
 !given in INFO ... for dist matrix formation it was (may be) necessary
 ! to change it in the order of active orbitals.
 
+allocate(active_atoms_sort(atom))
 j=0
 
-413 k=100
-loop4:do i=1,atom
-  do i1=1,j
-    if(active_atoms_sort(i1).eq.active_atoms(i)) then
-      cycle loop4
-    endif
-  enddo
-  if(k.gt.active_atoms(i))k=active_atoms(i)
-enddo loop4
-j=j+1
-active_atoms_sort(j)=k
-if(j.ne.atom)goto 413
+!413 k=100
+do
+  k=100
+  loop4:do i=1,atom
+    do i1=1,j
+      if(active_atoms_sort(i1).eq.active_atoms(i)) then
+        cycle loop4
+      endif
+    enddo
+    if(k.gt.active_atoms(i))k=active_atoms(i)
+  enddo loop4
+  j=j+1
+  active_atoms_sort(j)=k
+  if(j.eq.atom) exit
+enddo
 
 do i=1,atom
   active_atoms(i)=active_atoms_sort(i)
@@ -207,8 +219,18 @@ do i=1,tot_atom
   enddo
 enddo
 
+allocate(nnact(k))
+nnact = 0
+
+allocate(nnact_1(k))
+nnact_1 = 0
+!print*,'kkk',k, atom
+!do i = 1, k
+!print*,'nnmat_act',(nnmat_act(i,j),j=1,2)
+!enddo
+
 do i=1,k
-   nnact(i)=nnmat_act(i,1)**2.0+nnmat_act(i,2)**2.0
+   nnact(i)=nnmat_act(i,1)**2 + nnmat_act(i,2)**2
 enddo
 
 
@@ -251,13 +273,11 @@ do i=1,tot_atom
   enddo
 enddo
 
-do i=1,100
-  nnact(i)=0
-  nnact_1(i)=0
-enddo
+nnact = 0
+nnact_1 = 0
 
 do i=1,k2
-  nnact(i)=nnmat_inact(i,1)**2.0+nnmat_inact(i,2)**2.0
+  nnact(i)=nnmat_inact(i,1)**2+nnmat_inact(i,2)**2
 enddo
 
 j1=0
@@ -362,12 +382,17 @@ enddo
 !!!!!!!!! Routine to take care of the Islands of active atooms !!!!
 !!!!!!!!! Islands means the cluster of atoms !!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+allocate(nisland(tot_atom))
+allocate(islands(nnnatom, tot_atom))
 
-do i1=1,50
-  do i=1,20
-    islands(i,i1)=0
-  enddo
-enddo
+!do i1=1,50
+!  do i=1,20
+
+islands=0
+nisland=0
+
+!  enddo
+!enddo
 
 i4=0
 loop6:do i=1,atom
@@ -436,6 +461,8 @@ nland=i4
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!lowest distance between two islands
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+allocate(island_mat(nland, nland))
 
 if(nland.gt.1)then
   j1=nnnatom

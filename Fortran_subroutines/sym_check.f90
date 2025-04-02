@@ -1,22 +1,16 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 module symm_check
-use commondat
-use quality
+use commondat_mod
+use quality_mod
 implicit none
 
 contains
 subroutine sym_check(nl,str2,n,sym_str_sl,sym_str_num,numsymset)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!common/quality/str_quality_1,str_quality_2,bondq,tqlty,bqlty,sqlty,tnqs,nssym,qulsym,symq,&
-!sigsym,tnqs_sig
-
 logical :: fileexists
 character(len=35)::inputfilename
 integer::i,i1,i2,i3,i4,i5,i7,i8,l,m,bnd,n,nl,numsymset,nsymset,nsymstr,str6(100,20)
-!integer::str_quality_1(15000),str_quality_2(15000),bondq(15000),tqlty,bqlty,sqlty,tnqs,nssym,&
-!qulsym(15000),symq(15000),sigsym(15000),tnqs_sig
-integer::sym_str_num(1000),&
-sym_str_num1(1000),val,stc,sym_check_flg
+integer::sym_str_num(1000),sym_str_num1(1000),val,stc,sym_check_flg
 integer, pointer::str2(:,:)
 integer, allocatable::sym_str_sl1(:,:),sym_str_sl(:,:)
 

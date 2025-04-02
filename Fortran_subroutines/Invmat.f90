@@ -2,10 +2,10 @@
 !! this subroutine do the matrix inversion required for diagonalisation !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      SUBROUTINE Invmat(Ndim,Ifail)
+SUBROUTINE Invmat(Ndim,Ifail)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-use commondat
-use commondat1
+use commondat_mod
+use commondat1_mod
 Implicit none
 !DOUBLE PRECISION:: (C-H,O-Z)
 INTEGER :: Ndim, Ifail, i, j, k, n, nmax
@@ -13,8 +13,8 @@ DOUBLE PRECISION :: Xdet, Amax, Aij, Atmp
 Double precision, allocatable:: A(:,:), B(:,:)
 
 
-allocate(A(ndim, ndim))
-allocate(B(ndim, ndim))
+allocate(A(Ndim, Ndim))
+allocate(B(Ndim, Ndim))
 
 A = 0.0
 B = 0.0

@@ -18,16 +18,18 @@ subroutine MatLDR(name,col,N,D)
 !     Low::: lowwer main tridiagonal
 !     Amax::: maximum off-diagonal matrix elements
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-Double Precision A(N,N),U(N,N),VT(N,N),bond_vec_mat(150,150)
+integer N,Nlt
+Double Precision A(N,N),U(N,N),VT(N,N)!,bond_vec_mat(150,150)
 Double Precision Amax,Aii,Ajj,Aij,Aji,tmp
-Double Precision, allocatable:: D(:)
-integer N,Nlt,col(1000)
+!Double Precision, allocatable:: D(:)
+Double Precision:: D(N)
+integer, intent(in)::col(:)
 integer I,J,K,faiil
 integer iter,Itmax
 Double Precision Zer,One,Eps,ovlp
 character(len=3)::name
 common/fail/faiil
-common /bnd_mat/bond_vec_mat
+!common /bnd_mat/bond_vec_mat
 
 Data Zer,One,Eps/0.D0,1.D0,1.0D-20/
 
@@ -48,15 +50,15 @@ if(name.eq.'ind')then
   enddo
 endif
 
-if(name.eq.'bnv')then
-  do i=1,N
-    do j=1,N
-      A(i,j)=bond_vec_mat(i,j)
-    enddo
-  enddo
-endif
+!if(name.eq.'bnv')then
+!  do i=1,N
+!    do j=1,N
+!      A(i,j)=bond_vec_mat(i,j)
+!    enddo
+!  enddo
+!endif
 
-allocate(D(N))
+!allocate(D(N))
 D = 0
 do i = 1, N
   D(i) = Zer

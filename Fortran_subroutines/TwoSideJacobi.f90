@@ -25,6 +25,7 @@
       integer I,J,k
       Double Precision Zer,One,Eps
       Data Zer,One,Eps/0.D0,1.D0,1.0D-20/
+
       Adif = Aii - Ajj
       Aod = Aij + Aji
       if(dabs(Adif) .lt. dabs(Aod)) then

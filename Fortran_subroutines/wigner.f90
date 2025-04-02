@@ -3,7 +3,7 @@ subroutine wigner(nnae,wig2)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!! This subroutine calculates the number of permisible structures by wigner's
 !!! theorem
-use commondat
+use commondat_mod
 implicit none
 
 integer::wig2,s,i,j,k,l,b,m,nnae,factorial,a

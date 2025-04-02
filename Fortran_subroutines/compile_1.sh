@@ -7,26 +7,26 @@ set -e
 SOURCE_FILES=(
   commondat1.f90
   commondat.f90
+  orb.f90
+  mod_rum_rad.f90
   check_mod.f90
   quality.f90
+  final_str.f90
   loops.f90
   infosymm.f90
   factorial.f90
   comb.f90
-  new_row.f90
   close_file.f90
   wigner.f90
   sym_check.f90
   TwoSideJacobi.f90
   MatTran.f90
-  mod_MatLDR.f90
   vector_rep.f90
   rumer_structures.f90
-  Rum_set_id.f90
   main_bond.f90
   check_str_bond.f90
-  symm_loops.f90
-  coordination_val.f90
+  mod_symm_loops.f90
+  mod_coordination_val.f90
   nnat_bond_sig.f90
   geocal.f90
   lowercase.f90
@@ -35,9 +35,6 @@ SOURCE_FILES=(
   ind_matrix.f90
   eq_dst_check.f90
   eq_dstr_set.f90
-  rumer.f90
-  All_Rumer_set.f90
-  write_rumer_xmi.f90
   write_symm_xmi_1.f90
   write_symm_xmi_new.f90
   qult_str_arrange.f90
@@ -47,6 +44,10 @@ SOURCE_FILES=(
   nnat_bond_2.f90
   prio_rad.f90
   mod_quality_factor.f90
+  Rum_set_id.f90
+  mod_print_rumer.f90
+  All_Rumer_set.f90
+  write_rumer_xmi.f90
   symm_cal_sig.f90
   symm_cal_pi.f90
   str_select.f90

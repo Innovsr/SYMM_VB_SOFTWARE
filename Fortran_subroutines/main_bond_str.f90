@@ -1,7 +1,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine main_bond_str(str1,ncqs,qual1,qual2,str2,q_fac)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-use commondat
+use commondat_mod
 implicit none
 
 integer::jj,str1(15000,15),str2(15000,15),ncqs,qual1(15000),qual2(15000),i,j,k,l &

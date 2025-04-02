@@ -3,14 +3,15 @@
 !! for each structue. 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 module mod_quality_factor
-use commondat
-use intra_bond_fac
-use symm_break_fac
-use main_bd_cal
-use prio_radical
-use nnat_bond_2
-use nnat_bd_cal
+use commondat_mod
+use mod_intra_bond_factor
+use mod_symm_break_factor
+use mod_main_bond_cal
+use mod_prio_rad_str
+use mod_nnat_bond_cal_2
+use mod_nnat_bond_cal
 implicit none
+
 contains
 subroutine quality_factor(nl, str1, ncqs, quality_fac, str_quality_1, str_quality_2, bondq, mbondq, pref_radical)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -20,16 +21,25 @@ subroutine quality_factor(nl, str1, ncqs, quality_fac, str_quality_1, str_qualit
 integer::i,j,nl,ncqs,noqt, qt_max
 !integer::atsymset(20,20),nsym,syn(50),at_sym(50)
 integer, pointer :: str1(:,:), str_quality_1(:), str_quality_2(:)
-integer, pointer :: bondq(:), mbondq(:), pref_radical(:)
+integer, pointer :: bondq(:), mbondq(:), pref_radical(:), quality_fac(:)
 integer, allocatable:: qual_mat(:,:)
-integer, allocatable:: quality_fac(:)
+!integer, allocatable:: quality_fac(:)
 
 
 print*,'itb,syb,nnb,radical,mnbond',itb,syb,nnb,radical,mnbond
-print*,'flg1, nsym, input_flg, prad, imbd, nlast, ncqs',flg1, nsym, input_flg, prad, imbd, nlast, ncqs
+print*,'flg1`, nsym, input_flg, prad, imbd, nlast, ncqs',flg1, nsym, input_flg, prad, imbd, nlast, ncqs
+do i=1,ncqs
+print*,(str1(i,j),j=1,nae)
+enddo
 
-!if (.not. associated(quality_fac)) then
-if (.not. allocated(quality_fac)) then
+   allocate(str_quality_1(ncqs))
+   allocate(str_quality_2(ncqs))
+   allocate(bondq(ncqs))
+   allocate(pref_radical(ncqs))
+   allocate(mbondq(ncqs))
+!   allocate(quality_fac(MaxStrOepo))
+if (.not. associated(quality_fac)) then
+!if (.not. allocated(quality_fac)) then
   allocate(quality_fac(ncqs))
   quality_fac = 0
 endif
@@ -44,6 +54,7 @@ endif
 
 
 str_quality_1=0
+print*,'i am here'
 str_quality_2=0
 bondq=0
 pref_radical=0

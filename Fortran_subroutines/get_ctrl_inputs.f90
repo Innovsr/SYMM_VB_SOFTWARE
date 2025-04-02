@@ -5,34 +5,26 @@ subroutine get_ctrl_inputs(geometry_unit, nao_py, nae_py, nmul, output_file_name
                 atoset_array, norbsym_array, active_atom_array, atn_array, orbsym_array, flgst_py, total_atoms,&
                 niao_py, active_atm_num, output_folder) 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-use commondat
-use commondat1
-use covalent_str
+use commondat_mod
+use commondat1_mod
+use mod_cov_struc
 implicit none
 
-!common/ats/atsymset,nsym,syn,at_sym
-
 integer:: nao_py, nae_py, nmul, flgst_py, total_atoms, niao_py, active_atm_num
-character(len = 100)::geometry_unit, output_file_name,tempoutfile,all_struc_file
+character(len = 100):: output_file_name,tempoutfile,all_struc_file
 character(len = 300)::output_folder, outfile
 integer::chinst, symm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py
-integer::nnb_py, syb_py, mnbond_py, radical_py, nmbond_py!, main_bond_py
+integer::nnb_py, syb_py, mnbond_py, radical_py, nmbond_py
 integer::noeo, spin, term1, term2, product_term, denom, factorial, comb
-!character(len = 6)::symtype_py
 real*8::coordx(100), coordy(100), coordz(100), symatno_array(100)
-character(len=5)::symat_array(100)
-!integer::atoset_row, atoset_col,norbsym_size,atn_size,orbsym_row, orbsym_col,active_size
+character(len=5)::geometry_unit,symat_array(100)
 integer::atoset_array(200, 20), norbsym_array(50), atn_array(200)
 integer::orbsym_array(20, 20), active_atom_array(30), i, j, k, k5, k6
-!integer, intent(in)::atsymset, syn, at_sym
 
 allocate(atsymset(nao_py, nao_py))
 allocate(syn(nao_py))
 allocate(at_sym(nao_py))
-!allocate(atsymset(20, 20))
-!allocate(syn(50))
-!allocate(at_sym(50))
-!
+
 nfset = nset_py
 niao = niao_py
 tot_atom = total_atoms
@@ -105,6 +97,8 @@ noq0=100
 noq1=100
 noq2=100
 noq3=100
+if (chinst.eq.0) flg1 = 1
+if (chinst.eq.1) flg1 = 0
 
 if(itb.eq.1.and.syb.eq.1.and.nnb.eq.1.and.radical.eq.1.and.mnbond.eq.1.and.flg1.ne.1)then
   qflg=1
@@ -194,6 +188,8 @@ end do
 
 denom = factorial(int((noeo / 2) - spin))
 MaxStrOepo = int((term1 * term2 * product_term) / denom) !total structure one electron per orbital
+
+call wigner(noeo, CovDim)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 call geocal(coordx,coordy,coordz)
@@ -202,7 +198,8 @@ call geocal(coordx,coordy,coordz)
 if(flgst.eq.1.or.flgst.eq.2) then
   call cov_struc
 endif
-
+close(7)
+close(5)
 !!! ionic str calculation has been stopped for this version
 
 !if(flgst.eq.1.or.flgst.eq.3) then
