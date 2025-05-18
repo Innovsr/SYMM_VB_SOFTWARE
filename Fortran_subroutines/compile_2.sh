@@ -72,6 +72,7 @@ echo "Compiling Fortran source files into an executable..."
 #gfortran -o "$EXECUTABLE" "${SOURCE_FILES[@]}" 
 #gfortran -g -Wall -fcheck=all -fbounds-check -fbacktrace "${SOURCE_FILES[@]}" -o "$EXECUTABLE"
 #gfortran -g -Wall -fcheck=all -fbounds-check -fbacktrace -O0  "${SOURCE_FILES[@]}" -o "$EXECUTABLE"
+#gfortran -g -fcheck=all -Wall -O0 -fbounds-check -finit-real=snan -finit-integer=-999 "${SOURCE_FILES[@]}" -o "$EXECUTABLE"
 gfortran -g -Wall -fcheck=all -fbounds-check -fbacktrace -O0 -finit-real=nan -finit-integer=-9999 -ffpe-trap=zero,overflow,invalid "${SOURCE_FILES[@]}" -o "$EXECUTABLE"
 
 echo "Compilation successful. Executable: $EXECUTABLE"

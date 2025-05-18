@@ -1,7 +1,7 @@
 module commondat_mod
 implicit none
 
-integer::nao,nae,niao,mult,nlast,nlp,tncs,tnis,is,atom,nabsym,ndet,symm,repl,itb,syb,nnb,rad &
+integer::nao,nae,niao,mult,nlast,nlp,tncs,tnis,is,atom,nabsym,ndet,symm,asymm,repl,itb,syb,nnb,rad &
 ,flgst,noqult,rplc,flg_ion,flg_cov,imbd,nfset,noq0,noq1,noq2,noq3,noq,niabd,nialp,niach,serial &
 ,nrad,choice,pbond(1000),mbond(1000),nnnatom,nnat_bond(100,2),prio_rad(20,100),norad(20),prad &
 ,nlpset,lp(100),plpair(100,10),flg1,uoptstr,mnbond,nmbond,main_bond(100),iabd(50),ialp(50),iach(50)

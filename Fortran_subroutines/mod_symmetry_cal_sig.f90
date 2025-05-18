@@ -269,7 +269,8 @@ do i=1,ncqs
     new_score(i3,2)=score(i3,2)
   enddo
 
-!write(*,231)(str1(i,i1),i1=1,nae)
+!  write(*,231)(str1(i,i1),i1=1,nae)
+!  231 format(*(I0, 1x))
 
 !! if the structures have active lone pairs and or radicals the associated atoms are being scored in 'new_score()'.
 !! Scoring of the bonds of the structures started from here
@@ -361,6 +362,16 @@ do i=1,ncqs
     !print*,'ttttscore',tscore, new_score(n1,2), new_score(n2,2), scr
     nnscore=0.0
     nd=0
+    do i2=1,nactorb
+      if(str1(i,i1).eq.active_orbs(i2))then
+        k1=atm_nb_orbs(i2)
+      endif
+      if(str1(i,i1+1).eq.active_orbs(i2))then
+        k2=atm_nb_orbs(i2)
+      endif
+    enddo
+    tscore=tscore+dist_mat(k1,k2)
+
     n1=0
     n2=0
     n3=0
@@ -469,7 +480,7 @@ do i=1,ncqs
   stsymsc = 0
   endif
   stsymsc(i)=strscore+coord_score
-  !print*,'stsymsc',stsymsc(i)
+  print*,'stsymsc',stsymsc(i)
   loopsymsc(i)=loopsc
 
 !  write(15,*)stsymsc(i)
@@ -480,11 +491,14 @@ rewind(15)
 deallocate(score)
 !allocate(stsymsc1(ncqs))
 
-!do i=1,ncqs
-!  read(15,909)stsymsc1(i)
-!enddo
+do i=1,ncqs
+  write(*,231)'structures','>',(str1(i,i1),i1=1,nae)
+  write(*,*)stsymsc(i)
+enddo
+231 format(a,2x,a,1x,*(I0, 1x))
 !909 format (F10.6)
 
+!stop
 allocate(ssym(ncqs))
 ssym = 0
 

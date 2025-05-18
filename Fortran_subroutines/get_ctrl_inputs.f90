@@ -1,6 +1,6 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 subroutine get_ctrl_inputs(geometry_unit, nao_py, nae_py, nmul, output_file_name, &
-                chinst, symm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py, nnb_py,&
+                chinst, symm_py, asymm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py, nnb_py,&
                 syb_py, mnbond_py, radical_py, nmbond_py, symat_array, coordx, coordy, coordz, symatno_array,&
                 atoset_array, norbsym_array, active_atom_array, atn_array, orbsym_array, flgst_py, total_atoms,&
                 niao_py, active_atm_num, output_folder) 
@@ -13,7 +13,7 @@ implicit none
 integer:: nao_py, nae_py, nmul, flgst_py, total_atoms, niao_py, active_atm_num
 character(len = 100):: output_file_name,tempoutfile,all_struc_file
 character(len = 300)::output_folder, outfile
-integer::chinst, symm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py
+integer::chinst, symm_py, asymm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py
 integer::nnb_py, syb_py, mnbond_py, radical_py, nmbond_py
 integer::noeo, spin, term1, term2, product_term, denom, factorial, comb
 real*8::coordx(100), coordy(100), coordz(100), symatno_array(100)
@@ -33,6 +33,7 @@ nao = nao_py
 nae = nae_py
 mult = nmul
 symm = symm_py
+asymm = asymm_py
 set_order = set_order_py
 mset = mout_py
 !ovlp_int = ovlp_py
@@ -174,6 +175,7 @@ do i=1,nsym
 print*,'atsymset',nsym,at_sym(i),(atsymset(i,j),j=1,syn(i))
 enddo
 
+!stop
 !!!! calculate the maximum available structures
 noeo = nao - nlp
 spin = (mult - 1)/2

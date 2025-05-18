@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=CISVB Generator
+Comment=Visual GUI for CISVB Code
+Exec=/home/sourav/Desktop/SYMM_VB_SOFTWARE/Python_interface/dist/CisvbGen
+Icon=/home/sourav/Desktop/SYMM_VB_SOFTWARE/Python_interface/assets/cisvb_logo.png
+Terminal=false
+Type=Application
+Categories=Science;Utility;
+

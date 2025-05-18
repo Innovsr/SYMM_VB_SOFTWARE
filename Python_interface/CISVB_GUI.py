@@ -50,7 +50,13 @@ import Pmw
 import symm_str
 import tkinter.font as tkFont
 import math
+from math import acos, degrees
+from itertools import combinations
 from collections import Counter
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
+from mpl_toolkits.mplot3d import Axes3D, proj3d
 
 
 class GlobVar:
@@ -65,8 +71,12 @@ class GlobVar:
     molecule_string = None      # string of atoms present in the molecule or reaction.
     orbital_input = False       # specify if orbitals are inserted or not.
     orbital_data = []           #
+    atoms = []      # List to store atom data
     set_id = 0               # output set id to store present (on show) set number
     symm_key = 0
+    total_atoms = None
+    IAB_flag = True
+    geo_unit = "Bohr"
     at_list_bold = [            # List of Atoms according to periodic table
         'H', 'HE', 'LI', 'BE', 'B', 'C', 'N', 'O', 'F', 'NE', 'NA', 'MG', 'AL',
         'SL', 'P', 'S', 'CL', 'AR', 'K', 'CA', 'SC', 'TI', 'V', 'CR', 'MN', 'FE', 'CO', 'NR',
@@ -75,6 +85,41 @@ class GlobVar:
         'PR', 'ND', 'PM', 'SM', 'EU', 'GD', 'TB', 'DY', 'HO', 'ER', 'TM', 'YB', 'LU', 'HF', 'TA',
         'W', 'RE', 'OS', 'IR', 'PT', 'AU', 'HG', 'TL', 'PB', 'BI', 'PO', 'AT', 'RN', 'FR', 'RA'
     ]
+
+    at_covrad = {
+            'H': 37, 'HE': 32, 'LI': 134, 'BE': 90, 'B': 82, 'C': 77, 'N': 75, 'O': 73, 
+            'F': 71, 'NE': 69,'NA': 154, 'MG': 130, 'AL': 118, 'SL': 111, 'P': 106, 'S': 102,
+            'CL': 99, 'AR': 97, 'K': 196, 'CA': 174,'SC': 144, 'TI': 136, 'V': 125, 'CR': 127,
+            'MN': 139, 'FE': 125, 'CO': 126, 'NR': 121, 'CU': 138, 'ZN': 131,'GA': 126, 'GE': 122,
+            'AS': 119, 'SE': 116, 'BR': 114, 'KR': 110, 'RB': 211, 'SR': 192, 'Y': 162, 'ZR': 148,
+            'NB': 137, 'MO': 145, 'TC': 156, 'RU': 126, 'RH': 135, 'PD': 131, 'AG': 153, 'CD': 148,
+            'IN': 144, 'SN': 141, 'SB': 138, 'TE': 135, 'I': 133, 'XE': 130, 'CS': 225, 'BA': 198,
+            'LA': 169, 'CE': 204, 'PR': 203, 'ND': 201, 'PM': 199, 'SM': 198, 'EU': 198, 'GD': 196,
+            'TB': 194, 'DY': 192, 'HO': 192, 'ER': 189, 'TM': 190, 'YB': 187, 'LU': 160, 'HF': 150,
+            'TA': 138, 'W': 146, 'RE': 159, 'OS': 128, 'IR': 137, 'PT': 128, 'AU': 144, 'HG': 149,
+            'TL': 148, 'PB': 147, 'BI': 146, 'PO': 140, 'AT': 150, 'RN': 145, 'FR': 260, 'RA': 221
+            }
+
+    colors = {
+            'H': 'white', 'HE': 'cyan', 'LI': 'purple', 'BE': 'darkgreen', 'B': 'salmon',
+            'C': 'gray', 'N': 'blue', 'O': 'red', 'F': 'green', 'NE': 'cyan',
+            'NA': 'blue', 'MG': 'green', 'AL': 'gray', 'SL': 'orange', 'P': 'orange',
+            'S': 'yellow', 'CL': 'green', 'AR': 'cyan', 'K': 'purple', 'CA': 'darkgreen',
+            'SC': 'gray', 'TI': 'gray', 'V': 'gray', 'CR': 'gray', 'MN': 'gray',
+            'FE': 'orange', 'CO': 'white', 'NR': 'gray', 'CU': 'brown', 'ZN': 'gray',
+            'GA': 'gray', 'GE': 'gray', 'AS': 'gray', 'SE': 'orange', 'BR': 'darkred',
+            'KR': 'cyan', 'RB': 'purple', 'SR': 'darkgreen', 'Y': 'gray', 'ZR': 'gray',
+            'NB': 'gray', 'MO': 'gray', 'TC': 'gray', 'RU': 'gray', 'RH': 'gray',
+            'PD': 'gray', 'AG': 'silver', 'CD': 'gray', 'IN': 'gray', 'SN': 'gray',
+            'SB': 'gray', 'TE': 'gray', 'I': 'purple', 'XE': 'cyan', 'CS': 'purple',
+            'BA': 'darkgreen', 'LA': 'gray', 'CE': 'gray', 'PR': 'gray', 'ND': 'gray',
+            'PM': 'gray', 'SM': 'gray', 'EU': 'gray', 'GD': 'gray', 'TB': 'gray',
+            'DY': 'gray', 'HO': 'gray', 'ER': 'gray', 'TM': 'gray', 'YB': 'gray',
+            'LU': 'gray', 'HF': 'gray', 'TA': 'gray', 'W': 'gray', 'RE': 'gray',
+            'OS': 'gray', 'IR': 'gray', 'PT': 'gray', 'AU': 'gold', 'HG': 'silver',
+            'TL': 'gray', 'PB': 'gray', 'BI': 'gray', 'PO': 'gray', 'AT': 'gray',
+            'RN': 'cyan', 'FR': 'purple', 'RA': 'darkgreen'
+            }
 
     @staticmethod
     def configure_styles():
@@ -99,7 +144,7 @@ class GlobVar:
 
         style_colour_label3 = ttk.Style()
         style_colour_label3.configure(
-                "Colour_Label3.TLabel", foreground="darkblue", background="lightblue", font=("Arial", 16)
+                "Colour_Label3.TLabel", foreground="darkblue", background="lightblue", font=("Arial", 16, "bold")
                 )
             
         style = ttk.Style()
@@ -154,8 +199,8 @@ class Ctrl_Input:
 
         
         group_label_info = {
-                "Top_label":("frame","Basic Informations About The Molecular System",0,16),
-                "bottom_label":("frame4","Input Orbital Informations & Other Keywords",5,16),
+                "Top_label":("frame","Basic Informations About The Molecular System",0,18),
+                "bottom_label":("frame4","Orbital Info & Keywords:",5,16),
                 "geometry_label":("frame2","Geometry of the Molecular System",0,12),
                 "Active_space_label":("frame3","Define Active Space of the System",0,12)
                 }
@@ -163,7 +208,7 @@ class Ctrl_Input:
         for label_name, (frame, text, row, font) in group_label_info.items():
             if frame in frame_info:
                 label = ttk.Label(self.frames[frame], text=text, style="Colour_Label3.TLabel",
-                                  font=("Airtel", font))
+                                  font=("Airtel", font, "bold"))
                 label.grid(row=row, column=0, columnspan=3, padx=25, pady=25)
 
         # create Labels
@@ -235,11 +280,11 @@ class Ctrl_Input:
             button.grid(row=3, column=i, padx=10, pady=10)
 
     def update_geo_unit(self):
-        geo_unit = self.unit_type.get()
-        if geo_unit:
+        GlobVar.geo_unit = self.unit_type.get()
+        if GlobVar.geo_unit:
             self.unit_type_entry = True
-            print('geo_unit', geo_unit)
-            return (geo_unit)
+            print('geo_unit', GlobVar.geo_unit)
+            return (GlobVar.geo_unit)
 
     def read_filename(self):
         label1 = ttk.Label(self.frames["frame1"], text="Please enter the chemical formula", style="Colour_Label.TLabel")
@@ -287,22 +332,21 @@ class Ctrl_Input:
         if self.file_path:  # Check if a file is selected
             GlobVar.readgeo = Read_Geo(self.file_path)  # Initialize the Read_Geo class
             GlobVar.readgeo.read_geometry()       # Call the read_geometry method
-
             ttk.Button(
                 self.frames["frame2"],
                 text="View_Geometry",
                 command=GlobVar.readgeo.display_geometry
-            ).grid(row=1, column=2, columnspan=2)
+                ).grid(row=1, column=2, columnspan=2)
 
     def insert_geo_manually(self):
         """Allows manual insertion of geometry data via Read_Geo."""
         GlobVar.readgeo = Read_Geo(self.file_path)  # Initialize the Read_Geo class
         GlobVar.readgeo.insert_geo(self.root)  # Call insert_geo method
-        if GlobVar.geometry_inserted is True:
-            button = ttk.Button(
-                    self.frames["frame1"], text="View Geometry", command=GlobVar.readgeo.display_geometry
-                    )
-            button.grid(row=2, column=2, sticky=tk.W, padx=5, pady=5)
+        ttk.Button(
+            self.frames["frame2"],
+            text="View Geometry",
+            command=GlobVar.readgeo.display_geometry
+            ).grid(row=2, column=2, columnspan=2)
 
     def create_ctrl_pans(self):
         self.keywords = [
@@ -386,7 +430,6 @@ class Read_Geo:
                 )
         style_colour_frame = ttk.Style()
         style_colour_frame.configure("Colour_Frame.TFrame", background="lightblue")
-        self.atoms = []      # List to store atom data
         self.symat = []      # list to store atom names
         self.symatno = []    # list to store atomic numbers
         self.coordx = []     # list to store atoms x coordinates
@@ -420,7 +463,7 @@ class Read_Geo:
                     x = self.Deconvert(columns[1])
                     y = self.Deconvert(columns[2])
                     z = self.Deconvert(columns[3])
-                    self.atoms.append({
+                    GlobVar.atoms.append({
                         "atom": atom_name,
                         "x": x,
                         "y": y,
@@ -433,7 +476,7 @@ class Read_Geo:
                     x = self.Deconvert(columns[2])
                     y = self.Deconvert(columns[3])
                     z = self.Deconvert(columns[4])
-                    self.atoms.append({
+                    GlobVar.atoms.append({
                         "atom": atom_name,
                         "atomic_number": atomic_number,
                         "x": x,
@@ -445,9 +488,9 @@ class Read_Geo:
                             "Unknown Format", "Geometry file format is unknown Please Check help"
                             )
                     continue
-#            print('atom', self.atoms)
-            self.total_atoms = len(self.atoms)
-            for atom in self.atoms:
+#            print('atom', GlobVar.atoms)
+            GlobVar.total_atoms = len(GlobVar.atoms)
+            for atom in GlobVar.atoms:
                 self.symat.append(atom["atom"])
                 self.coordx.append(atom["x"])
                 self.coordy.append(atom["y"])
@@ -473,7 +516,7 @@ class Read_Geo:
         geo_window.title("Geometry")
         geo_window.geometry("650x650")
         geo_window.configure(background="lightblue")
-        entry_widgets = []
+        self.entry_widgets = []
         # frams
         frame1 = ttk.Frame(geo_window, style="Colour_Frame.TFrame", padding=10)
         frame1.grid(row=0, column=0)
@@ -485,13 +528,13 @@ class Read_Geo:
 
         canvas = tk.Canvas(container, background="lightblue", height=450, width=600)
         scrollbar = ttk.Scrollbar(container, orient=tk.VERTICAL, command=canvas.yview)
-        frame2 = ttk.Frame(canvas, style="Colour_Frame.TFrame", padding=10)
+        self.frame_entry = ttk.Frame(canvas, style="Colour_Frame.TFrame", padding=10)
 
         # Configure scrollable area
-        frame2.bind(
+        self.frame_entry.bind(
             "<Configure>", lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
         )
-        canvas.create_window((0, 0), window=frame2, anchor="nw")
+        canvas.create_window((0, 0), window=self.frame_entry, anchor="nw")
         canvas.configure(yscrollcommand=scrollbar.set)
 
         canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
@@ -503,79 +546,93 @@ class Read_Geo:
         atom_num_entry = ttk.Entry(frame1, width=10)
         atom_num_entry.grid(row=0, column=1, padx=10, pady=10)
 
-        def create_pan():
-            self.atom_num = int(atom_num_entry.get())
+        button_Enter = ttk.Button(frame1, text="Enter", command=lambda:self.create_pan(atom_num_entry))
+        button_Enter.grid(row=0, column=3, padx=10, pady=10, sticky=tk.W)
+        button_Insert = ttk.Button(frame3, text="Insert", command=self.fetch_data)
+        button_Insert.grid(row=0, column=3, padx=10, pady=10, sticky=tk.W)
+        button_Close = ttk.Button(frame3, text="Close", command=geo_window.destroy)
+        button_Close.grid(row=1, column=3, padx=10, pady=10, sticky=tk.W)
 
-            for widget in frame2.winfo_children():
-                widget.destroy()
-            entry_widgets.clear()
+    def create_pan(self, atom_num_entry):
+        self.atom_num = int(atom_num_entry.get())
 
-            label1 = ttk.Label(frame2, text=" Atom ", background="lightblue")
-            label1.grid(row=1, column=0, padx=10)
-            label2 = ttk.Label(frame2, text=" X Coordinates ", background="lightblue")
-            label2.grid(row=1, column=1, padx=10)
-            label3 = ttk.Label(frame2, text=" Y Coordinates ", background="lightblue")
-            label3.grid(row=1, column=2, padx=10)
-            label4 = ttk.Label(frame2, text=" Z Coordinates ", background="lightblue")
-            label4.grid(row=1, column=3, padx=10)
+        for widget in self.frame_entry.winfo_children():
+            widget.destroy()
+        self.entry_widgets.clear()
 
-            for i in range(self.atom_num):
-                Atom = ttk.Entry(frame2, width=10)
-                Atom.grid(row=2+i, column=0, padx=10, pady=10)
+        label1 = ttk.Label(self.frame_entry, text=" Atom ", background="lightblue")
+        label1.grid(row=1, column=0, padx=10)
+        label2 = ttk.Label(self.frame_entry, text=" X Coordinates ", background="lightblue")
+        label2.grid(row=1, column=1, padx=10)
+        label3 = ttk.Label(self.frame_entry, text=" Y Coordinates ", background="lightblue")
+        label3.grid(row=1, column=2, padx=10)
+        label4 = ttk.Label(self.frame_entry, text=" Z Coordinates ", background="lightblue")
+        label4.grid(row=1, column=3, padx=10)
 
-                X_coord = ttk.Entry(frame2, width=15)
-                X_coord.grid(row=2+i, column=1, padx=10, pady=10)
+        for i in range(self.atom_num):
+            Atom = ttk.Entry(self.frame_entry, width=10)
+            Atom.grid(row=2+i, column=0, padx=10, pady=10)
 
-                Y_coord = ttk.Entry(frame2, width=15)
-                Y_coord.grid(row=2+i, column=2, padx=10, pady=10)
+            X_coord = ttk.Entry(self.frame_entry, width=15)
+            X_coord.grid(row=2+i, column=1, padx=10, pady=10)
 
-                Z_coord = ttk.Entry(frame2, width=15)
-                Z_coord.grid(row=2+i, column=3, padx=10, pady=10)
+            Y_coord = ttk.Entry(self.frame_entry, width=15)
+            Y_coord.grid(row=2+i, column=2, padx=10, pady=10)
 
-                entry_widgets.append((Atom, X_coord, Y_coord, Z_coord))
+            Z_coord = ttk.Entry(self.frame_entry, width=15)
+            Z_coord.grid(row=2+i, column=3, padx=10, pady=10)
 
-        def fetch_data():
-            for atom, x_entry, y_entry, z_entry in entry_widgets:
-                atom_name = atom.get().strip()
-                if atom:  # Only process if the atom field is not empty
+            self.entry_widgets.append((Atom, X_coord, Y_coord, Z_coord))
+
+    def fetch_data(self):
+        GlobVar.atoms.clear()
+        self.symat.clear()
+        self.coordx.clear()
+        self.coordy.clear()
+        self.coordz.clear()
+        self.symatno.clear()
+        for atom, x_entry, y_entry, z_entry in self.entry_widgets:
+            atom_name = atom.get().strip()
+            if atom:  # Only process if the atom field is not empty
+                try:
                     x = float(self.Deconvert(x_entry.get().strip()))
                     y = float(self.Deconvert(y_entry.get().strip()))
                     z = float(self.Deconvert(z_entry.get().strip()))
+                except ValueError:
+                    messagebox.showerror("Input Error", "Coordinates must be valid numbers.")
+                    return
 
-                    self.atoms.append({
-                        "atom": atom_name,
-                        "x": x,
-                        "y": y,
-                        "z": z
-                    })
+                GlobVar.atoms.append({
+                    "atom": atom_name,
+                    "x": x,
+                    "y": y,
+                    "z": z
+                })
 
-            self.total_atoms = self.atom_num
-            for atom in self.atoms:
-                self.symat.append(atom["atom"])
-                self.coordx.append(atom["x"])
-                self.coordy.append(atom["y"])
-                self.coordz.append(atom["z"])
+        GlobVar.total_atoms = self.atom_num
+        for atom in GlobVar.atoms:
+            self.symat.append(atom["atom"])
+            self.coordx.append(atom["x"])
+            self.coordy.append(atom["y"])
+            self.coordz.append(atom["z"])
 
-            for element in self.symat:
-                if element in GlobVar.at_list_bold:
-                    atomic_number = GlobVar.at_list_bold.index(element) + 1  # Atomic number = index + 1
-                    self.symatno.append(float(atomic_number))
-                else:
-                    raise ValueError(f"Element {element} is not spelled Correctly.\n"
-                                     " or maybe it's above 88 elements of the periodic table \n"
-                                     "we only consider fistr 88 elements of the periodic table")
-#           print("self.symat, self.coordx, self.coordy, self.coordz, self.symatno", self.symat, self.coordx,\
-#           self.coordy, self.coordz, self.symatno)
-            GlobVar.geometry_inserted = True
+        for element in self.symat:
+            if element in GlobVar.at_list_bold:
+                atomic_number = GlobVar.at_list_bold.index(element) + 1  # Atomic number = index + 1
+                self.symatno.append(float(atomic_number))
+            else:
+                messagebox.showerror("Name Error",f"Element {element} is not spelled Correctly.\n"
+                                    "or, maybe its not in Uppercase or Uppercase-Lowercase letters "
+                                    "combination or maybe it's above 88 elements of the periodic table \n"
+                                    "we only consider fistr 88 elements of the periodic table")
+                return
 
-            return self.symat, self.coordx, self.coordy, self.coordz, self.symatno
+        #print("self.symat, self.coordx, self.coordy, self.coordz, self.symatno", self.symat, self.coordx,\
+        #self.coordy, self.coordz, self.symatno)
+        GlobVar.geometry_inserted = True
 
-        button = ttk.Button(frame1, text="Enter", command=create_pan)
-        button.grid(row=0, column=3, padx=10, pady=10, sticky=tk.W)
-        button = ttk.Button(frame3, text="Insert", command=fetch_data)
-        button.grid(row=0, column=3, padx=10, pady=10, sticky=tk.W)
-        button = ttk.Button(frame3, text="Close", command=geo_window.destroy)
-        button.grid(row=1, column=3, padx=10, pady=10, sticky=tk.W)
+        return self.symat, self.coordx, self.coordy, self.coordz, self.symatno
+
 
     def display_geometry(self):
         ''' Create a Toplevel window to display the file geometry '''
@@ -585,7 +642,16 @@ class Read_Geo:
                 geo_file_display.title(f"{GlobVar.molecule_string}-geometry")
             else:
                 geo_file_display.title("-Geometry-")
-            geo_file_display.geometry("700x500")  # Optional: Set the size of the Toplevel window
+            geo_file_display.geometry("500x300")  # Optional: Set the size of the Toplevel window
+
+            geo_file_display_frame = tk.Frame(geo_file_display)
+            geo_file_display_frame.grid(row=0,column=0, sticky='nsew')
+            geo_file_display.grid_rowconfigure(0, weight=1)
+            geo_file_display.grid_columnconfigure(0, weight=1)
+            self.geo_mol_show_frame = tk.Frame(geo_file_display)
+            self.geo_mol_show_frame.grid(row=1,column=0, sticky='nsew')
+            close_frame = tk.Frame(geo_file_display)
+            close_frame.grid(padx=10, pady=10, sticky='nsew')
 
             style = ttk.Style()
             style.configure("Treeview", font=("Helvetica", 12))
@@ -593,6 +659,7 @@ class Read_Geo:
             columns = ("atom", "x", "y", "z")
             tree = ttk.Treeview(geo_file_display, columns=columns, show="headings")
             #tree.pack(expand=True, fill="both")
+            tree.grid(row=0, column=0, sticky="nsew")
 
             # Define headings
             tree.heading("atom", text="Atom", anchor="center")
@@ -607,7 +674,7 @@ class Read_Geo:
             # Insert rows from self.atoms
 
             tree.insert("", tk.END, values=(" ", " ", " ", " "))
-            for atom in self.atoms:
+            for atom in GlobVar.atoms:
                 formatted_values = (
                         atom["atom"],
                         f"{float(atom['x']):.10f}",
@@ -615,16 +682,282 @@ class Read_Geo:
                         f"{float(atom['z']):.10f}"
                 )
                 tree.insert("", tk.END, values=formatted_values)
-        tree.pack(expand=True, fill="both")
-
 
         # Add a scrollbar for better usability
         scrollbar = ttk.Scrollbar(geo_file_display, orient="vertical", command=tree.yview)
         tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side="right", fill="y")
+        tree.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+
+
+        geo_file_display.grid_rowconfigure(0, weight=1)
+        geo_file_display.grid_columnconfigure(0, weight=1)
+        self.display_molecule()
+
+        close_button = tk.Button(close_frame, text='Close', command=geo_file_display.destroy)
+        close_button.pack(expand=True)
+
+    def display_molecule(self):
+        if GlobVar.geometry_inserted is True:
+            mol_display = tk.Toplevel()
+            if (GlobVar.molecule_string):
+                mol_display.title(f"{GlobVar.molecule_string}")
+            else:
+                mol_display.title("-Molecule-")
+            mol_display.geometry("700x700")
+            mol_display.configure(background="lightblue")
+
+            mol_frame = tk.Frame(mol_display)
+            mol_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+            button_frame = tk.Frame(mol_frame)
+            button_frame.pack(fill=tk.BOTH, expand=True)
+
+            center_frame = tk.Frame(button_frame)
+            center_frame.pack(expand=True)
+
+            canvas_frame = tk.Frame(mol_frame)
+            canvas_frame.pack(fill=tk.BOTH, expand=True)
+
+            box_frame = tk.Frame(mol_frame, width=100, height=100, bg='blue')
+            box_frame.pack(pady=10)
+            box_frame.pack_propagate(False)
+            
+            fig = plt.Figure(figsize=(6, 6))
+            fig.patch.set_facecolor('lightblue')
+            ax = fig.add_subplot(111, projection='3d')
+            ax.set_facecolor('lightblue')
+            
+            # drawing axis
+            ax.plot([0, 2], [0, 0], [0, 0], color='blue', linewidth=2, linestyle=':')
+            ax.plot([0, 0], [0, 2], [0, 0], color='blue', linewidth=2, linestyle=':')
+            ax.plot([0, 0], [0, 0], [0, 2], color='blue', linewidth=2, linestyle=':')
+            ax.set_box_aspect([1, 1, 1])  # Equal aspect ratio
+
+            if GlobVar.geo_unit == "Bohr":
+                bohr_to_angstrom = 0.529177
+                for atom in GlobVar.atoms:
+                    atom['x'] *= bohr_to_angstrom
+                    atom['y'] *= bohr_to_angstrom
+                    atom['z'] *= bohr_to_angstrom
+
+            # drawing atoms
+            old_colors = []
+            self.selected_atoms = []
+            atom_scatters = []
+            scale_factor = 0.5
+            for atom1 in GlobVar.atoms:
+                x1 = atom1['x']
+                y1 = atom1['y']
+                z1 = atom1['z']
+                symbol = atom1['atom']
+
+                radius = GlobVar.at_covrad.get(symbol)  # fallback value if element missing
+                size = (radius * scale_factor)**2
+                print('size of the atom',size)
+
+                scatters = ax.scatter(x1, y1, z1,
+                           color=GlobVar.colors.get(atom1['atom'], 'green'),
+                           s=size)
+
+                atom_scatters.append(scatters)
+                ax.text(x1, y1, z1 + 0.3, atom1['atom'], color='black', fontsize=10, ha='center', va='bottom')
+                clr = GlobVar.colors.get(atom1['atom'])
+                old_colors.append(clr)
+            print('scatters',scatters)
+
+            for atom1, atom2 in combinations(GlobVar.atoms, 2):
+                x1, y1, z1 = atom1['x'], atom1['y'], atom1['z']
+                x2, y2, z2 = atom2['x'], atom2['y'], atom2['z']
+
+                distance = math.sqrt(
+                        (x2-x1)**2 +
+                        (y2-y1)**2 +
+                        (z2-z1)**2
+                        )
+
+                r1 = GlobVar.at_covrad.get(atom1['atom'])
+                r2 = GlobVar.at_covrad.get(atom2['atom'])
+
+                if r1 is not None and r2 is not None:
+                    covrad = (r1 + r2)/100.0
+                    if distance <= covrad:
+                        ax.plot([x1, x2], [y1, y2], [z1, z2], color='black', linewidth=2.5)
+                else:
+                    messagebox.showerror("Not Found",f"covalent radious of {atom1} and/or {atom2}\n"
+                                         "are not found in the list")
+                            
+            
+            # Make panes transparent (no background)
+            ax.xaxis.set_pane_color((1, 1, 1, 0))
+            ax.yaxis.set_pane_color((1, 1, 1, 0))
+            ax.zaxis.set_pane_color((1, 1, 1, 0))
+            
+            # Hide grid lines
+            ax.grid(False)
+            
+            # Hide tick marks and labels
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_zticks([])
+            
+            # Hide box edges (axis lines)
+            try:
+                ax.w_xaxis.line.set_color((0, 0, 0, 0))
+                ax.w_yaxis.line.set_color((0, 0, 0, 0))
+                ax.w_zaxis.line.set_color((0, 0, 0, 0))
+            except AttributeError:
+                # For newer Matplotlib versions
+                for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
+                    axis.line.set_alpha(0)
+
+            # Add axis labels
+            ax.text(2, 0, 0, 'X', color='blue', fontsize=14, fontweight='bold')
+            ax.text(0, 2, 0, 'Y', color='blue', fontsize=14, fontweight='bold')
+            ax.text(0, 0, 2, 'Z', color='blue', fontsize=14, fontweight='bold')
+
+            
+            canvas = FigureCanvasTkAgg(fig, master=canvas_frame)
+            canvas_widget = canvas.get_tk_widget()
+            canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+            def on_click(event):
+                if event.inaxes != ax:
+                    return
+
+                # Get 2D click position
+                x2, y2 = event.x, event.y
+
+                # Get projection of 3D points
+                coords_2d = []
+                for atom in GlobVar.atoms:
+                    x3, y3, z3 = atom['x'], atom['y'], atom['z']
+                    x_proj, y_proj, _ = proj3d.proj_transform(x3, y3, z3, ax.get_proj())
+                    x_disp, y_disp = ax.transData.transform((x_proj, y_proj))
+                    coords_2d.append((x_disp, y_disp))
+
+                coords_2d = np.array(coords_2d)
+                distances = np.linalg.norm(coords_2d - np.array([x2, y2]), axis=1)
+                dist = min(distances)
+                index = np.argmin(distances)
+                atom_clicked = GlobVar.atoms[index]
+                r1 = GlobVar.at_covrad.get(atom_clicked['atom'])
+                print('dist, index',dist, index)
+                if dist <= math.sqrt(size):
+                    atom_scatters[index].set_color('magenta')
+                    fig.canvas.draw_idle()
+                    self.selected_atoms.append(atom_clicked)
+                    #print('selected_atoms',selected_atoms)
+
+                return (self.selected_atoms)
+
+                # Connect the event
+            fig.canvas.mpl_connect('button_press_event', on_click)
+            print('selected_atoms',self.selected_atoms)
+            
+            canvas.draw()
+
+            length = tk.Button(center_frame, text='length',
+                               command=lambda:self.calculate_length(
+                                                               atom_scatters,
+                                                               old_colors, fig)
+                               )
+            length.pack(side='left', padx=10)
+            ang = tk.Button(center_frame, text='ang',
+                               command=lambda:self.calculate_angle(
+                                                               atom_scatters,
+                                                               old_colors, fig)
+                            )                        
+            ang.pack(side='left', padx=10)
+            dang = tk.Button(center_frame, text='di-ang',
+                               command=lambda:self.calculate_diangle(
+                                                               atom_scatters,
+                                                               old_colors, fig)
+                            )                        
+            dang.pack(side='left', padx=10)
+
+            close_btn = tk.Button(box_frame, text="Close", command=mol_display.destroy)
+            close_btn.pack(expand=True)
+
+    def calculate_length(self, atom_scatters, old_colors, fig):
+        if len(self.selected_atoms) != 2:
+            messagebox.showerror('Selection Error','Please select any two atoms to calculate Bond Length')
+            return
+
+        for atom1, atom2 in combinations(self.selected_atoms, 2):
+            dx = atom2['x'] - atom1['x']
+            dy = atom2['y'] - atom1['y']
+            dz = atom2['z'] - atom1['z']
+
+            distance = math.sqrt(dx**2 + dy**2 + dz**2)
+
+        messagebox.showinfo("Bond Length:",f"Distance between {atom1['atom']} and\n"
+                            f"{atom2['atom']}: {distance:.4f} Å")
+
+        for i, scatter in enumerate(atom_scatters):
+            scatter.set_color(old_colors[i])  # Restore original
+        fig.canvas.draw_idle()
+        self.selected_atoms = []
+
+
+    def calculate_angle(self, atom_scatters, old_colors, fig):
+        if len(self.selected_atoms) != 3:
+            messagebox.showerror('Selection Error','Please select any three atoms to calculate Bond Angle')
+            return
+        for atom1, atom2, atom3 in combinations(self.selected_atoms, 3):
+            a = np.array([atom1['x'], atom1['y'], atom1['z']])
+            b = np.array([atom2['x'], atom2['y'], atom2['z']])
+            c = np.array([atom3['x'], atom3['y'], atom3['z']])
+
+        # the vectpr formula is used here : cos(θ)= u.v/|u||v|
+        ba = np.array(a) - np.array(b) # ba = u
+        bc = np.array(c) - np.array(b) # bc = v
+        cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+        angle_rad = acos(np.clip(cosine_angle, -1.0, 1.0))  # Avoid rounding errors
+        angle_deg = degrees(angle_rad)
+        messagebox.showinfo("Mesured Angle:",f"Angle within {atom1['atom']},\n"
+                            f"{atom2['atom']} and {atom3['atom']}: {angle_deg} D")
+
+        for i, scatter in enumerate(atom_scatters):
+            scatter.set_color(old_colors[i])  # Restore original
+        fig.canvas.draw_idle()
+        
+        self.selected_atoms = []
+        #return selected_atoms
+
+    def calculate_diangle(self, atom_scatters, old_colors, fig):
+        if len(self.selected_atoms) != 4:
+            messagebox.showerror('Selection Error','Please select any four atoms to calculate Dihedral Angle')
+            return
+        for atom1, atom2, atom3, atom4 in combinations(self.selected_atoms, 4):
+            a = np.array([atom1['x'], atom1['y'], atom1['z']])
+            b = np.array([atom2['x'], atom2['y'], atom2['z']])
+            c = np.array([atom3['x'], atom3['y'], atom3['z']])
+            d = np.array([atom3['x'], atom3['y'], atom3['z']])
+
+        b0 = -1.0 * (np.array(b) - np.array(a))
+        b1 = np.array(c) - np.array(b)
+        b2 = np.array(d) - np.array(c)
+
+        b1 /= np.linalg.norm(b1)
+
+        v = b0 - np.dot(b0, b1) * b1
+        w = b2 - np.dot(b2, b1) * b1
+
+        x = np.dot(v, w)
+        y = np.dot(np.cross(b1, v), w)
+        dhang = degrees(np.arctan2(y, x))
+        messagebox.showinfo("Mesured Dihedral Angle:",f"Angle within {atom1['atom']},\n"
+                            f"{atom2['atom']}, {atom3['atom']} and {atom4['atom']}: {dhang} D")
+
+        for i, scatter in enumerate(atom_scatters):
+            scatter.set_color(old_colors[i])  # Restore original
+        fig.canvas.draw_idle()
+        
+        self.selected_atoms = []
 
     def get_geometry_data(self):
-        return self.symat, self.coordx, self.coordy, self.coordz, self.symatno, self.total_atoms
+        return self.symat, self.coordx, self.coordy, self.coordz, self.symatno
 
 
 ###################################################################################
@@ -645,6 +978,9 @@ class Orb_Input:
         self.activeatoms = np.zeros(30, dtype=int)
         self.atn_vector = np.zeros(200, dtype=int)
         self.description_orb = ""
+        Pmw.initialise(root)
+        self.balloon = Pmw.Balloon(root)
+
         self.create_orbital_section()
 
     def create_orbital_section(self):
@@ -665,14 +1001,17 @@ class Orb_Input:
             top_label.grid(row=0, column=0, columnspan=3, pady=15)
 
             label_info={
-                    'label1':("Active Orbital",0),
-                    'label2':("Atom Number",1),
-                    'label3':("Orbital Type",2)
+                    'label1':("Active Orbital",0,"Active orbitals are listed below"),
+                    'label2':("Atom Number",1,"Put the active atom number as given in the geometry file\n"
+                              "associated with the each active orbitals"),
+                    'label3':("Orbital Type",2,"Put the active orbital types; It can be given\n"
+                              "as: s or sig, px... or pi1, py... or pi2, pz... or pi3")
                 }
 
-            for label, (text, col) in label_info.items():
+            for label, (text, col, tooltip) in label_info.items():
                 label = ttk.Label(self.orbital_frame, text=text, style='Colour_Label1.TLabel')
                 label.grid(row=1, column=col, padx=5, sticky='ew')
+                self.balloon.bind(label, tooltip)
 
             # Scrollable container
             container = ttk.Frame(self.orbital_frame)
@@ -699,7 +1038,13 @@ class Orb_Input:
             insert_button = ttk.Button(
                     self.orbital_frame, text="Insert", command=self.validate_and_store_orbital_data
                     )
-            insert_button.grid(row=3, column=0, columnspan=3, pady=10)
+            insert_button.grid(row=3, column=0, columnspan=2, pady=10)
+
+            self.show_button = ttk.Button(
+                    self.orbital_frame, text="View_Orbs", command=drawing_molecule
+                    )
+            self.show_button.grid(row=3, column=1, columnspan=2, pady=10)
+            self.show_button.config(state=tk.DISABLED)  # Initially disable the button
 
             close_button = ttk.Button(self.orbital_frame, text="Close", command=self.destroy_orbs)
             close_button.grid(row=4, column=0, pady=10, columnspan=3)
@@ -724,6 +1069,8 @@ class Orb_Input:
                 self.assotyp_entry.grid(row=i+3, column=2, padx=30, pady=10, sticky=tk.E)
                 self.assotyp_entry.insert(0, orbital_type)
                 self.typ_entry.append(self.assotyp_entry)
+#            self.assoatm_entry.insert(0, atom_number)
+#            self.atm_entry.append(self.assoatm_entry)
 
     def destroy_orbs(self):
         self.orbital_frame.destroy()
@@ -759,12 +1106,16 @@ class Orb_Input:
             self.typ_entry[i].configure(background="white")
 
             # Store the data
-            GlobVar.orbital_data.append({
-                "atom_number": atom_number,
-                "orbital_type": orbital_type
-            })
+            if i < len(GlobVar.orbital_data):
+                GlobVar.orbital_data[i]["atom_number"] = atom_number
+                GlobVar.orbital_data[i]["orbital_type"] = orbital_type
+            else:
+                GlobVar.orbital_data.append({
+                    "atom_number": atom_number,
+                    "orbital_type": orbital_type
+                })
 
-        messagebox.showinfo("Success", "Orbital inputs validated and stored successfully.")
+        #messagebox.showinfo("Success", "Orbital inputs validated and stored successfully.")
         sorbs = []
         pxorbs = []
         pyorbs = []
@@ -797,11 +1148,21 @@ class Orb_Input:
             elif 'pi3' in data["orbital_type"].lower():
                 pz_type = pz_type + 1
                 pzorbs.append(i+GlobVar.num_iao)
+            elif 'sig' in data["orbital_type"].lower():
+                sig_type = sig_type + 1
+                sorbs.append(i+GlobVar.num_iao)
             else:
                 messagebox.showerror("Input Error", f"The type of the orbital {i} is unknown. \n"
                                      "Please put s, px, py or pz otherwise put sig or sigma,\n"
                                      " pi1, pi2, pi3 if the direction of pi orbs are different"
                                      )
+
+        if all(x != 0 for x in [py_type, px_type, pz_type]):
+            messagebox.showerror("Input Error", "You have put three different pi directions \n"
+                                 "among them one should be Sigma, Please check and rectify"
+                                 )
+
+
         norbsym = [
                 px_type,
                 py_type,
@@ -833,10 +1194,13 @@ class Orb_Input:
         """atoset is matrix where each row represents an atom according to the geometry, if the atom ia
         an active atom, the corresponding column get '1' otherwise '0'. and the next columns contain the
         corresponding active orbital numbers associated with that atom."""
+#        for i 
+#        GlobVar.active_atom_coords
         self.keywd_button.config(state=tk.NORMAL)
-#        print('atoset',self.atoset)
+        self.show_button.config(state = tk.NORMAL)
+        print('atoset',self.atoset)
+        sys.exit()
 #        self.orbital_button.config(state=tk.DISABLED)  # Initially disable the button
-#        GlobVar.orbital_button.config(state = tk.DISABLED)
 
     def create_matrix(self):
         ''' Step 1: Gather atom numbers and their orbitals '''
@@ -872,6 +1236,10 @@ class Orb_Input:
 
         atn_vec = [sum(1 for x in row if x != 0) for row in matrix]
         self.atn_vector[:len(atn_vec)] = atn_vec
+        for attn in self.atn_vector:
+            if attn > 1:
+                GlobVar.IAB_flag = False
+                break
 
         return matrix
 
@@ -899,21 +1267,35 @@ class Keywd_Input:
         self.priority_str_window = None
         self.prio_bond_window = None
         self.prio_rads_window = None
+        self.get_set_order_window = None
         self.frame = None
-        self.method_type = tk.StringVar(value="Chem inst")
+        self.method_type = tk.StringVar(value="Chemical Insight Set")
         self.ChemInst_set_type = tk.StringVar(value="Single Set")
         self.rumer_set_type = tk.StringVar(value="Single Rumer Set")
         self.str_type = tk.StringVar(value="Covalent")
-        self.cheminst_str_type = tk.StringVar(value="Symmetry")
+        self.cheminst_str_type = tk.StringVar(value="Symmetric")
         self.symmetry_set_order_type = tk.StringVar(value="Quality-Arrange")
         self.ovlp_cal = tk.StringVar(value="No")
-        self.IAB_type = tk.StringVar(value="1")
-        self.NAB_type = tk.StringVar(value="2")
-        self.SBB_type = tk.StringVar(value="3")
+
+        if GlobVar.IAB_flag is True:
+            self.IAB_type = tk.StringVar(value="None")
+        else:
+            self.IAB_type = tk.StringVar(value="1")
+
+        if GlobVar.total_atoms < 3:
+            self.NAB_type = tk.StringVar(value="None")
+        else:
+            self.NAB_type = tk.StringVar(value="2")
+
+        if self.type_orb_count == 1:
+            self.SBB_type = tk.StringVar(value="None")
+        else:
+            self.SBB_type = tk.StringVar(value="3")
+
         self.PDB_type = tk.StringVar(value="None")
         self.PDR_type = tk.StringVar(value="None")
         self.ChemInst_set_type_entry = True
-        self.cheminst_str_type_entry = False
+        #self.cheminst_str_type_entry = False
         self.symmetric_set_order_type_entry = False
         self.prio_structure_entries = []
         self.prio_bond_entries = []
@@ -930,7 +1312,7 @@ class Keywd_Input:
         if self.keywd_window is None:
             self.keywd_window = tk.Toplevel(self.root, padx=10, pady=10)
             self.keywd_window.title("Spatial Keyword Inputs")
-            self.keywd_window.geometry("750x850")
+            self.keywd_window.geometry("860x950")
             self.keywd_window.configure(background="lightblue")
 
             '''dictionary to store the frame objects'''
@@ -943,10 +1325,11 @@ class Keywd_Input:
             '''dictionary to store the frame names and row values'''
             frames_info = {  
                 "method_type_frame": 0,
-                "rumer_set_type_frame": 1,
+                "VB-set_type_frame": 1,
+                #"rumer_set_type_frame": 1,
                 "str_type_frame": 2,
                 "ChemInst_set_type_frame": 3,
-                "cheminst_str_type_frame": 4,
+                #"cheminst_str_type_frame": 4,
                 "symmetry_set_order_frame": 5,
                 "ovlp_cal_frame": 6,
                 "prio_label_frame": 7,
@@ -958,31 +1341,34 @@ class Keywd_Input:
             }
 
             # Create frames in a loop
+            col = 0
             for frame_name, row in frames_info.items():
+                if frame_name == 'end_frame':
+                    col = 2
                 frame = ttk.Frame(self.keywd_window, style="Colour_Frame.TFrame")
-                frame.grid(row=row, column=0, sticky=tk.W)
+                frame.grid(row=row, column=col, columnspan=5, sticky=tk.W)
                 self.frames[frame_name] = frame
            
             labels_info = {
-                "method_type_label": ("method_type_frame", "Select method type: ", 0, 
-                                      "Select any one from the two methods provided.\n"
+                "method_type_label": ("method_type_frame", "Select One from the Four Main Operations below: ", 0, 6,
+                                      "Select any one from the four methods provided.\n"
                                       "Select 'Rumer' to generate a Rumer structure set,\n"
                                       "no need to provide any spatial keywords. For all\n"
                                       "other types of sets please select Chem Inst."),
     
-                "rumer_set_type_label": ("rumer_set_type_frame", "Rumer Set type: ", 0,
-                                         "Select any one from the two Rumer set options. \n"
-                                         "Select 'Single Rumer Set' to generate one Rumer structure set,\n"
-                                         "corresponding to the given order of orbitals. Select \n"
-                                         "'All Rumer Sets' to get all possible unique Rumer sets."),
+                "empty_label1": ("method_type_frame", "", 2, 4,
+                                         ""),
 
-                "str_type_label": ("str_type_frame", "Select structure type: ", 0,
+                "keywd_label": ("VB-set_type_frame", " Select Apropreate Keywords Below:", 0, 4,
+                                         ""),
+
+                "str_type_label": ("str_type_frame", "Select Type of Valence Bonds: ", 0, 1,
                                    "Select any one from the three types. Select 'Covalent'\n"
                                    "to generate covalent sets only. Select 'Ionic' to generate \n"
                                    "ionic structure sets only. Select both to generate both \n"
                                    "types of structure sets."),
 
-                "ChemInst_set_type_label": ("ChemInst_set_type_frame", "Chem Inst Set type:", 0,
+                "ChemInst_set_type_label": ("ChemInst_set_type_frame", "Number of Complete VB sructure Set:", 0, 1,
                                             "Select any one from the four types of Chemical\n"
                                             "insight output sets. Select 'Single Set' if you want the best\n"
                                             "chemically insightful one set, select 'All Best Sets' if you\n"
@@ -993,72 +1379,79 @@ class Keywd_Input:
                                             "overlapped sets but less chemically meaningful. These sets \n"
                                             "could help read off negative Coulson-Chirgwin weights."),
 
-                "ChemInst_str_type_label": ("cheminst_str_type_frame", "Cheminst Str Type:", 0,
+                "ChemInst_str_type_label": ("VB-set_type_frame", "VB-Set Type:", 1, 1,
                                             "Select any one from the three types of calculations. Select\n"
                                             "'Symmetry' if you want to have symmetric sets. Select \n"
                                             "'Asymetric' if you want to have chemical insight sets. \n"
                                             "Select 'Checksymm' if you want to check some sets are \n"
                                             "symmetric or not"),
 
-                "symmetry_set_order_label": ("symmetry_set_order_frame", "Symmetric group arrangement:", 0,
-                                             "Select any order of arrangement of the symmetric \n"
-                                             "group. It could help searching a symmetric set easyer.\n" 
-                                             "'Quality' arrange symmetric groups from higher quality \n"
-                                             "to lower quality. other two options 'big to small' and \n"
-                                             "'small to big' arrange the groups according to their sizes"),
 
-                "ovlp_cal_label": ("ovlp_cal_frame", "Estimate Overlap", 0,
+                "ovlp_cal_label": ("ovlp_cal_frame", "Estimate Overlap", 0, 1,
                                    "To estimate overlap among the structures \n"
                                    "in each set click yes. The default is set to 'No'"),
 
-                "mout_label": ("mout_frame", "Maximum Number of Output Files:", 0,
-                               "For a large Active Space, the total number of sets can\n"
-                               "reach millions or more. Each output file can contain\n"
-                               "up to 75,000 sets. By default, the number of output files\n"
-                               "is set to one. If additional output files are required, please\n"
-                               "specify the desired number in the entry box and press 'Enter'."),
-                               
-                "prio_label": ("prio_label_frame", "Decide Priorities of the Chemical Qualities:", 0,
+                "empty_label2": ("ovlp_cal_frame", "", 1, 4,
+                                         ""),
+
+                "prio_label": ("prio_label_frame", "Select Priorities of the Chemical Qualities below:", 0, 5,
                                "The sequence of the default priority is IAB > NAB > SBB and \n"
                                "PBU & PRU are not taken in the calculation; To change this default \n"
                                "priorities please click the button and selevct the numbers for each "),
 
-                "IAB_label": ("diff_qualities_frame", "IAB  PRIORITY: ", 0,
-                              "Intra Atomic Bond Priority. Default is set to '1'"),
+                "IAB_label": ("diff_qualities_frame", "IAB  PRIORITY: ", 0, 1,
+                              "Intra Atomic Bond Priority. Default is set to '1'\n"
+                              "If it shows as disabled, it means that the active atoms \n"
+                              "of your system contains only one active orbital."),
 
-                "NAB_label": ("diff_qualities_frame", "NAB  PRIORITY: ", 1,
-                              "Near Atomic Bond Priority. Default is set to '2'"),
+                "NAB_label": ("diff_qualities_frame", "NAB  PRIORITY: ", 1, 1,
+                              "Near Atomic Bond Priority. Default is set to '2'\n"
+                              "If it shows as disabled, it means that your active \n"
+                              "space contains only two active atoms."),
 
-                "SBB_label": ("diff_qualities_frame", "SBB  PRIORITY: ", 2,
-                              "Symmetry Breaking Bond Priority. Default is set to '3'"),
+                "SBB_label": ("diff_qualities_frame", "SBB  PRIORITY: ", 2, 1,
+                              "Symmetry Breaking Bond Priority. Default is set to '3'. \n"
+                              "If it shows as disabled, it means that the active space \n"
+                              "of your system contains only one type of symmetric orbital."),
 
-                "PDB_label": ("diff_qualities_frame", "PDB  PRIORITY: ", 3,
+                "PDB_label": ("diff_qualities_frame", "PDB  PRIORITY: ", 3, 1,
                               "Pre-defined Bond Priority. Default is set to \n"
                               "'None': Not taken into the calculation"),
 
-                "PDR_label": ("diff_qualities_frame", "PDR  PRIORITY: ", 4,
+                "PDR_label": ("diff_qualities_frame", "PDR  PRIORITY: ", 4, 1,
                               "Pre-defined Radical Priority. Default is set to \n"
-                              "'None': Not taken into the calculation")
+                              "'None': Not taken into the calculation"),
+
+                "empty_label3": ("mout_frame", "", 1, 4,
+                                         ""),
                 }
                 
-            for label_name, (frame_name, text, row, tooltip) in labels_info.items():
+            for label_name, (frame_name, text, row, colspn, tooltip) in labels_info.items():
                 styles = "Colour_Label.TLabel"
                 if label_name in ("IAB_label", "NAB_label", "SBB_label", "PDB_label", "PDR_label"):
                     styles = "Colour_Label2.TLabel"
+                if label_name in (
+                        "method_type_label",
+                        "prio_label",
+                        "empty_label1",
+                        "empty_label2", 
+                        "empty_label3", 
+                        "keywd_label"
+                        ):
+                    styles = "Colour_Label3.TLabel"
 
                 if frame_name in self.frames:
                     label = ttk.Label(self.frames[frame_name], text=text, style=styles)
-                    label.grid(row=row, column=0, sticky=tk.W, padx=10, pady=10)
+                    label.grid(row=row, column=0, columnspan=colspn, sticky=tk.W, padx=10, pady=10)
                     self.balloon.bind(label, tooltip)
                     self.labels[label_name] = label
 
             self.radio_buttons_info = {
-                    "Rumer_Set_Type":["Single Rumer Set", "All Rumer Sets"],
-                    "tip_method":["Chem inst", "Rumer"],
+                    #"Rumer_Set_Type":["Single Rumer Set", "All Rumer Sets"],
+                    "tip_method":["Chemical Insight Set", "Rumer Set", "Equal Bond-Distributed Set", "Check Set if Symmetric"],
                     "str_type":["Covalent", "Ionic", "Both"],
-                    "cheminstsets_type":["Single Set", "All Best Sets", "All Sets", "Eq Bond"],
-                    "Cheminst_str_type":["Symmetry", "Asymmetry", "Checksymm"],
-                    "set_order":["Quality-Arrange", "Big-to-Small", "Small-to-Big"],
+                    "cheminstsets_type":["Single Set", "All Sets", "Best Sets"],
+                    "Cheminst_str_type":["Symmetric", "Asymmetric"],
                     "ovlp_types":["Yes", "No"],
                     "IAB_option":["1", "2", "3", "4", "5", "None"],
                     "NAB_option":["1", "2", "3", "4", "5", "None"],
@@ -1068,29 +1461,27 @@ class Keywd_Input:
                     }
 
             self.radio_buttons_variable = {
-                    "Rumer_Set_Type":["rumer_set_type_frame", self.rumer_set_type, 
-                                      self.Update_Rumer_Set_Type, 0],
-                    "tip_method":["method_type_frame", self.method_type, self.update_method_type, 0],
-                    "str_type":["str_type_frame", self.str_type, self.Update_Str_Type, 0],
+                    #"Rumer_Set_Type":["rumer_set_type_frame", self.rumer_set_type, 
+                    #                  self.Update_Rumer_Set_Type, 0, 1],
+                    "tip_method":["method_type_frame", self.method_type, self.update_method_type, 1, 0],
+                    "str_type":["str_type_frame", self.str_type, self.Update_Str_Type, 0, 1],
                     "cheminstsets_type":["ChemInst_set_type_frame", self.ChemInst_set_type, 
-                                         self.ChemInst_set_type_read, 0],
-                    "Cheminst_str_type":["cheminst_str_type_frame", self.cheminst_str_type, 
-                                         self.cheminst_str_type_read, 0],
-                    "set_order":["symmetry_set_order_frame", self.symmetry_set_order_type, 
-                                 self.symmetry_set_order_type_read, 0],
-                    "ovlp_types":["ovlp_cal_frame", self.ovlp_cal, self.get_str_ovlp_keywd, 0],
-                    "IAB_option":["diff_qualities_frame", self.IAB_type, self.get_IAB_Priority, 0],
-                    "NAB_option":["diff_qualities_frame", self.NAB_type, self.get_NAB_Priority, 1],
-                    "SBB_option":["diff_qualities_frame", self.SBB_type, self.get_SBB_Priority, 2],
-                    "PDB_option":["diff_qualities_frame", self.PDB_type, self.get_PDB_Priority, 3],
-                    "PDR_option":["diff_qualities_frame", self.PDR_type, self.get_PDR_Priority, 4]
+                                         self.ChemInst_set_type_read, 0, 1],
+                    "Cheminst_str_type":["VB-set_type_frame", self.cheminst_str_type, 
+                                         self.cheminst_str_type_read, 1, 1],
+                    "ovlp_types":["ovlp_cal_frame", self.ovlp_cal, self.get_str_ovlp_keywd, 0, 1],
+                    "IAB_option":["diff_qualities_frame", self.IAB_type, self.get_IAB_Priority, 0, 1],
+                    "NAB_option":["diff_qualities_frame", self.NAB_type, self.get_NAB_Priority, 1, 1],
+                    "SBB_option":["diff_qualities_frame", self.SBB_type, self.get_SBB_Priority, 2, 1],
+                    "PDB_option":["diff_qualities_frame", self.PDB_type, self.get_PDB_Priority, 3, 1],
+                    "PDR_option":["diff_qualities_frame", self.PDR_type, self.get_PDR_Priority, 4, 1]
                     }
 
-            for button, (frame, variable, callback, row) in self.radio_buttons_variable.items():
+            for button, (frame, variable, callback, row, colstart) in self.radio_buttons_variable.items():
                 if button in self.radio_buttons_info:
                     self.create_radiobuttons(
-                            self.frames[frame], self.radio_buttons_info[button], variable, callback, row
-                            )
+                            self.frames[frame], self.radio_buttons_info[button], variable, 
+                            callback, row, colstart )
 
             button_info = {
                     "PDB_button":["PDB_PDR_Button_frame", " Insert PDB ", self.Insert_PDB, 0, 0,
@@ -1103,10 +1494,14 @@ class Keywd_Input:
                                          "you can insert them by clicking this Button;\n"
                                          "The provided structures must be linearly independent \n"
                                          "otherwise they will not be present in the set together"],
-                    "insert_button":["end_frame", "Insert", self.get_keywds, 0, 0,
+                    "insert_button":["end_frame", "Insert", self.get_keywds, 0, 3,
                                      "Click the button to insert all values"],
-                    "close_button":["end_frame", "Close", self.keywd_window.destroy, 1, 0,
-                                     "Click the button to closr this Keyword pane"]
+                    "close_button":["end_frame", "Close", self.keywd_window.destroy, 1, 3,
+                                     "Click the button to closr this Keyword pane"],
+                    "more_button":["VB-set_type_frame", "More", self.get_set_order, 1, 4,
+                                     "Click for more options"],
+                    "more_button1":["ChemInst_set_type_frame", "More", self.get_mout_number, 0, 5,
+                                     "Click for more options"]
                     }
             for button_name, (frame, text, command, row, column, tooltip) in button_info.items():
                 button = ttk.Button(self.frames[frame], text=text, command=command)
@@ -1118,9 +1513,9 @@ class Keywd_Input:
                     button.config(state=tk.DISABLED)  # Initially disable the button
 
 
-    def create_radiobuttons(self, frame, options, variable, callback, row):
+    def create_radiobuttons(self, frame, options, variable, callback, row, colstart):
         ''' Create radio buttons; check conditions and disabled specific buttons accordingly '''
-        for i, option in enumerate(options, start=1):
+        for i, option in enumerate(options, start=colstart):
             button = ttk.Radiobutton(
                 frame,
                 text=option,
@@ -1130,12 +1525,18 @@ class Keywd_Input:
                 style="Custom.TRadiobutton"
             )
             button.grid(row=row, column=i, padx=10, pady=10)
-            self.disable_widgets_in_frame(self.frames["rumer_set_type_frame"])
+            #self.disable_widgets_in_frame(self.frames["rumer_set_type_frame"])
             if GlobVar.multiplicity == 1:
                 if options is self.radio_buttons_info["PDR_option"]:
                     button.config(state=tk.DISABLED)
             if self.type_orb_count == 1:
                 if options is self.radio_buttons_info["SBB_option"]:
+                    button.config(state=tk.DISABLED)
+            if GlobVar.total_atoms < 3:
+                if options is self.radio_buttons_info["NAB_option"]:
+                    button.config(state=tk.DISABLED)
+            if GlobVar.IAB_flag is True:
+                if options is self.radio_buttons_info["IAB_option"]:
                     button.config(state=tk.DISABLED)
 
     def get_IAB_Priority(self):
@@ -1172,9 +1573,9 @@ class Keywd_Input:
         if method_type:
             self.method_type_entry = True
             if method_type == 'Rumer':
-                self.enable_widgets_in_frame(self.frames["rumer_set_type_frame"])
+                #self.enable_widgets_in_frame(self.frames["rumer_set_type_frame"])
                 self.disable_widgets_in_frame(self.frames["ChemInst_set_type_frame"])
-                self.disable_widgets_in_frame(self.frames["cheminst_str_type_frame"])
+                self.disable_widgets_in_frame(self.frames["VB-ser_type_frame"])
                 self.disable_widgets_in_frame(self.frames["symmetry_set_order_frame"])
                 self.disable_widgets_in_frame(self.frames["ovlp_cal_frame"])
                 self.disable_widgets_in_frame(self.frames["prio_label_frame"])
@@ -1183,9 +1584,9 @@ class Keywd_Input:
                 self.disable_widgets_in_frame(self.frames["priority_str_frame"])
                 self.disable_widgets_in_frame(self.frames["mout_frame"])
             elif method_type == 'Chem inst':
-                self.disable_widgets_in_frame(self.frames["rumer_set_type_frame"])
+                #self.disable_widgets_in_frame(self.frames["rumer_set_type_frame"])
                 self.enable_widgets_in_frame(self.frames["ChemInst_set_type_frame"])
-                self.enable_widgets_in_frame(self.frames["cheminst_str_type_frame"])
+                self.enable_widgets_in_frame(self.frames["VB-set_type_frame"])
                 self.enable_widgets_in_frame(self.frames["symmetry_set_order_frame"])
                 self.enable_widgets_in_frame(self.frames["ovlp_cal_frame"])
                 self.enable_widgets_in_frame(self.frames["prio_label_frame"])
@@ -1248,17 +1649,79 @@ class Keywd_Input:
 
     def cheminst_str_type_read(self):
         cheminst_type = self.cheminst_str_type.get()
-        if cheminst_type:
-            self.cheminst_str_type_entry = True
-#            print('cheminst_type',cheminst_type)
+        print('cheminst_type1',cheminst_type)
+        if cheminst_type == 'Asymmetric':
+            self.button["more_button"].config(state=tk.DISABLED)  # Initially disable the button
+            print('cheminst_type2',cheminst_type)
+        else:
+            self.button["more_button"].config(state=tk.NORMAL) 
+            #self.cheminst_str_type_entry = True
+            print('cheminst_type3',cheminst_type)
         return (cheminst_type)
 
     def symmetry_set_order_type_read(self):
         set_order_type = self.symmetry_set_order_type.get()
         if set_order_type:
             self.symmetry_set_order_type_entry = True
-#            print('set_order_type',set_order_type)
+            print('set_order_type',set_order_type)
             return (set_order_type)
+
+    def get_mout_number(self):
+        mout_entry_window = tk.Toplevel(self.root, padx=10, pady=10)
+        mout_entry_window.title("Set Order")
+        mout_entry_window.geometry("550x300")
+        mout_entry_window.configure(background="lightblue")
+        mout_entry_frame = ttk.Frame(mout_entry_window, style="Colour_Frame.TFrame")
+        mout_entry_frame.grid(row=0, column=0, sticky=tk.W)
+        mout_entry_label= ttk.Label(mout_entry_frame, 
+                                            text="If All Sets or Best Sets are opted the number \n"
+                                                "of total sets can be millians so users can put a\n"
+                                                "maximum number of set (eg. 13 or 1007) or a range \n"
+                                                "(eg. 5000-5015). Default maxima sets are 75000 \n"
+                                            , style="Colour_Label3.TLabel")
+        mout_entry_label.grid(row=0, column=0, columnspan=3, padx=10, pady=10)
+        mout_label = ttk.Label(mout_entry_frame, text=" Enter Value: ", style="Colour_Label.TLabel")
+        mout_label.grid(row=1, column=0, padx=10, pady=10)
+        mout_entry = ttk.Entry(mout_entry_frame, width=10)
+        mout_entry.grid(row=1, column=1, padx=10, pady=10)
+        enter_button = ttk.Button(mout_entry_frame, text="Enter"
+                                  , command=lambda:self.get_maximum_num_output(mout_entry))
+        enter_button.grid(row=1, column=3, padx=10, pady=10)
+        close_button = ttk.Button(mout_entry_frame, text="Close", command=mout_entry_window.destroy)
+        close_button.grid(row=2, column=0, columnspan=3, pady=10)
+
+    def get_set_order(self):
+        #if self.get_set_order_window is None:
+        self.get_set_order_window = tk.Toplevel(self.root, padx=10, pady=10)
+        self.get_set_order_window.title("Set Order")
+        self.get_set_order_window.geometry("550x300")
+        self.get_set_order_window.configure(background="lightblue")
+        symmetry_set_order_frame = ttk.Frame(self.get_set_order_window, style="Colour_Frame.TFrame")
+        symmetry_set_order_frame.grid(row=0, column=0, sticky=tk.W)
+
+        symmetry_set_order_label= ttk.Label(symmetry_set_order_frame, 
+                                            text="Select any order of arrangement of the symmetric \n"
+                                                "group below. It could help searching a symmetric \n"
+                                                "set easyer.'Quality' arrange symmetric groups from \n"
+                                                "higher quality to lower quality. other two options \n"
+                                                "'big to small' and 'small to big' arrange the groups \n"
+                                                "according to their sizes. Default is Quality\n"
+                                            , style="Colour_Label3.TLabel")
+        symmetry_set_order_label.grid(row=0, column=0, columnspan=3, padx=10, pady=10)
+        options=("Quality-Arrange", "Big-to-Small", "Small-to-Big")
+        for i, option in enumerate(options, start=0):
+            button = ttk.Radiobutton(
+                symmetry_set_order_frame,
+                text=option,
+                value=option,
+                variable=self.symmetry_set_order_type,
+                command=self.symmetry_set_order_type_read,
+                style="Custom.TRadiobutton"
+            )
+            button.grid(row=1, column=i, padx=10, pady=10)
+        close_button = ttk.Button(symmetry_set_order_frame, text="DONE", command=self.get_set_order_window.destroy)
+        close_button.grid(row=2, column=0, columnspan=3, pady=10)
+
 
     def Insert_PDB(self):
         if self.prio_bond_window is None:
@@ -1503,13 +1966,18 @@ class Keywd_Input:
 
         checksym, nmbond, symm = 0, 0, 1
 
-        method_mapping = {'Chem inst': 1, 'Rumer': 0}
+        method_mapping = {
+                'Chemical Insight Set': 1,
+                'Rumer Set': 0,
+                'Equal Bond-Distributed Set': 2,
+                'Check Set if Symmetric': 3
+                }
         chinst = map_string_to_int(self.update_method_type(), method_mapping)
 
-        cheminst_mapping = {'Symmetry': 1, 'Asymmetry': 0, 'Checksymm': 1}
+        cheminst_mapping = {'Symmetric': (1, 0), 'Asymmetric': (0, 1)}
         cheminst = self.cheminst_str_type_read()
-        symm = cheminst_mapping.get(cheminst, symm)
-        checksym = 1 if cheminst == 'Checksymm' else 0
+        symm, asymm = cheminst_mapping.get(cheminst, (0, 1))
+        #checksym = 1 if cheminst == 'Checksymm' else 0
 
         set_order_mapping = {'Quality-Arrange': 0, 'Small-to-Big': 1, 'Big-to-Small': 2}
         set_order = map_string_to_int(self.symmetry_set_order_type_read(), set_order_mapping)
@@ -1517,7 +1985,7 @@ class Keywd_Input:
         str_type_mapping = {'Both': 1, 'Covalent': 2, 'Ionic': 3}
         strtype = map_string_to_int(self.Update_Str_Type(), str_type_mapping)
 
-        settype_mapping = {'Single Set': 0, 'All Best Sets': 1, 'All Sets': 2, 'Eq Bond': 4}
+        settype_mapping = {'Single Set': 0, 'Best Sets': 1, 'All Sets': 2}
         nset = map_string_to_int(self.ChemInst_set_type_read(), settype_mapping)
 
         mout = self.mout_number
@@ -1539,9 +2007,136 @@ class Keywd_Input:
 
         Run_button.config(state=tk.NORMAL)
 
-        return (chinst, symm, checksym, strtype, set_order, nset, mout, overlap,
+        return (chinst, symm, asymm, checksym, strtype, set_order, nset, mout, overlap,
                 itbp, nnbp, sybp, mnbondp, radicalp, nmbond)
 
+
+class drawing_molecule:
+    def __init__(self, atoms):
+        self.active_atom = atoms
+    def VB_view(self):
+        if GlobVar.geometry_inserted is True:
+            mol_display = tk.Toplevel()
+            if (GlobVar.molecule_string):
+                mol_display.title(f"{GlobVar.molecule_string}")
+            else:
+                mol_display.title("-Molecule-")
+            mol_display.geometry("700x700")
+            mol_display.configure(background="lightblue")
+
+            mol_frame = tk.Frame(mol_display)
+            mol_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+            button_frame = tk.Frame(mol_frame)
+            button_frame.pack(fill=tk.BOTH, expand=True)
+
+            center_frame = tk.Frame(button_frame)
+            center_frame.pack(expand=True)
+
+            canvas_frame = tk.Frame(mol_frame)
+            canvas_frame.pack(fill=tk.BOTH, expand=True)
+
+            box_frame = tk.Frame(mol_frame, width=100, height=100, bg='blue')
+            box_frame.pack(pady=10)
+            box_frame.pack_propagate(False)
+            
+            fig = plt.Figure(figsize=(6, 6))
+            fig.patch.set_facecolor('lightblue')
+            ax = fig.add_subplot(111, projection='3d')
+            ax.set_facecolor('lightblue')
+            
+            # drawing axis
+            ax.plot([0, 2], [0, 0], [0, 0], color='blue', linewidth=2, linestyle=':')
+            ax.plot([0, 0], [0, 2], [0, 0], color='blue', linewidth=2, linestyle=':')
+            ax.plot([0, 0], [0, 0], [0, 2], color='blue', linewidth=2, linestyle=':')
+            ax.set_box_aspect([1, 1, 1])  # Equal aspect ratio
+
+            if GlobVar.geo_unit == "Bohr":
+                bohr_to_angstrom = 0.529177
+                for atom in self.active_atoms:
+                    atom['x'] *= bohr_to_angstrom
+                    atom['y'] *= bohr_to_angstrom
+                    atom['z'] *= bohr_to_angstrom
+
+            # drawing atoms
+            old_colors = []
+            self.selected_atoms = []
+            atom_scatters = []
+            scale_factor = 0.5
+            for atom1 in self.active_atoms:
+                x1 = atom1['x']
+                y1 = atom1['y']
+                z1 = atom1['z']
+                symbol = atom1['atom']
+
+                radius = GlobVar.at_covrad.get(symbol)  # fallback value if element missing
+                size = (radius * scale_factor)**2
+                print('size of the atom',size)
+
+                scatters = ax.scatter(x1, y1, z1,
+                           color=GlobVar.colors.get(atom1['atom'], 'green'),
+                           s=size)
+
+                atom_scatters.append(scatters)
+                ax.text(x1, y1, z1 + 0.3, atom1['atom'], color='black', fontsize=10, ha='center', va='bottom')
+                clr = GlobVar.colors.get(atom1['atom'])
+                old_colors.append(clr)
+            print('scatters',scatters)
+
+            for atom1, atom2 in combinations(self.active_atoms, 2):
+                x1, y1, z1 = atom1['x'], atom1['y'], atom1['z']
+                x2, y2, z2 = atom2['x'], atom2['y'], atom2['z']
+
+                distance = math.sqrt(
+                        (x2-x1)**2 +
+                        (y2-y1)**2 +
+                        (z2-z1)**2
+                        )
+
+                r1 = GlobVar.at_covrad.get(atom1['atom'])
+                r2 = GlobVar.at_covrad.get(atom2['atom'])
+
+                if r1 is not None and r2 is not None:
+                    covrad = (r1 + r2)/100.0
+                    if distance <= covrad:
+                        ax.plot([x1, x2], [y1, y2], [z1, z2], color='black', linewidth=2.5)
+                else:
+                    messagebox.showerror("Not Found",f"covalent radious of {atom1} and/or {atom2}\n"
+                                         "are not found in the list")
+                            
+            
+            # Make panes transparent (no background)
+            ax.xaxis.set_pane_color((1, 1, 1, 0))
+            ax.yaxis.set_pane_color((1, 1, 1, 0))
+            ax.zaxis.set_pane_color((1, 1, 1, 0))
+            
+            # Hide grid lines
+            ax.grid(False)
+            
+            # Hide tick marks and labels
+            ax.set_xticks([])
+            ax.set_yticks([])
+            ax.set_zticks([])
+            
+            # Hide box edges (axis lines)
+            try:
+                ax.w_xaxis.line.set_color((0, 0, 0, 0))
+                ax.w_yaxis.line.set_color((0, 0, 0, 0))
+                ax.w_zaxis.line.set_color((0, 0, 0, 0))
+            except AttributeError:
+                # For newer Matplotlib versions
+                for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
+                    axis.line.set_alpha(0)
+
+            # Add axis labels
+            ax.text(2, 0, 0, 'X', color='blue', fontsize=14, fontweight='bold')
+            ax.text(0, 2, 0, 'Y', color='blue', fontsize=14, fontweight='bold')
+            ax.text(0, 0, 2, 'Z', color='blue', fontsize=14, fontweight='bold')
+
+            
+            canvas = FigureCanvasTkAgg(fig, master=canvas_frame)
+            canvas_widget = canvas.get_tk_widget()
+            canvas_widget.pack(fill=tk.BOTH, expand=True)
 
 class Run_Fort:
     def __init__(self, root, ctrl_class):
@@ -1549,9 +2144,9 @@ class Run_Fort:
         self.ctrl_class = ctrl_class
 
     def get_keywds(self, keywd_class):
-        self.chinst, self.symm, self.checksym, self.strtype, self.set_order, self.nset, \
-                self.mout, self.ovlp, self.itb, self.nnb, self.syb, self.mnbond, \
-                self.radical, self.nmbond = keywd_class.get_keywds()
+        self.chinst, self.symm, self.asymm, self.checksym, self.strtype, self.set_order, \
+                self.nset, self.mout, self.ovlp, self.itb, self.nnb, self.syb, \
+                self.mnbond, self.radical, self.nmbond = keywd_class.get_keywds()
         GlobVar.symm_key = self.symm
 
     def get_orbs(self, orb_class):
@@ -1568,7 +2163,7 @@ class Run_Fort:
         if not GlobVar.geometry_inserted:
             messagebox.showerror("Invalid Geometry", "please insert the geometry")
             return
-        symat, coordx, coordy, coordz, symatno, self.totalatoms = GlobVar.readgeo.get_geometry_data()
+        symat, coordx, coordy, coordz, symatno = GlobVar.readgeo.get_geometry_data()
         # Convert each to a numpy array
         self.symat_py = np.zeros(100, dtype="U5")
         self.symat_py[:len(symat)] = symat
@@ -1614,10 +2209,11 @@ class Run_Fort:
         print(self.atn)
         print(self.orbsym)
         print(self.strtype)
-        print(self.totalatoms)
+        print(GlobVar.total_atoms)
         print(GlobVar.num_iao)
         print(self.actv_atm_num)
         print(output_folder)
+        #exit()
         symm_str.get_ctrl_inputs(
                 self.geometry_unit,
                 self.nao,
@@ -1626,7 +2222,7 @@ class Run_Fort:
                 GlobVar.molecule_string,
                 self.chinst, 
                 self.symm,
-#                self.checksym,
+                self.asymm,
                 self.set_order,
                 self.nset,
                 self.mout,
@@ -1648,7 +2244,7 @@ class Run_Fort:
                 self.atn,
                 self.orbsym,
                 self.strtype,
-                self.totalatoms,
+                GlobVar.total_atoms,
                 GlobVar.num_iao,
                 self.actv_atm_num,
                 output_folder
@@ -1774,9 +2370,6 @@ class Output:
 
         self.tempfname = fname + '/' + 'out.temp'
 
-#        Output_window.grid_columnconfigure(0, weight=1)
-#        Output_window.grid_columnconfigure(1, weight=1)
-
         set_text_wt = tk.Text(self.frames["set_frame"], wrap=tk.WORD, bg="white", fg="black", width=50, height=15)
         set_text_wt.grid(row=0, column=0, padx=5, pady=5, sticky="w")
 
@@ -1795,15 +2388,11 @@ class Output:
         font = tkFont.Font(family="Helvetica", size=16)
         self.set_info_wt.configure(yscrollcommand=v_info_scrollbar.set, font=font)
 
-#        self.frames["set_frame"].grid(row=3, column=0, sticky="w")
-#        self.frames["info_frame"].grid(row=3, column=1, sticky="ew")
-
         print('out.temp file path', self.tempfname)
         if not os.path.exists(self.tempfname):
             messagebox.showerror(
                     'Error', 'No Output File has been found'
                     )
-            #set_text_wt.insert(tk.END, "No Structures are available\n")
             return
         else:
             with open(self.tempfname, "r") as file:
@@ -1856,19 +2445,6 @@ class Output:
         print('flag',GlobVar.set_id)
 
         set_text_wt.tag_configure("right", justify="right")
-        #print('out.temp file path', self.tempfname)
-        #if not os.path.exists(self.tempfname):
-        #    set_text_wt.insert(tk.END, "No Structures are available\n")
-        #    return
-        #else:
-        #    with open(self.tempfname, "r") as file:
-        #        try:
-        #            lines = file.readlines()
-        #        except: 
-        #            messagebox.showerror(
-        #                    'Error', 'No independent set has been found, try after few munits'
-        #                    )
-        #            return
         print('lines',lines)
         for line in lines:
             if line.startswith('Set_number'):
@@ -2021,7 +2597,7 @@ class class_manager:
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Chemical Insight & Symmetric VB (CISVB) Structures Generation Software")
-    root.geometry("600x920")
+    root.geometry("630x920")
     root.configure(background="lightblue")
     GlobVar.configure_styles()
     inputc = Ctrl_Input(root)

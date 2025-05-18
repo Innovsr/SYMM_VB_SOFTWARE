@@ -85,7 +85,8 @@ ttqlty2=strnn+noq2
 ttqlty3=strnn+noq3
 
 
-write(*,*)'sl  structures           group_numbers'
+if(symm.eq.1) write(*,*)'sl  structures           group_numbers'
+if(asymm.eq.1) write(*,*)'sl  structures           quality_factors'
 do i=1,ncqss
    write(*,231)i,(str3(i,j),j=1,nae),quality_fac(i)
    group_num(i)=quality_fac(i)
@@ -93,7 +94,7 @@ enddo
 
 231 format(30I3)
 
-
+if(symm.eq.1) then
 jj=1
 loop1:do m19=1,ncqss
   if(m19.eq.1)qul(1)=quality_fac(1)
@@ -121,6 +122,9 @@ do i=1,nqul
    nqset(i)=jjj
    strset(i)=jj
 enddo
+endif
+
+if (asymm.eq.1) nqul=ncqs
 
 flg=0
 totstr=0
@@ -138,9 +142,9 @@ do m1=1,nqul
    i7=0
    m21=0
    print*,'m1m1',m1
+   print*,'loop1'
 
-!p rint*,'loop1'
-   call write_symm_xmi_1(i7,m21,m1,sf1,sf2,str3)!,q_fac2)
+   call write_symm_xmi_1(i7,m21,m1,sf1,sf2,str3)
    if (sf1.eq.1) cycle
    if (sf2.eq.1) return
 
@@ -151,8 +155,9 @@ do m1=1,nqul
       i7=i2i7
       m21=m2m21
       print*,'m2m2',m2
+      print*,'loop2'
 
-      call write_symm_xmi_1(i7,m21,m2,sf1,sf2,str3)!,q_fac2)
+      call write_symm_xmi_1(i7,m21,m2,sf1,sf2,str3)
       if (sf1.eq.1) cycle
       if (sf2.eq.1) return
       
@@ -163,8 +168,9 @@ do m1=1,nqul
          i7=i3i7
          m21=m3m21
          print*,'m3m3',m3
+         print*,'loop3'
          
-         call write_symm_xmi_1(i7,m21,m3,sf1,sf2,str3)!,q_fac2)
+         call write_symm_xmi_1(i7,m21,m3,sf1,sf2,str3)
          if (sf1.eq.1) cycle
          if (sf2.eq.1) return
          
@@ -175,8 +181,9 @@ do m1=1,nqul
             i7=i4i7
             m21=m4m21
             print*,'m4m4',m4
+            print*,'loop4'
             
-            call write_symm_xmi_1(i7,m21,m4,sf1,sf2,str3)!,q_fac2)
+            call write_symm_xmi_1(i7,m21,m4,sf1,sf2,str3)
             if (sf1.eq.1) cycle
             if (sf2.eq.1) return
             
@@ -187,8 +194,9 @@ do m1=1,nqul
                i7=i5i7
                m21=m5m21
                print*,'m5m5',m5
+               print*,'loop5'
                
-               call write_symm_xmi_1(i7,m21,m5,sf1,sf2,str3)!,q_fac2)
+               call write_symm_xmi_1(i7,m21,m5,sf1,sf2,str3)
                if (sf1.eq.1) cycle
                if (sf2.eq.1) return
                
@@ -199,7 +207,7 @@ do m1=1,nqul
                   i7=i6i7
                   m21=m6m21
                   
-                  call write_symm_xmi_1(i7,m21,m6,sf1,sf2,str3)!,q_fac2)
+                  call write_symm_xmi_1(i7,m21,m6,sf1,sf2,str3)
                   if (sf1.eq.1) cycle
                   if (sf2.eq.1) return
                   
@@ -211,7 +219,7 @@ do m1=1,nqul
                      m21=m7m21
                      
                      !print*,'loop7'
-                     call write_symm_xmi_1(i7,m21,m7,sf1,sf2,str3)!,q_fac2)
+                     call write_symm_xmi_1(i7,m21,m7,sf1,sf2,str3)
                      if (sf1.eq.1) cycle
                      if (sf2.eq.1) return
                      
@@ -222,7 +230,7 @@ do m1=1,nqul
                         i7=i8i7
                         m21=m8m21
                         
-                        call write_symm_xmi_1(i7,m21,m8,sf1,sf2,str3)!,q_fac2)
+                        call write_symm_xmi_1(i7,m21,m8,sf1,sf2,str3)
                         if (sf1.eq.1) cycle
                         if (sf2.eq.1) return
                         
@@ -234,7 +242,7 @@ do m1=1,nqul
                            m21=m9m21
                            
                            !print*,'loop9'
-                           call write_symm_xmi_1(i7,m21,m9,sf1,sf2,str3)!,q_fac2)
+                           call write_symm_xmi_1(i7,m21,m9,sf1,sf2,str3)
                            if (sf1.eq.1) cycle
                            if (sf2.eq.1) return
                            
@@ -246,7 +254,7 @@ do m1=1,nqul
                               m21=m10m21
                               
                               !print*,'loop10'
-                              call write_symm_xmi_1(i7,m21,m10,sf1,sf2,str3)!,q_fac2)
+                              call write_symm_xmi_1(i7,m21,m10,sf1,sf2,str3)
                               if (sf1.eq.1) cycle
                               if (sf2.eq.1) return
                               
@@ -258,7 +266,7 @@ do m1=1,nqul
                                  m21=m11m21
                                  
                                  !print*,'loop11'
-                                 call write_symm_xmi_1(i7,m21,m11,sf1,sf2,str3)!,q_fac2)
+                                 call write_symm_xmi_1(i7,m21,m11,sf1,sf2,str3)
                                  if (sf1.eq.1) cycle
                                  if (sf2.eq.1) return
                                  
@@ -270,7 +278,7 @@ do m1=1,nqul
                                     m21=m12m21
                                     
                                     print*,'loop12'
-                                    call write_symm_xmi_1(i7,m21,m12,sf1,sf2,str3)!,q_fac2)
+                                    call write_symm_xmi_1(i7,m21,m12,sf1,sf2,str3)
                                     if (sf1.eq.1) cycle
                                     if (sf2.eq.1) return
                                     
@@ -282,7 +290,7 @@ do m1=1,nqul
                                        m21=m13m21
                                        
                                        print*,'loop13'
-                                       call write_symm_xmi_1(i7,m21,m13,sf1,sf2,str3)!,q_fac2)
+                                       call write_symm_xmi_1(i7,m21,m13,sf1,sf2,str3)
                                        if (sf1.eq.1) cycle
                                        if (sf2.eq.1) return
                                        
@@ -293,7 +301,7 @@ do m1=1,nqul
                                           i7=i14i7
                                           m21=m14m21
                                           
-                                          call write_symm_xmi_1(i7,m21,m14,sf1,sf2,str3)!,q_fac2)
+                                          call write_symm_xmi_1(i7,m21,m14,sf1,sf2,str3)
                                           if (sf1.eq.1) cycle
                                           if (sf2.eq.1) return
                                           
@@ -305,7 +313,7 @@ do m1=1,nqul
                                              m21=m15m21
                                              
                                              print*,'loop15'
-                                             call write_symm_xmi_1(i7,m21,m15,sf1,sf2,str3)!,q_fac2)
+                                             call write_symm_xmi_1(i7,m21,m15,sf1,sf2,str3)
                                              if (sf1.eq.1) cycle
                                              if (sf2.eq.1) return
                                              
@@ -317,7 +325,7 @@ do m1=1,nqul
                                                 m21=m16m21
                                                 
                                                 print*,'loop16'
-                                                call write_symm_xmi_1(i7,m21,m16,sf1,sf2,str3)!,q_fac2)
+                                                call write_symm_xmi_1(i7,m21,m16,sf1,sf2,str3)
                                                 if (sf1.eq.1) cycle
                                                 if (sf2.eq.1) return
                                                 

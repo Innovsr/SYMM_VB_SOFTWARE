@@ -24,7 +24,7 @@ integer, pointer::str1(:,:),str2(:,:)
 ! set_order=1 means  smaller to larger sets
 ! set_order=2 means larger to smaller sets
 
-print*,'set_order',set_order
+print*,'set_order',set_order, MaxStrOepo, nae
 print*,'enter qult_str_arrange'
 x=MaxStrOepo
 y=nae
@@ -58,6 +58,7 @@ allocate(stq4(x))
 allocate(sl_num(x))
 allocate(sl_qfac(x))
 allocate(sl_qfac1(x))
+allocate(str3(x,y))
 
 sym_str_qual1=0
 sym_str_num_final=0
@@ -118,13 +119,16 @@ do k6=1,nqul1
   enddo loop2
 enddo
 
+!deallocate(qul1)
 k7=0
 do k6=jj,1,-1
   k7=k7+1
   qual4(k7)=qual3(k6)
 enddo
 
-str1 = 0
+!deallocate(qual3)
+
+!str1 = 0
 !!!!! for the non-symmetric system .. if user dont want to take the symmetry in the calculations !!!!!!!!! 
 if(symm.eq.0)then
   i4=0
@@ -144,6 +148,7 @@ if(symm.eq.0)then
   enddo
 endif
 
+!deallocate(qual4)
 !!!!! for the symmetric system .. if user opted to take the symmetry calculations !!!!!!!!! 
 if(symm.ne.0)then
 do i=1,n
@@ -172,11 +177,12 @@ enddo
   enddo
   mloopsymsc=ind
   
-  !print*,'mq_fac,msymq,mloopsymsc',mq_fac,msymq,mloopsymsc
-  !do i = 1,n
-  !  print*,'symq',symq(i), q_fac(i),loopsymsc(i)
-  !enddo
-  
+  print*,'mq_fac,msymq,mloopsymsc',mq_fac,msymq,mloopsymsc
+  do i = 1,n
+    print*,'symq',symq(i), quality_fac(i),loopsymsc(i)
+  enddo
+!  mloopsymsc = 0
+! stop 
   
   bnd=(nae-nl*2-nlast)/2
   m=0
@@ -366,7 +372,7 @@ enddo
 
 !!! if user want some symmetric set must be availeble stats bellow !!!
 
-allocate(str3(x,y))
+!allocate(str3(x,y))
 str3(x,y)=0
 if(nstrt.ne.0.and.symm.eq.1)then
   do j=1,n
@@ -497,13 +503,13 @@ if(nstrt.ne.0.and.symm.eq.1)then
   enddo
 endif
 
-deallocate(str3)
+!deallocate(str3)
 !stop
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !!!!!!!!!!!!! below part works when user wish to have some structures always in the top of the list !!!!!!!!!!!!!!
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-allocate(str3(x,y))
+!allocate(str3(x,y))
 str3(x,y)=0
 
 if(nstrt.ne.0.and.symm.eq.0)then
@@ -702,27 +708,45 @@ endif
 !do i=1,kk
 !print*,'st_ct1(kk)',st_ct1(i),kk
 !enddo
-!print*,'i4',i4
-deallocate(str3)
-deallocate(q_fac3)
-deallocate(q_fac5)
-deallocate(q_fac6)
-deallocate(q_fac7)
-deallocate(q_fac2)
-deallocate(qul1)
-deallocate(qual3)
-deallocate(qual4)
-deallocate(bdq)
-deallocate(bdq1)
-deallocate(str_cnt)
-deallocate(stq1)
-deallocate(stq2)
-deallocate(stq3)
-deallocate(stq4)
-deallocate(sl_num)
-deallocate(sl_qfac)
-deallocate(sl_qfac1)
-print*,'exit qult_str_arrange'
+print*,'i am here:qult_arr'
+!deallocate(str3)
+!print*,'i am here1'
+!deallocate(q_fac3)
+!print*,'i am here2'
+!deallocate(q_fac5)
+!print*,'i am here3'
+!deallocate(q_fac6)
+!print*,'i am here4'
+!deallocate(q_fac7)
+!print*,'i am here5'
+!!deallocate(q_fac2)
+!print*,'i am here6'
+!!deallocate(qul1)
+!print*,'i am here7'
+!!deallocate(qual3)
+!print*,'i am here8'
+!!deallocate(qual4)
+!print*,'i am here9'
+!deallocate(bdq)
+!print*,'i am here9'
+!deallocate(bdq1)
+!print*,'i am here10'
+!deallocate(str_cnt)
+!print*,'i am here11'
+!deallocate(stq1)
+!print*,'i am here12'
+!deallocate(stq2)
+!print*,'i am here13'
+!deallocate(stq3)
+!print*,'i am here14'
+!deallocate(stq4)
+!print*,'i am here15'
+!deallocate(sl_num)
+!print*,'i am here16'
+!deallocate(sl_qfac)
+!print*,'i am here17'
+!deallocate(sl_qfac1)
+!print*,'exit qult_str_arrange'
 
 !stop
 return

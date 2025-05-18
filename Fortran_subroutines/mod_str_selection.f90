@@ -27,7 +27,7 @@ elporb,perm_nstr,total_str,rep,allowed_nstr
 integer::str_cnt(15000), lps(50)
 integer::qulsymm(15000),symqq(15000),tqlty1,bqlty1,sqlty1, factorial
 integer, pointer::astr(:,:), str1(:,:), str2(:,:)
-integer, pointer:: fvec(:,:),q_fac(:)
+integer, pointer:: fvec(:,:)!,q_fac(:)
 
 
 if(.not. allocated(rumer))then
@@ -234,20 +234,22 @@ loop1:do i1=1,m4
 !***********************************************************************
 
    if (flg1.eq.0.and.flg_cov.eq.1.and.flg_ion.eq.0)then
-      if (symm.eq.1) then
+      if (symm.eq.1.and.asymm.eq.0) then
          call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
          if(sig_sym_flg.eq.1)call symmetry_cal_sig(nl,str1,str1_cnt,symq,nssym)
          if(sig_sym_flg.ne.1)call symmetry_cal_pi(nl,str1,str1_cnt,symq,nssym)
          !print*,'symq',sig_sym_flg,'|',(symq(i7),i7=1,str1_cnt)
          !stop
+         print*,'qult_str_arr in'
          call qult_str_arrange(nl,str1,str1_cnt,str2)
+         print*,'qult_str_arr out'
          call vector_rep(nl,str2,str1_cnt,fvec)
          call rumer_structures(nl,str2,str1_cnt)
          call write_structures_file(str1_cnt,str2)
          call write_symm_xmi_new(nl,allowed_nstr,str2,str1_cnt)
       endif
 
-      if (symm.eq.0.and.nfset.ne.4)then
+      if (symm.eq.0.and.nfset.ne.4.and.asymm.eq.0)then
          call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
          call qult_str_arrange(nl,str1,str1_cnt,str2)
          call rumer_structures(nl,str2,str1_cnt)
@@ -256,7 +258,7 @@ loop1:do i1=1,m4
          call main_bond_cal(nl,str2,str1_cnt,mbondq)
       endif
 
-      if (symm.eq.0.and.nfset.eq.4)then
+      if (symm.eq.0.and.nfset.eq.4.and.asymm.eq.0)then
          call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
          call qult_str_arrange(nl,str1,str1_cnt,str2)
          call rumer_structures(nl,str2,str1_cnt)
@@ -264,6 +266,17 @@ loop1:do i1=1,m4
          call main_bond_cal(nl,str2,str1_cnt,mbondq)
          call check_str_bond(nl,str2,str1_cnt)
          call eq_dstr_set(str1_cnt,nl,allowed_nstr,str2)
+      endif
+
+      if (symm.eq.0.and.asymm.eq.1) then
+         print*,'sourav inside the cheminst assymmetric str generation'
+         call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
+         call qult_str_arrange(nl,str1,str1_cnt,str2)
+         print*,'qult_str_arr out'
+         call vector_rep(nl,str2,str1_cnt,fvec)
+         call rumer_structures(nl,str2,str1_cnt)
+         call write_structures_file(str1_cnt,str2)
+         call write_symm_xmi_new(nl,allowed_nstr,str2,str1_cnt)
       endif
    endif
 
