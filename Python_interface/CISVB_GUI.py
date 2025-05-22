@@ -71,12 +71,14 @@ class GlobVar:
     molecule_string = None      # string of atoms present in the molecule or reaction.
     orbital_input = False       # specify if orbitals are inserted or not.
     orbital_data = []           #
-    atoms = []      # List to store atom data
+    all_atoms = []      # List to store atom data
     set_id = 0               # output set id to store present (on show) set number
     symm_key = 0
     total_atoms = None
     IAB_flag = True
     geo_unit = "Bohr"
+    Gl_atoset = np.zeros((200, 50), dtype=int)
+    Gl_activeatoms = np.zeros(30, dtype=int)
     at_list_bold = [            # List of Atoms according to periodic table
         'H', 'HE', 'LI', 'BE', 'B', 'C', 'N', 'O', 'F', 'NE', 'NA', 'MG', 'AL',
         'SL', 'P', 'S', 'CL', 'AR', 'K', 'CA', 'SC', 'TI', 'V', 'CR', 'MN', 'FE', 'CO', 'NR',
@@ -435,6 +437,7 @@ class Read_Geo:
         self.coordx = []     # list to store atoms x coordinates
         self.coordy = []     # list to store atoms y coordinates
         self.coordz = []     # list to store atoms z coordinates
+        self.atoms = []
 
     def Deconvert(self, value):
         ''' Check if the string contains 'D' for scientific notation '''
@@ -452,18 +455,21 @@ class Read_Geo:
         try:
             with open(self.file_path, 'r') as file:
                 lines = file.readlines()
+                nline = 0
             for line in lines:
                 line = line.strip()
                 if not line:  # Skip empty lines
                     continue
                 columns = line.split()
+                nline += 1
                 if len(columns) == 4:
                     ''' 4-column format: atom name, x, y, z'''
                     atom_name = columns[0].capitalize()  # Capitalize atom name
                     x = self.Deconvert(columns[1])
                     y = self.Deconvert(columns[2])
                     z = self.Deconvert(columns[3])
-                    GlobVar.atoms.append({
+                    self.atoms.append({
+                        "sl_num":nline,
                         "atom": atom_name,
                         "x": x,
                         "y": y,
@@ -476,7 +482,8 @@ class Read_Geo:
                     x = self.Deconvert(columns[2])
                     y = self.Deconvert(columns[3])
                     z = self.Deconvert(columns[4])
-                    GlobVar.atoms.append({
+                    self.atoms.append({
+                        "sl_num":nline,
                         "atom": atom_name,
                         "atomic_number": atomic_number,
                         "x": x,
@@ -488,9 +495,17 @@ class Read_Geo:
                             "Unknown Format", "Geometry file format is unknown Please Check help"
                             )
                     continue
-#            print('atom', GlobVar.atoms)
-            GlobVar.total_atoms = len(GlobVar.atoms)
-            for atom in GlobVar.atoms:
+
+            if GlobVar.geo_unit == "Bohr":
+                bohr_to_angstrom = 0.529177
+                for atom in self.atoms:
+                    atom['x'] *= bohr_to_angstrom
+                    atom['y'] *= bohr_to_angstrom
+                    atom['z'] *= bohr_to_angstrom
+
+            print('atom', self.atoms)
+            GlobVar.total_atoms = len(self.atoms)
+            for atom in self.atoms:
                 self.symat.append(atom["atom"])
                 self.coordx.append(atom["x"])
                 self.coordy.append(atom["y"])
@@ -506,10 +521,12 @@ class Read_Geo:
 #            print("self.symat, self.coordx, self.coordy, self.coordz, self.symatno",self.symat, \
 #            self.coordx, self.coordy, self.coordz, self.symatno)
             GlobVar.geometry_inserted = True
+            GlobVar.all_atoms = self.atoms
             return self.symat, self.coordx, self.coordy, self.coordz, self.symatno
         except Exception as e:
             print(f"An error occurred: {e}")
             return None
+        return (self.atoms)
 
     def insert_geo(self, root):
         geo_window = tk.Toplevel(root)
@@ -552,6 +569,7 @@ class Read_Geo:
         button_Insert.grid(row=0, column=3, padx=10, pady=10, sticky=tk.W)
         button_Close = ttk.Button(frame3, text="Close", command=geo_window.destroy)
         button_Close.grid(row=1, column=3, padx=10, pady=10, sticky=tk.W)
+        return (self.atoms)
 
     def create_pan(self, atom_num_entry):
         self.atom_num = int(atom_num_entry.get())
@@ -585,7 +603,7 @@ class Read_Geo:
             self.entry_widgets.append((Atom, X_coord, Y_coord, Z_coord))
 
     def fetch_data(self):
-        GlobVar.atoms.clear()
+        self.atoms.clear()
         self.symat.clear()
         self.coordx.clear()
         self.coordy.clear()
@@ -602,15 +620,22 @@ class Read_Geo:
                     messagebox.showerror("Input Error", "Coordinates must be valid numbers.")
                     return
 
-                GlobVar.atoms.append({
+                self.atoms.append({
                     "atom": atom_name,
                     "x": x,
                     "y": y,
                     "z": z
                 })
 
+        if GlobVar.geo_unit == "Bohr":
+            bohr_to_angstrom = 0.529177
+            for atom in self.atoms:
+                atom['x'] *= bohr_to_angstrom
+                atom['y'] *= bohr_to_angstrom
+                atom['z'] *= bohr_to_angstrom
+
         GlobVar.total_atoms = self.atom_num
-        for atom in GlobVar.atoms:
+        for atom in self.atoms:
             self.symat.append(atom["atom"])
             self.coordx.append(atom["x"])
             self.coordy.append(atom["y"])
@@ -630,6 +655,7 @@ class Read_Geo:
         #print("self.symat, self.coordx, self.coordy, self.coordz, self.symatno", self.symat, self.coordx,\
         #self.coordy, self.coordz, self.symatno)
         GlobVar.geometry_inserted = True
+        GlobVar.all_atoms = self.atoms
 
         return self.symat, self.coordx, self.coordy, self.coordz, self.symatno
 
@@ -674,7 +700,7 @@ class Read_Geo:
             # Insert rows from self.atoms
 
             tree.insert("", tk.END, values=(" ", " ", " ", " "))
-            for atom in GlobVar.atoms:
+            for atom in self.atoms:
                 formatted_values = (
                         atom["atom"],
                         f"{float(atom['x']):.10f}",
@@ -699,6 +725,8 @@ class Read_Geo:
 
     def display_molecule(self):
         if GlobVar.geometry_inserted is True:
+            atoms_new = []
+            atoms_new = self.atoms
             mol_display = tk.Toplevel()
             if (GlobVar.molecule_string):
                 mol_display.title(f"{GlobVar.molecule_string}")
@@ -706,6 +734,8 @@ class Read_Geo:
                 mol_display.title("-Molecule-")
             mol_display.geometry("700x700")
             mol_display.configure(background="lightblue")
+
+            #self.atoms = GlobVar.atoms
 
             mol_frame = tk.Frame(mol_display)
             mol_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
@@ -734,19 +764,12 @@ class Read_Geo:
             ax.plot([0, 0], [0, 0], [0, 2], color='blue', linewidth=2, linestyle=':')
             ax.set_box_aspect([1, 1, 1])  # Equal aspect ratio
 
-            if GlobVar.geo_unit == "Bohr":
-                bohr_to_angstrom = 0.529177
-                for atom in GlobVar.atoms:
-                    atom['x'] *= bohr_to_angstrom
-                    atom['y'] *= bohr_to_angstrom
-                    atom['z'] *= bohr_to_angstrom
-
             # drawing atoms
             old_colors = []
             self.selected_atoms = []
             atom_scatters = []
             scale_factor = 0.5
-            for atom1 in GlobVar.atoms:
+            for atom1 in atoms_new:
                 x1 = atom1['x']
                 y1 = atom1['y']
                 z1 = atom1['z']
@@ -766,7 +789,7 @@ class Read_Geo:
                 old_colors.append(clr)
             print('scatters',scatters)
 
-            for atom1, atom2 in combinations(GlobVar.atoms, 2):
+            for atom1, atom2 in combinations(atoms_new, 2):
                 x1, y1, z1 = atom1['x'], atom1['y'], atom1['z']
                 x2, y2, z2 = atom2['x'], atom2['y'], atom2['z']
 
@@ -830,7 +853,7 @@ class Read_Geo:
 
                 # Get projection of 3D points
                 coords_2d = []
-                for atom in GlobVar.atoms:
+                for atom in atoms_new:
                     x3, y3, z3 = atom['x'], atom['y'], atom['z']
                     x_proj, y_proj, _ = proj3d.proj_transform(x3, y3, z3, ax.get_proj())
                     x_disp, y_disp = ax.transData.transform((x_proj, y_proj))
@@ -840,7 +863,7 @@ class Read_Geo:
                 distances = np.linalg.norm(coords_2d - np.array([x2, y2]), axis=1)
                 dist = min(distances)
                 index = np.argmin(distances)
-                atom_clicked = GlobVar.atoms[index]
+                atom_clicked = atoms_new[index]
                 r1 = GlobVar.at_covrad.get(atom_clicked['atom'])
                 print('dist, index',dist, index)
                 if dist <= math.sqrt(size):
@@ -990,6 +1013,7 @@ class Orb_Input:
             self.orbital_frame.geometry("560x560")
             self.orbital_frame.configure(background="lightblue")
             GlobVar.orbital_input = True
+            atoset_created = False
 
             for widget in self.orbital_frame.winfo_children():
                 widget.destroy()
@@ -1036,23 +1060,21 @@ class Orb_Input:
 
 
             insert_button = ttk.Button(
-                    self.orbital_frame, text="Insert", command=self.validate_and_store_orbital_data
-                    )
+                    self.orbital_frame, text="Insert", command=self.validate_and_store_orbital_data)
             insert_button.grid(row=3, column=0, columnspan=2, pady=10)
 
             self.show_button = ttk.Button(
-                    self.orbital_frame, text="View_Orbs", command=drawing_molecule
-                    )
+                    self.orbital_frame, text="View Orbs", command=self.call_drawing_molecule)
             self.show_button.grid(row=3, column=1, columnspan=2, pady=10)
-            self.show_button.config(state=tk.DISABLED)  # Initially disable the button
+            if not atoset_created:
+                self.show_button.config(state=tk.DISABLED)  # Initially disable the button
 
             close_button = ttk.Button(self.orbital_frame, text="Close", command=self.destroy_orbs)
             close_button.grid(row=4, column=0, pady=10, columnspan=3)
 
             for i in range(self.num_orbital):
                 label4 = ttk.Label(
-                        frame1, text=f"active orbital {i+1} ", style="Colour_Label.TLabel"
-                        )
+                        frame1, text=f"active orbital {i+1} ", style="Colour_Label.TLabel")
                 label4.grid(row=i+3, column=0, padx=30, pady=10, sticky=tk.W)
 
                 # Get atom number from orbital_data if available
@@ -1071,6 +1093,12 @@ class Orb_Input:
                 self.typ_entry.append(self.assotyp_entry)
 #            self.assoatm_entry.insert(0, atom_number)
 #            self.atm_entry.append(self.assoatm_entry)
+
+    def call_drawing_molecule(self):
+        GlobVar.Gl_atoset = self.atoset
+        GlobVar.Gl_activeatoms = self.activeatoms
+        d=drawing_molecule()
+        d.VB_view()
 
     def destroy_orbs(self):
         self.orbital_frame.destroy()
@@ -1184,13 +1212,14 @@ class Orb_Input:
         self.orbsym[2, :] = pzorbs_padded
         self.orbsym[3, :] = sorbs_padded
 
-#        print('norbsym', self.norbsym_py)
+        print('norbsym', self.norbsym_py)
 #        print('sig_type, px_type, py_type, pz_type', sig_type, px_type, py_type, pz_type )
 
         # Checking how many types are non-zero
         GlobVar.type_orb_count = sum(1 for count in [sig_type, px_type, py_type, pz_type] if count > 0)
 
         self.atoset = self.create_matrix()
+        atoset_created = True
         """atoset is matrix where each row represents an atom according to the geometry, if the atom ia
         an active atom, the corresponding column get '1' otherwise '0'. and the next columns contain the
         corresponding active orbital numbers associated with that atom."""
@@ -1199,7 +1228,7 @@ class Orb_Input:
         self.keywd_button.config(state=tk.NORMAL)
         self.show_button.config(state = tk.NORMAL)
         print('atoset',self.atoset)
-        sys.exit()
+#        sys.exit()
 #        self.orbital_button.config(state=tk.DISABLED)  # Initially disable the button
 
     def create_matrix(self):
@@ -2012,8 +2041,15 @@ class Keywd_Input:
 
 
 class drawing_molecule:
-    def __init__(self, atoms):
-        self.active_atom = atoms
+    def __init__(self):
+        self.atoset = GlobVar.Gl_atoset
+        self.active_atoms = GlobVar.Gl_activeatoms
+        #self.atoset = atoset
+        #self.active_atoms = active_atoms
+        self.atoms = GlobVar.all_atoms
+        print('self .active_atoms',self.active_atoms)
+        print('self.atoms',self.atoms)
+
     def VB_view(self):
         if GlobVar.geometry_inserted is True:
             mol_display = tk.Toplevel()
@@ -2051,58 +2087,53 @@ class drawing_molecule:
             ax.plot([0, 0], [0, 0], [0, 2], color='blue', linewidth=2, linestyle=':')
             ax.set_box_aspect([1, 1, 1])  # Equal aspect ratio
 
-            if GlobVar.geo_unit == "Bohr":
-                bohr_to_angstrom = 0.529177
-                for atom in self.active_atoms:
-                    atom['x'] *= bohr_to_angstrom
-                    atom['y'] *= bohr_to_angstrom
-                    atom['z'] *= bohr_to_angstrom
-
             # drawing atoms
             old_colors = []
             self.selected_atoms = []
             atom_scatters = []
             scale_factor = 0.5
-            for atom1 in self.active_atoms:
-                x1 = atom1['x']
-                y1 = atom1['y']
-                z1 = atom1['z']
-                symbol = atom1['atom']
+            for entry in self.atoms:
+                if entry['sl_num'] in self.active_atoms:
+                    x1 = entry['x']
+                    y1 = entry['y']
+                    z1 = entry['z']
+                    symbol = entry['atom']
 
-                radius = GlobVar.at_covrad.get(symbol)  # fallback value if element missing
-                size = (radius * scale_factor)**2
-                print('size of the atom',size)
+                    radius = GlobVar.at_covrad.get(symbol)  # fallback value if element missing
+                    size = (radius * scale_factor)**2
+                    print('size of the atom',size)
 
-                scatters = ax.scatter(x1, y1, z1,
-                           color=GlobVar.colors.get(atom1['atom'], 'green'),
-                           s=size)
+                    scatters = ax.scatter(x1, y1, z1,
+                               color=GlobVar.colors.get(symbol, 'green'),
+                               s=size)
 
-                atom_scatters.append(scatters)
-                ax.text(x1, y1, z1 + 0.3, atom1['atom'], color='black', fontsize=10, ha='center', va='bottom')
-                clr = GlobVar.colors.get(atom1['atom'])
-                old_colors.append(clr)
+                    atom_scatters.append(scatters)
+                    ax.text(x1, y1, z1 + 0.3, symbol, color='black', fontsize=10, ha='center', va='bottom')
+                    clr = GlobVar.colors.get(symbol)
+                    old_colors.append(clr)
             print('scatters',scatters)
 
-            for atom1, atom2 in combinations(self.active_atoms, 2):
-                x1, y1, z1 = atom1['x'], atom1['y'], atom1['z']
-                x2, y2, z2 = atom2['x'], atom2['y'], atom2['z']
+            for entry1, entry2 in combinations(self.atoms, 2):
+                if entry1['sl_num'] in self.active_atoms and entry2['sl_num'] in self.active_atoms:
+                    x1, y1, z1 = entry1['x'], entry1['y'], entry1['z']
+                    x2, y2, z2 = entry2['x'], entry2['y'], entry2['z']
 
-                distance = math.sqrt(
-                        (x2-x1)**2 +
-                        (y2-y1)**2 +
-                        (z2-z1)**2
-                        )
+                    distance = math.sqrt(
+                            (x2-x1)**2 +
+                            (y2-y1)**2 +
+                            (z2-z1)**2
+                            )
 
-                r1 = GlobVar.at_covrad.get(atom1['atom'])
-                r2 = GlobVar.at_covrad.get(atom2['atom'])
+                    r1 = GlobVar.at_covrad.get(entry1['atom'])
+                    r2 = GlobVar.at_covrad.get(entry2['atom'])
 
-                if r1 is not None and r2 is not None:
-                    covrad = (r1 + r2)/100.0
-                    if distance <= covrad:
-                        ax.plot([x1, x2], [y1, y2], [z1, z2], color='black', linewidth=2.5)
-                else:
-                    messagebox.showerror("Not Found",f"covalent radious of {atom1} and/or {atom2}\n"
-                                         "are not found in the list")
+                    if r1 is not None and r2 is not None:
+                        covrad = (r1 + r2)/100.0
+                        if distance <= covrad:
+                            ax.plot([x1, x2], [y1, y2], [z1, z2], color='black', linewidth=2.5)
+                    else:
+                        messagebox.showerror("Not Found",f"covalent radious of {atom1} and/or {atom2}\n"
+                                             "are not found in the list")
                             
             
             # Make panes transparent (no background)
@@ -2133,10 +2164,213 @@ class drawing_molecule:
             ax.text(0, 2, 0, 'Y', color='blue', fontsize=14, fontweight='bold')
             ax.text(0, 0, 2, 'Z', color='blue', fontsize=14, fontweight='bold')
 
-            
+            orbital_coord = []
+            single_orbs = ()
+
+            # create a list of orbital number and its coordinates to
+            # which it is associated
+            for i, row in enumerate(self.atoset):
+                nonzero_indices = np.nonzero(row)[0]
+                nonzero_values = row[nonzero_indices]
+                print('i, row', i, row)
+                if nonzero_values.size > 0:
+                    for entry1 in nonzero_values:
+                        for entry2 in self.atoms:
+                            if entry2['sl_num'] == i+1:
+                                x = entry2['x']
+                                y = entry2['y']
+                                z = entry2['z']
+                                symbol = entry2['atom']
+                        for entry2 in GlobVar.orbital_data:
+                            if entry2['atom_number'] == i+1:
+                                orb_type = entry2['orbital_type']
+
+                        single_orbs = (symbol, entry1, orb_type, x, y, z)
+                        orbital_coord.append(single_orbs)
+
+            print(GlobVar.orbital_data)
+            print(orbital_coord)
+            for entry in orbital_coord:
+                symbol, orb_num, orb_typ, x0, y0, z0 = entry
+                if 's' in orb_typ.lower() or 'sig' in orb_typ.lower():
+                    radius = GlobVar.at_covrad.get(symbol)  # fallback value if element missing
+                    a = radius/200 + 0.15
+                    b = radius/200
+
+                    theta = np.linspace(0, 2 * np.pi, 40)  # azimuthal angle
+                    phi = np.linspace(0, np.pi, 40)        # polar angle
+                    
+                    theta, phi = np.meshgrid(theta, phi)
+                    
+                    x = a * np.sin(phi) * np.cos(theta) + x0
+                    y = a * np.sin(phi) * np.sin(theta) + y0
+                    z = b * np.cos(phi) + z0
+                    
+                    ax.plot_surface(x, y, z, color='red', alpha=0.5)
+#                    ax.set_box_aspect([1, 1, 1])
+                    ax.text(x, y, z + 0.3, orb_num, color='black', 
+                            fontsize=10, ha='center', va='bottom')
+                else:
+                    x_u, y_u, z_u, x_l, y_l, z_l = self.orbital_builder(
+                            symbol, orb_num, orb_typ, x0, y0, z0)
+
+                    ax.plot_surface(x_u, y_u, z_u, color='red', alpha=0.5) # transparency alpha
+                    ax.plot_surface(x_l, y_l, z_l, color='red', alpha=0.5) # transparency alpha
+                    radius = GlobVar.at_covrad.get(symbol)  
+                    size = radius/100
+
+                    if 'pz' in orb_typ.lower() and 'px' in orb_typ.lower():
+                        z0 = z0 + size*1.05
+                        x0 = x0 + size*1.05
+                    if 'pz' in orb_typ.lower() and 'py' in orb_typ.lower():
+                        z0 = z0 + size*1.05
+                        y0 = y0 + size*1.05
+                    if 'px' in orb_typ.lower() and 'py' in orb_typ.lower():
+                        x0 = x0 + size*1.05
+                        y0 = y0 + size*1.05
+                    if 'px' == orb_typ.lower():
+                        x0 = x0 + size*1.1 
+                        z0 = z0 + 0.05
+                    if 'py' == orb_typ.lower():
+                        y0 = y0 + size*1.1
+                        z0 = z0 + 0.05
+                    if 'pz' == orb_typ.lower():
+                        z0 = z0 + size*1.1
+                        x0 = x0 + 0.05
+                    ax.text(x0, y0, z0, orb_num, color='black', 
+                            fontsize=10, ha='center', va='bottom')
+
             canvas = FigureCanvasTkAgg(fig, master=canvas_frame)
             canvas_widget = canvas.get_tk_widget()
             canvas_widget.pack(fill=tk.BOTH, expand=True)
+
+    def orbital_builder(self, symbol, orb_num, orb_typ, x0, y0, z0 ):
+        print('------',symbol, orb_num, orb_typ,'------')
+        print('extended_orbital_coord',x0, y0, z0)
+        x1, y1, z1 = x0, y0, z0
+        # create one ellipsoid for pi orbitals and sphere for 
+        # sigma orbitals asssociated with each atoms
+        # to make it more looks like an pi orbital add two hulf
+        # upper part in spherical and lower part is ellipsoid
+
+        a, b, c = 0.2, 0.2, 0.4  # axes lengths of lower part
+        e, f, g = 0.2, 0.2, 0.2  # axes lengths of upper part
+
+        radius = GlobVar.at_covrad.get(symbol)  
+        size = radius/100
+
+        u = np.linspace(0, 2 * np.pi, 40)
+
+        # making upper part
+        v_upper = np.linspace(0, np.pi/2, 20)
+        x_upper = e * np.outer(np.cos(u), np.sin(v_upper))+x0
+        y_upper = f * np.outer(np.sin(u), np.sin(v_upper))+y0
+        z_upper = g * np.outer(np.ones_like(u), np.cos(v_upper))+z0+size/1.6
+
+        # making lower part
+        v_lower = np.linspace(np.pi/2, np.pi, 20)
+        x_lower = a * np.outer(np.cos(u), np.sin(v_lower))+x0
+        y_lower = b * np.outer(np.sin(u), np.sin(v_lower))+y0
+        z_lower = c * np.outer(np.ones_like(u), np.cos(v_lower))+z0+size/1.6
+
+        # creating axis points at 0.4 points away from the centre of the atom 
+        if 'pz' == orb_typ.lower():
+            return (x_upper, y_upper, z_upper, x_lower, y_lower, z_lower)
+        if 'pz' in orb_typ.lower():
+            z1 = z1 + 0.4
+        if 'px' in orb_typ.lower():
+            x1 = x1 + 0.4
+        if 'py' in orb_typ.lower():
+            y1 = y1 + 0.4
+
+        # making upper part
+        #v_upper = np.linspace(0, np.pi/2, 50)
+        x_upper = e * np.outer(np.cos(u), np.sin(v_upper))
+        y_upper = f * np.outer(np.sin(u), np.sin(v_upper))
+        z_upper = g * np.outer(np.ones_like(u), np.cos(v_upper))
+
+        ## making lower part
+        ##v_lower = np.linspace(np.pi/2, np.pi, 50)
+        x_lower = a * np.outer(np.cos(u), np.sin(v_lower))
+        y_lower = b * np.outer(np.sin(u), np.sin(v_lower))
+        z_lower = c * np.outer(np.ones_like(u), np.cos(v_lower))
+        print('extended_orbital_coord',x1, y1, z1)
+
+        # find the direction of the preffered axis 
+        p0 = np.array([x0, y0, z0])
+        p1 = np.array([x1, y1, z1])
+        direction = p1 - p0        #direction = (x1−x0,y1−y0,z1−z0)
+        b = direction / np.linalg.norm(direction)  # normalize to get direction unit-vector
+
+        """ Find the rotation matrix that aligns vec1 to the direction of the preffered axis """
+        vec1 = np.array([0, 0, 1]) # original directtion of the orbital
+        a = (vec1 / np.linalg.norm(vec1)).reshape(3) # unit vector of vec1
+        v = np.cross(a, b) #The cross product gives the axis about which to rotate to align a with b
+        c = np.dot(a, b) #cosine of the angle between the two vectors.
+
+        # If the vectors are already aligned, the rotation is the identity matrix (no rotation needed).
+        if np.isclose(c, 1):
+            R = np.eye(3) # 3X3 Identity matrix
+
+        #If the vectors are exactly opposite, rotate 180° about any axis perpendicular to a.
+        if np.isclose(c, -1):
+            orth = np.array([1, 0, 0]) if not np.isclose(a[0], 1) else np.array([0, 1, 0])
+            v = np.cross(a, orth)
+            v = v / np.linalg.norm(v)
+            H = np.array([[0, -v[2], v[1]],[v[2], 0, -v[0]],[-v[1], v[0], 0]])
+            R = -np.eye(3) + 2 * np.outer(v, v)
+
+        # For all other cases, use Rodrigues’ rotation formula to construct the rotation matrix.
+        s = np.linalg.norm(v) # sin of the angle between two vectors
+        kmat = np.array([[0, -v[2], v[1]],
+                     [v[2], 0, -v[0]],
+                     [-v[1], v[0], 0]])
+        R = np.eye(3) + kmat + kmat @ kmat * ((1 - c) / (s ** 2)) # Rodrigues Formula
+
+        x_upper_r, y_upper_r, z_upper_r = self.rotate_and_translate(x_upper, y_upper, z_upper, R, p0)
+        x_lower_r, y_lower_r, z_lower_r = self.rotate_and_translate(x_lower, y_lower, z_lower, R, p0)
+        if 'pz' in orb_typ.lower() and 'px' in orb_typ.lower():
+            z_upper_r = z_upper_r + size/1.7
+            z_lower_r = z_lower_r + size/1.7
+            x_upper_r = x_upper_r + size/1.7
+            x_lower_r = x_lower_r + size/1.7
+            print('pz & px is considered')
+        if 'pz' in orb_typ.lower() and 'py' in orb_typ.lower():
+            z_upper_r = z_upper_r + size/1.7
+            z_lower_r = z_lower_r + size/1.7
+            y_upper_r = y_upper_r + size/1.7
+            y_lower_r = y_lower_r + size/1.7
+            print('pz & py is considered')
+        if 'px' in orb_typ.lower() and 'py' in orb_typ.lower():
+            x_upper_r = x_upper_r + size/1.7
+            x_lower_r = x_lower_r + size/1.7
+            y_upper_r = y_upper_r + size/1.7
+            y_lower_r = y_lower_r + size/1.7
+            print('px & py is considered')
+        if 'px' == orb_typ.lower():
+            x_upper_r = x_upper_r + size*3/4 
+            x_lower_r = x_lower_r + size*3/4 
+            print('px is considered')
+        if 'py' == orb_typ.lower():
+            y_upper_r = y_upper_r + size*3/4
+            y_lower_r = y_lower_r + size*3/4
+            print('py is considered')
+        if 'pz' == orb_typ.lower():
+            z_upper_r = y_upper_r + size*3/4
+            z_lower_r = y_lower_r + size*3/4
+            print('py is considered')
+
+        return (x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r)
+
+    def rotate_and_translate(self, x, y, z, R, center):
+        pts = np.stack([x.flatten(), y.flatten(), z.flatten()])
+        pts_rot = R @ pts
+        pts_rot[0] += center[0]
+        pts_rot[1] += center[1]
+        pts_rot[2] += center[2]
+        return (pts_rot[0].reshape(x.shape), pts_rot[1].reshape(y.shape), 
+                pts_rot[2].reshape(z.shape))
+
 
 class Run_Fort:
     def __init__(self, root, ctrl_class):
