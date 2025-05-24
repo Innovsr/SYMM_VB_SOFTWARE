@@ -1005,6 +1005,7 @@ class Orb_Input:
         self.balloon = Pmw.Balloon(root)
 
         self.create_orbital_section()
+        GlobVar.Gl_activeatoms = self.activeatoms
 
     def create_orbital_section(self):
         if GlobVar.orbital_input is False:
@@ -1066,6 +1067,7 @@ class Orb_Input:
             self.show_button = ttk.Button(
                     self.orbital_frame, text="View Orbs", command=self.call_drawing_molecule)
             self.show_button.grid(row=3, column=1, columnspan=2, pady=10)
+
             if not atoset_created:
                 self.show_button.config(state=tk.DISABLED)  # Initially disable the button
 
@@ -1095,8 +1097,6 @@ class Orb_Input:
 #            self.atm_entry.append(self.assoatm_entry)
 
     def call_drawing_molecule(self):
-        GlobVar.Gl_atoset = self.atoset
-        GlobVar.Gl_activeatoms = self.activeatoms
         d=drawing_molecule()
         d.VB_view()
 
@@ -1227,6 +1227,7 @@ class Orb_Input:
 #        GlobVar.active_atom_coords
         self.keywd_button.config(state=tk.NORMAL)
         self.show_button.config(state = tk.NORMAL)
+        GlobVar.Gl_atoset = self.atoset
         print('atoset',self.atoset)
 #        sys.exit()
 #        self.orbital_button.config(state=tk.DISABLED)  # Initially disable the button
@@ -2044,11 +2045,17 @@ class drawing_molecule:
     def __init__(self):
         self.atoset = GlobVar.Gl_atoset
         self.active_atoms = GlobVar.Gl_activeatoms
-        #self.atoset = atoset
-        #self.active_atoms = active_atoms
         self.atoms = GlobVar.all_atoms
+        self.nlp_lst = []
+        self.rad_lst = []
+        self.bond_lst = []
         print('self .active_atoms',self.active_atoms)
-        print('self.atoms',self.atoms)
+        print('self.atoms',self.atoset)
+
+    def str_info(self, nlp_lst, rad_lst, bond_lst):
+        self.nlp_lst = nlp_lst
+        self.rad_lst = rad_lst
+        self.bond_lst = bond_lst
 
     def VB_view(self):
         if GlobVar.geometry_inserted is True:
@@ -2082,10 +2089,14 @@ class drawing_molecule:
             ax.set_facecolor('lightblue')
             
             # drawing axis
-            ax.plot([0, 2], [0, 0], [0, 0], color='blue', linewidth=2, linestyle=':')
-            ax.plot([0, 0], [0, 2], [0, 0], color='blue', linewidth=2, linestyle=':')
-            ax.plot([0, 0], [0, 0], [0, 2], color='blue', linewidth=2, linestyle=':')
+            ax.plot([0, 2], [0, 0], [0, 0], color='green', linewidth=2, linestyle=':', alpha=0.8)
+            ax.plot([0, 0], [0, 2], [0, 0], color='green', linewidth=2, linestyle=':', alpha=0.8)
+            ax.plot([0, 0], [0, 0], [0, 2], color='green', linewidth=2, linestyle=':', alpha=0.8)
             ax.set_box_aspect([1, 1, 1])  # Equal aspect ratio
+            # Add axis labels
+            ax.text(2, 0, 0, 'X', color='green', fontsize=14, fontweight='bold', alpha=0.8)
+            ax.text(0, 2, 0, 'Y', color='green', fontsize=14, fontweight='bold', alpha=0.8)
+            ax.text(0, 0, 2, 'Z', color='green', fontsize=14, fontweight='bold', alpha=0.8)
 
             # drawing atoms
             old_colors = []
@@ -2103,16 +2114,18 @@ class drawing_molecule:
                     size = (radius * scale_factor)**2
                     print('size of the atom',size)
 
-                    scatters = ax.scatter(x1, y1, z1,
+                    scatters = ax.scatter(x1, y1, z1,                   # drawing atoms
                                color=GlobVar.colors.get(symbol, 'green'),
-                               s=size)
+                               s=size, alpha=0.4)
 
                     atom_scatters.append(scatters)
-                    ax.text(x1, y1, z1 + 0.3, symbol, color='black', fontsize=10, ha='center', va='bottom')
+                    ax.text(x1 - 0.15, y1 - 0.15, z1 - 0.15, symbol, 
+                            color='black', fontsize=10, ha='center', va='bottom') # puttong names
                     clr = GlobVar.colors.get(symbol)
                     old_colors.append(clr)
-            print('scatters',scatters)
+            #print('scatters',scatters)
 
+            # drawing bonds
             for entry1, entry2 in combinations(self.atoms, 2):
                 if entry1['sl_num'] in self.active_atoms and entry2['sl_num'] in self.active_atoms:
                     x1, y1, z1 = entry1['x'], entry1['y'], entry1['z']
@@ -2129,8 +2142,13 @@ class drawing_molecule:
 
                     if r1 is not None and r2 is not None:
                         covrad = (r1 + r2)/100.0
-                        if distance <= covrad:
-                            ax.plot([x1, x2], [y1, y2], [z1, z2], color='black', linewidth=2.5)
+                        if distance <= covrad: # cheking if the distances between two atoms are bonded
+
+                           # x01, y01, z01 = self.point_on_circ(x2, y2, z2, x1, y1, z1, covrad)
+                           # x02, y02, z02 = self.point_on_circ(x1, y1, z1, x2, y2, z2, covrad)
+                           # ax.plot([x01, x02], [y01, y02], [z01, z02], color='black', linewidth=2.5, alpha=0.6)
+
+                            ax.plot([x1, x2], [y1, y2], [z1, z2], color='black', linewidth=2.5, alpha=0.5)
                     else:
                         messagebox.showerror("Not Found",f"covalent radious of {atom1} and/or {atom2}\n"
                                              "are not found in the list")
@@ -2159,11 +2177,6 @@ class drawing_molecule:
                 for axis in [ax.xaxis, ax.yaxis, ax.zaxis]:
                     axis.line.set_alpha(0)
 
-            # Add axis labels
-            ax.text(2, 0, 0, 'X', color='blue', fontsize=14, fontweight='bold')
-            ax.text(0, 2, 0, 'Y', color='blue', fontsize=14, fontweight='bold')
-            ax.text(0, 0, 2, 'Z', color='blue', fontsize=14, fontweight='bold')
-
             orbital_coord = []
             single_orbs = ()
 
@@ -2172,7 +2185,7 @@ class drawing_molecule:
             for i, row in enumerate(self.atoset):
                 nonzero_indices = np.nonzero(row)[0]
                 nonzero_values = row[nonzero_indices]
-                print('i, row', i, row)
+                # print('i, row', i, row)
                 if nonzero_values.size > 0:
                     for entry1 in nonzero_values:
                         for entry2 in self.atoms:
@@ -2188,65 +2201,114 @@ class drawing_molecule:
                         single_orbs = (symbol, entry1, orb_type, x, y, z)
                         orbital_coord.append(single_orbs)
 
-            print(GlobVar.orbital_data)
-            print(orbital_coord)
+            # print(GlobVar.orbital_data)
+            # print(orbital_coord)
             for entry in orbital_coord:
                 symbol, orb_num, orb_typ, x0, y0, z0 = entry
-                if 's' in orb_typ.lower() or 'sig' in orb_typ.lower():
+                if 's' == orb_typ.lower() or 'sig' in orb_typ.lower():
                     radius = GlobVar.at_covrad.get(symbol)  # fallback value if element missing
-                    a = radius/200 + 0.15
-                    b = radius/200
+                    n = radius/200
+                    a, b = n, n + 0.15  # axes lengths of lower part
+                    u = np.linspace(0, 2 * np.pi, 40)
+                    v = np.linspace(0, np.pi, 40)  # upper hemisphere
+                    u, v = np.meshgrid(u, v)
+                    
+                    # Parametric surface
+                    x = a * np.cos(u) * np.sin(v)+x0
+                    y = a * np.sin(u) * np.sin(v)+y0
+                    z = b * np.cos(v) + z0
 
-                    theta = np.linspace(0, 2 * np.pi, 40)  # azimuthal angle
-                    phi = np.linspace(0, np.pi, 40)        # polar angle
-                    
-                    theta, phi = np.meshgrid(theta, phi)
-                    
-                    x = a * np.sin(phi) * np.cos(theta) + x0
-                    y = a * np.sin(phi) * np.sin(theta) + y0
-                    z = b * np.cos(phi) + z0
-                    
-                    ax.plot_surface(x, y, z, color='red', alpha=0.5)
-#                    ax.set_box_aspect([1, 1, 1])
-                    ax.text(x, y, z + 0.3, orb_num, color='black', 
-                            fontsize=10, ha='center', va='bottom')
+                    ax.plot_surface(x, y, z, color='red', alpha=0.5) # transparency alpha
+                    ax.text(x0, y0 + 0.1, z0 + b + 0.1, orb_num, color='black', fontsize=10, ha='center', va='bottom')
+
                 else:
                     x_u, y_u, z_u, x_l, y_l, z_l = self.orbital_builder(
                             symbol, orb_num, orb_typ, x0, y0, z0)
 
                     ax.plot_surface(x_u, y_u, z_u, color='red', alpha=0.5) # transparency alpha
                     ax.plot_surface(x_l, y_l, z_l, color='red', alpha=0.5) # transparency alpha
-                    radius = GlobVar.at_covrad.get(symbol)  
-                    size = radius/100
 
-                    if 'pz' in orb_typ.lower() and 'px' in orb_typ.lower():
-                        z0 = z0 + size*1.05
-                        x0 = x0 + size*1.05
-                    if 'pz' in orb_typ.lower() and 'py' in orb_typ.lower():
-                        z0 = z0 + size*1.05
-                        y0 = y0 + size*1.05
-                    if 'px' in orb_typ.lower() and 'py' in orb_typ.lower():
-                        x0 = x0 + size*1.05
-                        y0 = y0 + size*1.05
-                    if 'px' == orb_typ.lower():
-                        x0 = x0 + size*1.1 
-                        z0 = z0 + 0.05
-                    if 'py' == orb_typ.lower():
-                        y0 = y0 + size*1.1
-                        z0 = z0 + 0.05
-                    if 'pz' == orb_typ.lower():
-                        z0 = z0 + size*1.1
-                        x0 = x0 + 0.05
-                    ax.text(x0, y0, z0, orb_num, color='black', 
-                            fontsize=10, ha='center', va='bottom')
+                    i, j = x_u.shape[0] // 2, x_u.shape[1] // 2
+                    p = np.array([x_u[i, j], y_u[i, j], z_u[i, j]])
+                    
+                    # Compute radial direction from center
+                    center = np.array([x0, y0, z0])
+                    normal = p - center
+                    normal = normal / np.linalg.norm(normal)
+                    
+                    # Offset the point in front of the surface
+                    d = 0.2  # small distance in front
+                    p_front = p + d * normal
+
+                    ax.text(
+                        p_front[0], p_front[1], p_front[2],  # x, y, z coordinates
+                        str(orb_num),                        # Convert orb_num to string (if it's numeric)
+                        color='black',
+                        fontsize=10,
+                        ha='center',
+                        va='bottom'
+                    )
+
+
+            if len(self.bond_lst) != 0:
+                #for i in range(len(self.bond_lst)):
+                for a, b in self.bond_lst:
+                    print('a, b', a, b)
+                    for (symbol1, orb_num1, orb_typ1, x1, y1, z1) in orbital_coord:
+                        for (symbol2, orb_num2, orb_typ2, x2, y2, z2) in orbital_coord:
+                            print('Checking:', type(orb_num1), type(orb_num2))
+                            if int(a) == int(orb_num1) and int(b) == int(orb_num2):
+                                print('i am here')
+                                size = radius/100
+                                if 'pz' in orb_typ1.lower() and 'px' in orb_typ1.lower():
+                                    z1 = z1 + size*0.5
+                                    x1 = x1 + size*0.5
+                                if 'pz' in orb_typ1.lower() and 'py' in orb_typ1.lower():
+                                    z1 = z1 + size*0.5
+                                    y1 = y1 + size*0.5
+                                if 'px' in orb_typ1.lower() and 'py' in orb_typ1.lower():
+                                    x1 = x1 + size*0.5
+                                    y1 = y1 + size*0.5
+                                if 'px' == orb_typ1.lower():
+                                    x1 = x1 + size*0.5 
+                                    z1 = z1 + 0.05
+                                if 'py' == orb_typ1.lower():
+                                    y1 = y1 + size*0.5
+                                    z1 = z1 + 0.05
+                                if 'pz' == orb_typ1.lower():
+                                    z1 = z1 + size*0.5
+                                    x1 = x1 + 0.05
+
+                                if 'pz' in orb_typ2.lower() and 'px' in orb_typ2.lower():
+                                    z2 = z2 + size*0.5
+                                    x2 = x2 + size*0.5
+                                if 'pz' in orb_typ2.lower() and 'py' in orb_typ2.lower():
+                                    z2 = z2 + size*0.5
+                                    y2 = y2 + size*0.5
+                                if 'px' in orb_typ2.lower() and 'py' in orb_typ2.lower():
+                                    x2 = x2 + size*0.5
+                                    y2 = y2 + size*0.5
+                                if 'px' == orb_typ2.lower():
+                                    x2 = x2 + size*0.5 
+                                    z2 = z2 + 0.05
+                                if 'py' == orb_typ2.lower():
+                                    y2 = y2 + size*0.5
+                                    z2 = z2 + 0.05
+                                if 'pz' == orb_typ2.lower():
+                                    z2 = z2 + size*0.5
+                                    x2 = x2 + 0.05
+
+                                ax.plot([x1, x2], [y1, y2], [z1, z2], color='blue', linewidth=2.5)
 
             canvas = FigureCanvasTkAgg(fig, master=canvas_frame)
             canvas_widget = canvas.get_tk_widget()
             canvas_widget.pack(fill=tk.BOTH, expand=True)
 
+
     def orbital_builder(self, symbol, orb_num, orb_typ, x0, y0, z0 ):
         print('------',symbol, orb_num, orb_typ,'------')
         print('extended_orbital_coord',x0, y0, z0)
+        sflg = 0
         x1, y1, z1 = x0, y0, z0
         # create one ellipsoid for pi orbitals and sphere for 
         # sigma orbitals asssociated with each atoms
@@ -2274,33 +2336,99 @@ class drawing_molecule:
         z_lower = c * np.outer(np.ones_like(u), np.cos(v_lower))+z0+size/1.6
 
         # creating axis points at 0.4 points away from the centre of the atom 
-        if 'pz' == orb_typ.lower():
+        if 's' in orb_typ.lower():
+            n = radius/200
+
+            a, b = n, 2*n  # axes lengths of lower part
+
+            #radius = GlobVar.at_covrad.get(symbol)  
+            #size = radius/100
+
+            u = np.linspace(0, 2 * np.pi, 40)
+            # making upper part
+            v_upper = np.linspace(0, np.pi/2, 20)
+            x_upper = a * np.outer(np.cos(u), np.sin(v_upper))
+            y_upper = a * np.outer(np.sin(u), np.sin(v_upper))
+            z_upper = a * np.outer(np.ones_like(u), np.cos(v_upper))
+
+            ## making lower part
+            v_lower = np.linspace(np.pi/2, np.pi, 20)
+            x_lower = a * np.outer(np.cos(u), np.sin(v_lower))
+            y_lower = a * np.outer(np.sin(u), np.sin(v_lower))
+            z_lower = b * np.outer(np.ones_like(u), np.cos(v_lower))
+
+            sflg = 1
+            pxflg = 0
+            pyflg = 0
+            if '-pz' in orb_typ.lower():
+                print('here1')
+                return (x_upper+x0, y_upper+y0, z_upper+z0, x_lower+x0, y_lower+y0, z_lower+z0)
+            if 'pz' in orb_typ.lower():
+                print('here2')
+            #    z1 = z1 - 0.4
+                z_upper = b * np.outer(np.ones_like(u), np.cos(v_upper))
+                z_lower = a * np.outer(np.ones_like(u), np.cos(v_lower))
+                return (x_upper+x0, y_upper+y0, z_upper+z0, x_lower+x0, y_lower+y0, z_lower+z0)
+            if '-px' in orb_typ.lower():
+                print('here3')
+                x1 = x1 + 0.4
+                pxflg = 1
+            if 'px' in orb_typ.lower() and pxflg == 0:
+                print('here4')
+                x1 = x1 - 0.4
+            if '-py' in orb_typ.lower():
+                print('here5')
+                y1 = y1 + 0.4
+                pyflg = 1
+            if 'py' in orb_typ.lower() and pyflg ==0:
+                print('here6')
+                y1 = y1 - 0.4
+
+            print('extended_orbital_coord',x1, y1, z1)
+        elif 'pz' == orb_typ.lower():
             return (x_upper, y_upper, z_upper, x_lower, y_lower, z_lower)
-        if 'pz' in orb_typ.lower():
-            z1 = z1 + 0.4
-        if 'px' in orb_typ.lower():
-            x1 = x1 + 0.4
-        if 'py' in orb_typ.lower():
-            y1 = y1 + 0.4
+        elif '-pz' == orb_typ.lower():
+            return (x_upper, y_upper, -z_upper, x_lower, y_lower, -z_lower)
+        else:
+            pxflg = 0
+            pyflg = 0
+            pzflg = 0
+            if '-pz' in orb_typ.lower():
+                z1 = z1 - 0.4
+                pzflg = 1
+            if 'pz' in orb_typ.lower() and pzflg == 0:
+                z1 = z1 + 0.4
+            if '-px' in orb_typ.lower():
+                x1 = x1 - 0.4
+                pxflg = 1
+            if 'px' in orb_typ.lower() and pxflg == 0:
+                x1 = x1 + 0.4
+            if '-py' in orb_typ.lower():
+                y1 = y1 - 0.4
+                pyflg = 1
+            if 'py' in orb_typ.lower() and pyflg ==0:
+                y1 = y1 + 0.4
 
-        # making upper part
-        #v_upper = np.linspace(0, np.pi/2, 50)
-        x_upper = e * np.outer(np.cos(u), np.sin(v_upper))
-        y_upper = f * np.outer(np.sin(u), np.sin(v_upper))
-        z_upper = g * np.outer(np.ones_like(u), np.cos(v_upper))
+            # making upper part
+            #v_upper = np.linspace(0, np.pi/2, 50)
+            x_upper = e * np.outer(np.cos(u), np.sin(v_upper))
+            y_upper = f * np.outer(np.sin(u), np.sin(v_upper))
+            z_upper = g * np.outer(np.ones_like(u), np.cos(v_upper))
 
-        ## making lower part
-        ##v_lower = np.linspace(np.pi/2, np.pi, 50)
-        x_lower = a * np.outer(np.cos(u), np.sin(v_lower))
-        y_lower = b * np.outer(np.sin(u), np.sin(v_lower))
-        z_lower = c * np.outer(np.ones_like(u), np.cos(v_lower))
-        print('extended_orbital_coord',x1, y1, z1)
+            ## making lower part
+            ##v_lower = np.linspace(np.pi/2, np.pi, 50)
+            x_lower = a * np.outer(np.cos(u), np.sin(v_lower))
+            y_lower = b * np.outer(np.sin(u), np.sin(v_lower))
+            z_lower = c * np.outer(np.ones_like(u), np.cos(v_lower))
+            print('extended_orbital_coord',x1, y1, z1)
 
         # find the direction of the preffered axis 
         p0 = np.array([x0, y0, z0])
         p1 = np.array([x1, y1, z1])
         direction = p1 - p0        #direction = (x1−x0,y1−y0,z1−z0)
+        print('direction', direction, p0, p1)
         b = direction / np.linalg.norm(direction)  # normalize to get direction unit-vector
+        print('unit_vector', b, np.linalg.norm(direction))
 
         """ Find the rotation matrix that aligns vec1 to the direction of the preffered axis """
         vec1 = np.array([0, 0, 1]) # original directtion of the orbital
@@ -2329,38 +2457,85 @@ class drawing_molecule:
 
         x_upper_r, y_upper_r, z_upper_r = self.rotate_and_translate(x_upper, y_upper, z_upper, R, p0)
         x_lower_r, y_lower_r, z_lower_r = self.rotate_and_translate(x_lower, y_lower, z_lower, R, p0)
-        if 'pz' in orb_typ.lower() and 'px' in orb_typ.lower():
-            z_upper_r = z_upper_r + size/1.7
-            z_lower_r = z_lower_r + size/1.7
-            x_upper_r = x_upper_r + size/1.7
-            x_lower_r = x_lower_r + size/1.7
-            print('pz & px is considered')
-        if 'pz' in orb_typ.lower() and 'py' in orb_typ.lower():
-            z_upper_r = z_upper_r + size/1.7
-            z_lower_r = z_lower_r + size/1.7
-            y_upper_r = y_upper_r + size/1.7
-            y_lower_r = y_lower_r + size/1.7
-            print('pz & py is considered')
-        if 'px' in orb_typ.lower() and 'py' in orb_typ.lower():
-            x_upper_r = x_upper_r + size/1.7
-            x_lower_r = x_lower_r + size/1.7
-            y_upper_r = y_upper_r + size/1.7
-            y_lower_r = y_lower_r + size/1.7
-            print('px & py is considered')
-        if 'px' == orb_typ.lower():
-            x_upper_r = x_upper_r + size*3/4 
-            x_lower_r = x_lower_r + size*3/4 
+
+        if sflg == 0:
+            x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r = self.position_scaling(
+                x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r, orb_typ, size, 'orb')
+        return (x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r)
+
+    def position_scaling(self, x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r, orb_typ, size, flg):
+        # scaling for shifting the orbitals outside of the surface
+        pxflg = 0
+        pyflg = 0
+        pzflg = 0
+        pxflg1 = 0
+        pyflg1 = 0
+        pzflg1 = 0
+        if flg == 'text':
+            a = 0.1
+        else:
+            a = 0
+
+        if '-pz' in orb_typ.lower():
+            z_upper_r = z_upper_r - size/1.4 - a
+            z_lower_r = z_lower_r - size/1.4 - a
+            pzflg = 1
+            print('-pz is considered')
+        if 'pz' in orb_typ.lower() and pzflg == 0:
+            z_upper_r = z_upper_r + size/1.4 - a
+            z_lower_r = z_lower_r + size/1.4 - a
+            pzflg1 = 1
+            print('pz is considered')
+        if '-py' in orb_typ.lower():
+            y_upper_r = y_upper_r - size/1.4 - a
+            y_lower_r = y_lower_r - size/1.4 - a
+            pyflg = 1
+            print('-py is considered')
+        if 'py' in orb_typ.lower() and pyflg == 0:
+            y_upper_r = y_upper_r + size/1.4 - a
+            y_lower_r = y_lower_r + size/1.4 - a
+            pyflg1 = 1
+            print('py is considered')
+        if '-px' in orb_typ.lower() :
+            x_upper_r = x_upper_r - size/1.4 - a
+            x_lower_r = x_lower_r - size/1.4 - a
+            pxflg = 1
+            print('-px is considered')
+        if 'px' in orb_typ.lower() and pxflg == 0:
+            x_upper_r = x_upper_r + size/1.4 - a
+            x_lower_r = x_lower_r + size/1.4 - a 
+            pxflg1 = 1
             print('px is considered')
-        if 'py' == orb_typ.lower():
-            y_upper_r = y_upper_r + size*3/4
-            y_lower_r = y_lower_r + size*3/4
-            print('py is considered')
-        if 'pz' == orb_typ.lower():
-            z_upper_r = y_upper_r + size*3/4
-            z_lower_r = y_lower_r + size*3/4
-            print('py is considered')
+
+        # for pure px, py or pz they need additional scalling
+        if pxflg + pyflg + pzflg + pxflg1 + pyflg1 + pzflg1 == 1:
+            if pzflg == 1:
+                z_upper_r = z_upper_r - size/2.5 - a
+                z_lower_r = z_lower_r - size/2.5 - a
+                print('-pz is considered')
+            if pzflg1 == 1:
+                z_upper_r = z_upper_r + size/2.5 - a
+                z_lower_r = z_lower_r + size/2.5 - a
+                print('pz is considered')
+            if pyflg == 1:
+                y_upper_r = y_upper_r - size/2.5 - a
+                y_lower_r = y_lower_r - size/2.5 - a
+                print('-py is considered')
+            if pyflg1 == 1:
+                y_upper_r = y_upper_r + size/2.5 - a
+                y_lower_r = y_lower_r + size/2.5 - a
+                print('py is considered')
+            if pxflg == 1:
+                x_upper_r = x_upper_r - size/2.5 - a
+                x_lower_r = x_lower_r - size/2.5 - a
+                print('-px is considered')
+            if pxflg1 == 1:
+                x_upper_r = x_upper_r + size/2.5 - a 
+                x_lower_r = x_lower_r + size/2.5 - a 
+                print('px is considered')
 
         return (x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r)
+
 
     def rotate_and_translate(self, x, y, z, R, center):
         pts = np.stack([x.flatten(), y.flatten(), z.flatten()])
@@ -2509,13 +2684,17 @@ class Output:
                 "button_frame":("lightblue",2,0),
                 "set_frame":("white",3,0),
                 "info_frame":("white",3,1),
-                "info_button_frame":("lightblue",4,0)
+                "info_button_frame":("lightblue",4,0),
                 }
         for frame_name,(bg, row, column) in frame_info.items():
             frame = tk.Frame(Output_window, bg=bg)
             frame.grid(row=row, column=column, padx=10, pady=10)
             self.frames[frame_name] = frame
 
+        self.frame_view_str = tk.Frame(self.frames['info_button_frame'], bg='lightblue')
+        self.frame_view_str.grid(row=0, column=0,padx=20, pady=20)
+        self.frame_view_info = tk.Frame(self.frames['info_button_frame'], bg='lightblue')
+        self.frame_view_info.grid(row=0, column=1,padx=20, pady=20)
 #        self.frames["info_button_frame"].config(style="Colour_Frame.TFrame")
         scrollbar = tk.Scrollbar(self.frames["text_frame"])
 #        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
@@ -2698,20 +2877,82 @@ class Output:
                         set_text_wt.insert(
                                 tk.END, f"   {sls[int(index) - 1]}:        " + structure[int(index) - 1] + "\n"
                                 )
-                    info_button = tk.Button(self.frames["info_button_frame"], text="Set Info", 
+                    info_button = tk.Button(self.frame_view_info, text="Set Info", 
                            command=lambda: self.set_info(
                                 various_qualities, overall_qualities, rumers, indset
                                 )
                             )
                     info_button.grid(row=0, column=0, sticky=tk.W, padx=10)
                     if GlobVar.symm_key == 1:
-                        symm_grp_button = tk.Button(self.frames["info_button_frame"], text="Symmetry groups",
+                        symm_grp_button = tk.Button(self.frame_view_info, text="Symmetry groups",
                                                     command=lambda:self.show_symm_groups(
                                                         overall_qualities, structure
                                                         )
                                                     )
                         symm_grp_button.grid(row=0, column=1, sticky=tk.W, padx=10)
+
+                    self.molkey = 0
+
+                    view_button = tk.Button(self.frame_view_str, text="View Structure", 
+                           command=lambda: self.View_Structure(indset, 'molflg', structure))
+                    view_button.grid(row=0, column=1, sticky=tk.W, padx=10)
+
+                    view_button_next = tk.Button(self.frame_view_str, text="next", 
+                           command=lambda: self.View_Structure(indset, 'molflg1', structure))
+                    view_button_next.grid(row=0, column=2, sticky=tk.W, padx=10)
+
+                    view_button_prev = tk.Button(self.frame_view_str, text="prev", 
+                           command=lambda: self.View_Structure(indset, 'molflg2', structure))
+                    view_button_prev.grid(row=0, column=0, sticky=tk.W, padx=10)
                     print('linear_indset', linear_indset)
+
+    def View_Structure(self, indset, flg, structures):
+        print('indset',indset, flg)
+        print('structure',structures[0], structures[1])
+        seen = set()
+        nlp_lst = []
+        rad_lst = []
+        nbd = []
+        bond_lst = []
+
+        if flg == 'molflg':
+            self.molkey = 0
+        if flg == 'molflg1':
+            self.molkey += 1
+        if flg == 'molflg2' and self.molkey != 0:
+            self.molkey -= 1
+        if self.molkey < len(indset):
+            entry = indset[self.molkey] - 1
+            structure =structures[entry].split() 
+            print('entry', entry)
+            print(structures[entry])
+
+            nlp = GlobVar.num_electron - GlobVar.num_orbital
+            if nlp != 0:
+                for item in structure:
+                    if item not in seen:
+                        seen.add(item)
+                        nlp_lst.append(item)
+                    if len(result) == nlp:
+                        break
+
+            nrad = GlobVar.multiplicity - 1
+            if nrad != 0:
+                rad_lst = structure[-nrad:]
+
+            nbond = int((len(structure) - nrad - 2*nlp)/2)
+            if nbond != 0:
+                k=nrad
+                usable = structure[:-k] if k > 0 else structure
+                bond_lst = [usable[i:i+2] for i in range(len(usable) - 2*nbond, len(usable), 2)]
+        else:
+            return
+        d=drawing_molecule()
+        d.str_info(nlp_lst, rad_lst, bond_lst)
+        d.VB_view()
+
+        print('nlp:',nlp_lst,'rad:',rad_lst,'bond:',bond_lst)
+
 
     def show_symm_groups(self, overall_qualities, structure):
         strpergrp = Counter(overall_qualities)
