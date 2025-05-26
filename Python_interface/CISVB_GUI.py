@@ -2225,8 +2225,8 @@ class drawing_molecule:
                 symbol, orb_num, orb_typ, x0, y0, z0 = entry
                 if 's' == orb_typ.lower() or 'sig' in orb_typ.lower():
                     radius = GlobVar.at_covrad.get(symbol)  # fallback value if element missing
-                    n = radius/200
-                    a, b = n, n + 0.15  # axes lengths of lower part
+                    n = radius/280
+                    a, b = n, n + 0.07  # axes lengths of lower part
                     u = np.linspace(0, 2 * np.pi, 40)
                     v = np.linspace(0, np.pi, 40)  # upper hemisphere
                     u, v = np.meshgrid(u, v)
@@ -2309,9 +2309,9 @@ class drawing_molecule:
         if 's' in orb_typ.lower():
             print('entered in S... orbs')
             radius = GlobVar.at_covrad.get(symbol)  
-            n = radius/200
+            n = radius/250
 
-            a, b = n, 1.5*n  # axes lengths of lower part
+            a, b = n, 2*n  # axes lengths of lower part
 
             u = np.linspace(0, 2 * np.pi, 40)
             # making upper part
@@ -2363,52 +2363,34 @@ class drawing_molecule:
 
             # making upper part
             v_upper = np.linspace(0, np.pi/2, 20)
-            x_upper = a * np.outer(np.cos(u), np.sin(v_upper))+x0
-            y_upper = a * np.outer(np.sin(u), np.sin(v_upper))+y0
-            z_upper = a * np.outer(np.ones_like(u), np.cos(v_upper))+z0+size/1.6
+            x_upper = a * np.outer(np.cos(u), np.sin(v_upper))#+x0
+            y_upper = a * np.outer(np.sin(u), np.sin(v_upper))#+y0
+            z_upper = a * np.outer(np.ones_like(u), np.cos(v_upper))#+z0#+size/1.6
 
             # making lower part
             v_lower = np.linspace(np.pi/2, np.pi, 20)
-            x_lower = a * np.outer(np.cos(u), np.sin(v_lower))+x0
-            y_lower = a * np.outer(np.sin(u), np.sin(v_lower))+y0
-            z_lower = b * np.outer(np.ones_like(u), np.cos(v_lower))+z0+size/1.6
+            x_lower = a * np.outer(np.cos(u), np.sin(v_lower))#+x0
+            y_lower = a * np.outer(np.sin(u), np.sin(v_lower))#+y0
+            z_lower = b * np.outer(np.ones_like(u), np.cos(v_lower))#+z0#+size/1.6
 
-            if 'pz' == orb_typ.lower():
-                return (x_upper, y_upper, z_upper, x_lower, y_lower, z_lower)
-            if '-pz' == orb_typ.lower():
-                return (x_upper, y_upper, -z_upper, x_lower, y_lower, -z_lower)
-            else:
-                pxflg = 0
-                pyflg = 0
-                pzflg = 0
-                if '-pz' in orb_typ.lower():
-                    z1 = z1 - 0.4
-                    pzflg = 1
-                if 'pz' in orb_typ.lower() and pzflg == 0:
-                    z1 = z1 + 0.4
-                if '-px' in orb_typ.lower():
-                    x1 = x1 - 0.4
-                    pxflg = 1
-                if 'px' in orb_typ.lower() and pxflg == 0:
-                    x1 = x1 + 0.4
-                if '-py' in orb_typ.lower():
-                    y1 = y1 - 0.4
-                    pyflg = 1
-                if 'py' in orb_typ.lower() and pyflg ==0:
-                    y1 = y1 + 0.4
-
-                # making upper part
-                #v_upper = np.linspace(0, np.pi/2, 50)
-                x_upper = a * np.outer(np.cos(u), np.sin(v_upper))
-                y_upper = a * np.outer(np.sin(u), np.sin(v_upper))
-                z_upper = a * np.outer(np.ones_like(u), np.cos(v_upper))
-
-                ## making lower part
-                ##v_lower = np.linspace(np.pi/2, np.pi, 50)
-                x_lower = a * np.outer(np.cos(u), np.sin(v_lower))
-                y_lower = a * np.outer(np.sin(u), np.sin(v_lower))
-                z_lower = b * np.outer(np.ones_like(u), np.cos(v_lower))
-                print('extended_orbital_coord',x1, y1, z1)
+            pxflg = 0
+            pyflg = 0
+            pzflg = 0
+            if '-pz' in orb_typ.lower():
+                z1 = z1 - 0.4
+                pzflg = 1
+            if 'pz' in orb_typ.lower() and pzflg == 0:
+                z1 = z1 + 0.4
+            if '-px' in orb_typ.lower():
+                x1 = x1 - 0.4
+                pxflg = 1
+            if 'px' in orb_typ.lower() and pxflg == 0:
+                x1 = x1 + 0.4
+            if '-py' in orb_typ.lower():
+                y1 = y1 - 0.4
+                pyflg = 1
+            if 'py' in orb_typ.lower() and pyflg ==0:
+                y1 = y1 + 0.4
 
         # find the direction of the preffered axis 
         p0 = np.array([x0, y0, z0])
@@ -2429,101 +2411,64 @@ class drawing_molecule:
             R = np.eye(3) # 3X3 Identity matrix
 
         #If the vectors are exactly opposite, rotate 180° about any axis perpendicular to a.
-        if np.isclose(c, -1):
+        elif np.isclose(c, -1):
             orth = np.array([1, 0, 0]) if not np.isclose(a[0], 1) else np.array([0, 1, 0])
             v = np.cross(a, orth)
             v = v / np.linalg.norm(v)
             H = np.array([[0, -v[2], v[1]],[v[2], 0, -v[0]],[-v[1], v[0], 0]])
             R = -np.eye(3) + 2 * np.outer(v, v)
 
-        # For all other cases, use Rodrigues’ rotation formula to construct the rotation matrix.
-        s = np.linalg.norm(v) # sin of the angle between two vectors
-        kmat = np.array([[0, -v[2], v[1]],
-                     [v[2], 0, -v[0]],
-                     [-v[1], v[0], 0]])
-        R = np.eye(3) + kmat + kmat @ kmat * ((1 - c) / (s ** 2)) # Rodrigues Formula
+        else:
+            # For all other cases, use Rodrigues’ rotation formula to construct the rotation matrix.
+            s = np.linalg.norm(v) # sin of the angle between two vectors
+            kmat = np.array([[0, -v[2], v[1]],
+                         [v[2], 0, -v[0]],
+                         [-v[1], v[0], 0]])
+            R = np.eye(3) + kmat + kmat @ kmat * ((1 - c) / (s ** 2)) # Rodrigues Formula
 
         x_upper_r, y_upper_r, z_upper_r = self.rotate_and_translate(x_upper, y_upper, z_upper, R, p0)
         x_lower_r, y_lower_r, z_lower_r = self.rotate_and_translate(x_lower, y_lower, z_lower, R, p0)
 
         if sflg == 0:
-            x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r = self.position_scaling(
-                x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r, orb_typ, size, 'orb')
+            x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r= self.position_scaling(
+                x_upper_r, y_upper_r, z_upper_r, x_lower_r, 
+                y_lower_r, z_lower_r, x0, y0, z0, orb_typ,  size, 'orb')
         return (x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r)
 
-    def position_scaling(self, x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r, orb_typ, size, flg):
+    def position_scaling(self, x_u, y_u, z_u, x_l, 
+                         y_l, z_l, x0, y0, z0, orb_typ, size, flg):
         # scaling for shifting the orbitals outside of the surface
-        pxflg = 0
-        pyflg = 0
-        pzflg = 0
-        pxflg1 = 0
-        pyflg1 = 0
-        pzflg1 = 0
+        a = np.array([x0, y0, z0])
+        x_c = np.mean(x_l)
+        y_c = np.mean(y_l)
+        z_c = np.mean(z_l)
+        b = np.array([x_c, y_c, z_c])
+        c = np.array([x_u, y_u, z_u])
+
+        direction = b - a
+        norm = np.linalg.norm(direction)
+
         if flg == 'text':
-            a = 0.1
+            d = norm - size*1.15 + 0.1  # distance from the center of atom + an offset for the numbers
+        elif flg == 'orb':
+            d = norm - size*1.15 # distance from the center of atom
         else:
-            a = 0
+            d = 0.0
+        
+        if norm == 0:
+            raise ValueError("Zero-length direction vector. Check position scaling function")
 
-        if '-pz' in orb_typ.lower():
-            z_upper_r = z_upper_r - size/1.4 - a
-            z_lower_r = z_lower_r - size/1.4 - a
-            pzflg = 1
-            print('-pz is considered')
-        if 'pz' in orb_typ.lower() and pzflg == 0:
-            z_upper_r = z_upper_r + size/1.4 - a
-            z_lower_r = z_lower_r + size/1.4 - a
-            pzflg1 = 1
-            print('pz is considered')
-        if '-py' in orb_typ.lower():
-            y_upper_r = y_upper_r - size/1.4 - a
-            y_lower_r = y_lower_r - size/1.4 - a
-            pyflg = 1
-            print('-py is considered')
-        if 'py' in orb_typ.lower() and pyflg == 0:
-            y_upper_r = y_upper_r + size/1.4 - a
-            y_lower_r = y_lower_r + size/1.4 - a
-            pyflg1 = 1
-            print('py is considered')
-        if '-px' in orb_typ.lower() :
-            x_upper_r = x_upper_r - size/1.4 - a
-            x_lower_r = x_lower_r - size/1.4 - a
-            pxflg = 1
-            print('-px is considered')
-        if 'px' in orb_typ.lower() and pxflg == 0:
-            x_upper_r = x_upper_r + size/1.4 - a
-            x_lower_r = x_lower_r + size/1.4 - a 
-            pxflg1 = 1
-            print('px is considered')
+        unit_vector = direction / norm
 
-        # for pure px, py or pz they need additional scalling
-        if pxflg + pyflg + pzflg + pxflg1 + pyflg1 + pzflg1 == 1:
-            if pzflg == 1:
-                z_upper_r = z_upper_r - size/2.5 - a
-                z_lower_r = z_lower_r - size/2.5 - a
-                print('-pz is considered')
-            if pzflg1 == 1:
-                z_upper_r = z_upper_r + size/2.5 - a
-                z_lower_r = z_lower_r + size/2.5 - a
-                print('pz is considered')
-            if pyflg == 1:
-                y_upper_r = y_upper_r - size/2.5 - a
-                y_lower_r = y_lower_r - size/2.5 - a
-                print('-py is considered')
-            if pyflg1 == 1:
-                y_upper_r = y_upper_r + size/2.5 - a
-                y_lower_r = y_lower_r + size/2.5 - a
-                print('py is considered')
-            if pxflg == 1:
-                x_upper_r = x_upper_r - size/2.5 - a
-                x_lower_r = x_lower_r - size/2.5 - a
-                print('-px is considered')
-            if pxflg1 == 1:
-                x_upper_r = x_upper_r + size/2.5 - a 
-                x_lower_r = x_lower_r + size/2.5 - a 
-                print('px is considered')
-
+        # Translate point b to be at distance d from a
+        offset =  d * unit_vector
+        x_upper_r = x_u + offset[0]
+        y_upper_r = y_u + offset[1]
+        z_upper_r = z_u + offset[2]
+        x_lower_r = x_l + offset[0]
+        y_lower_r = y_l + offset[1]
+        z_lower_r = z_l + offset[2]
         return (x_upper_r, y_upper_r, z_upper_r, x_lower_r, y_lower_r, z_lower_r)
-
 
     def rotate_and_translate(self, x, y, z, R, center):
         pts = np.stack([x.flatten(), y.flatten(), z.flatten()])
