@@ -2145,12 +2145,7 @@ class drawing_molecule:
                     if r1 is not None and r2 is not None:
                         covrad = (r1 + r2)/100.0
                         if distance <= covrad: # cheking if the distances between two atoms are bonded
-
-                           # x01, y01, z01 = self.point_on_circ(x2, y2, z2, x1, y1, z1, covrad)
-                           # x02, y02, z02 = self.point_on_circ(x1, y1, z1, x2, y2, z2, covrad)
-                           # ax.plot([x01, x02], [y01, y02], [z01, z02], color='black', linewidth=2.5, alpha=0.6)
-
-                            ax.plot([x1, x2], [y1, y2], [z1, z2], color='black', linewidth=2.5, alpha=0.5)
+                            ax.plot([x1, x2], [y1, y2], [z1, z2], color='black', linestyle=':', linewidth=2.5, alpha=0.5)
                     else:
                         messagebox.showerror("Not Found",f"covalent radious of {atom1} and/or {atom2}\n"
                                              "are not found in the list")
@@ -2238,7 +2233,7 @@ class drawing_molecule:
                     centers = (x0, y0, z0)
                     centers1 = (orb_num, x0, y0, z0)
                     guiding_points.append(centers)
-                    vb_bonds_points.append(orb_num + centers)
+                    vb_bonds_points.append(centers1)
 
                     ax.plot_surface(x, y, z, color='red', alpha=0.5) # transparency alpha
                     ax.text(x0, y0 + 0.1, z0 + b + 0.1, orb_num, color='black', fontsize=10, ha='center', va='bottom')
@@ -2279,16 +2274,57 @@ class drawing_molecule:
                         va='bottom'
                     )
 
-
+            # drwaing vb bonds after generating structures
             if len(self.bond_lst) != 0:
-                #for i in range(len(self.bond_lst)):
                 for a, b in self.bond_lst:
                     print('a, b', a, b)
                     for orb_num1, x1, y1, z1 in vb_bonds_points:
 
                             for orb_num2, x2, y2, z2 in vb_bonds_points:
                                     if int(a) == int(orb_num1) and int(b) == int(orb_num2):
-                                        ax.plot([x1, x2], [y1, y2], [z1, z2], color='blue', linewidth=2.5)
+                                        p1 = (x1, y1, z1)
+                                        p2 = (x2, y2, z2)
+                                        filtered_points = guiding_points.copy()
+                                        if p1 in filtered_points:
+                                            filtered_points.remove(p1)
+                                        if p2 in filtered_points:
+                                            filtered_points.remove(p2)
+
+                                        #print('guiding_points',guiding_points)
+                                        #print('points',p1, p2)
+                                        #print('filtered_points',filtered_points)
+                                        line_pts = self.get_line_points(p1, p2, 50)
+                                        clear, min_dist = self.is_arc_clear(line_pts, filtered_points, d_min=0.01)
+                                        print('clear',clear, min_dist)
+                                        if clear:
+                                            ax.plot([x1, x2], [y1, y2], [z1, z2], color='blue', linewidth=2.5)
+                                        else:
+                                            height = 0.1
+                                            normal = [0, 1, 0]
+                                            #success = False
+                                            for i in range(20):
+                                                arc_pts = self.generate_arc(p1, p2, normal, height)
+                                                clear, min_dist = self.is_arc_clear(arc_pts, filtered_points,
+                                                                                    d_min=0.01)
+                                                if clear:
+                                                    #success = True
+                                                    ax.plot(arc_pts[:,0], arc_pts[:,1], arc_pts[:,2], color='blue', linewidth=2.5)
+                                                    break
+                                                height += 0.1
+
+            if len(self.rad_lst) != 0:
+                for a in self.rad_lst:
+                    for orb_num, x1, y1, z1 in vb_bonds_points:
+                        if int(a) == int(orb_num):
+                            ax.scatter(x1, y1, z1, color='blue', s=50)
+
+
+            if len(self.nlp_lst) != 0:
+                for a in self.nlp_lst:
+                    for orb_num, x1, y1, z1 in vb_bonds_points:
+                        if int(a) == int(orb_num):
+                            ax.scatter(x1, y1, z1, color='blue', s=50)
+                            ax.scatter(x1, y1, z1+0.5, color='blue', s=50)
 
             canvas = FigureCanvasTkAgg(fig, master=canvas_frame)
             canvas_widget = canvas.get_tk_widget()
@@ -2478,6 +2514,44 @@ class drawing_molecule:
         pts_rot[2] += center[2]
         return (pts_rot[0].reshape(x.shape), pts_rot[1].reshape(y.shape), 
                 pts_rot[2].reshape(z.shape))
+
+    def generate_arc(self, P1, P2, normal, height=1.0, n_points=100):
+        P1, P2, normal = map(np.array, (P1, P2, normal))
+        v = P2 - P1
+        v_hat = v / np.linalg.norm(v)
+        print('v:',v, 'v_hat:',v_hat)
+        w = np.cross(normal, v_hat)
+        print('wwww',w)
+        w_hat = w / np.linalg.norm(w)
+        print('W_hat',w_hat)
+
+        M = (P1 + P2) / 2
+        C = M + height * w_hat  # center of the arc
+
+        r = np.linalg.norm(P1 - C)
+        theta1 = np.arctan2(np.dot(P1 - C, w_hat), np.dot(P1 - C, v_hat))
+        theta2 = np.arctan2(np.dot(P2 - C, w_hat), np.dot(P2 - C, v_hat))
+        thetas = np.linspace(theta1, theta2, n_points)
+
+        arc_points = []
+        for theta in thetas:
+            point = C + r * (np.cos(theta) * v_hat + np.sin(theta) * w_hat)
+            arc_points.append(point)
+        return np.array(arc_points)
+
+    def is_arc_clear(self, arc_points, stored_points, d_min):
+        from scipy.spatial.distance import cdist
+        distances = cdist(arc_points, stored_points)
+        min_dist = np.min(distances)
+        return min_dist > d_min, min_dist
+
+    def get_line_points(self, p1, p2, num_points=100):
+        """Generate num_points along a line from p1 to p2."""
+        p1 = np.array(p1)
+        p2 = np.array(p2)
+        t = np.linspace(0, 1, num_points)
+        points = (1 - t[:, None]) * p1 + t[:, None] * p2  # shape: (num_points, 3)
+        return points
 
 
 class Run_Fort:
