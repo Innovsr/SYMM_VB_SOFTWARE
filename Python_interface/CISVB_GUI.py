@@ -2051,22 +2051,29 @@ class drawing_molecule:
         self.nlp_lst = []
         self.rad_lst = []
         self.bond_lst = []
+        self.str_number = None
+        self.set_number = None
         print('self .active_atoms',self.active_atoms)
         print('self.atoms',self.atoset)
 
-    def str_info(self, nlp_lst, rad_lst, bond_lst):
+    def str_info(self, nlp_lst, rad_lst, bond_lst, str_number, set_number):
         self.nlp_lst = nlp_lst
         self.rad_lst = rad_lst
         self.bond_lst = bond_lst
+        self.str_number = str_number
+        self.set_number = set_number
 
     def VB_view(self):
         if GlobVar.geometry_inserted is True:
             mol_display = tk.Toplevel()
-            if (GlobVar.molecule_string):
+            if GlobVar.molecule_string and not self.str_number:
                 mol_display.title(f"{GlobVar.molecule_string}")
+            elif GlobVar.molecule_string and self.str_number:
+                mol_display.title(f"Molecule: {GlobVar.molecule_string}, Set_number: {self.set_number}, Structure Number: {self.str_number}")
             else:
                 mol_display.title("-Molecule-")
-            mol_display.geometry("700x700")
+
+            mol_display.geometry("600x700")
             mol_display.configure(background="lightblue")
 
             mol_frame = tk.Frame(mol_display)
@@ -2245,16 +2252,27 @@ class drawing_molecule:
                     xl_c, yl_c, zl_c = np.mean(x_l), np.mean(y_l), np.mean(z_l) # the surface
                     centers_u = (xu_c, yu_c, zu_c)
                     centers_l = (xl_c, yl_c, zl_c)
-                    centers1 = (orb_num, xu_c, yu_c, zu_c)
                     guiding_points.append(centers_u)
                     guiding_points.append(centers_l)
-                    vb_bonds_points.append(centers1)
 
                     ax.plot_surface(x_u, y_u, z_u, color='red', alpha=0.5) # transparency alpha
                     ax.plot_surface(x_l, y_l, z_l, color='red', alpha=0.5) # transparency alpha
 
-                    i, j = x_u.shape[0] // 2, x_u.shape[1] // 2
-                    p = np.array([x_u[i, j], y_u[i, j], z_u[i, j]])
+                    if 's' in orb_typ.lower():
+                        i, j = x_l.shape[0] // 2, x_l.shape[1] // 2
+                        p = np.array([x_l[i, j], y_l[i, j], z_l[i, j]])
+                        centers1 = (orb_num, xl_c, yl_c, zl_c)
+                        if 'pz' in orb_typ.lower() and '-pz' not in orb_typ.lower():
+                            i, j = x_u.shape[0] // 2, x_u.shape[1] // 2
+                            p = np.array([x_u[i, j], y_u[i, j], z_u[i, j]])
+                            centers1 = (orb_num, xu_c, yu_c, zu_c)
+                        vb_bonds_points.append(centers1)
+                    else:
+                        i, j = x_u.shape[0] // 2, x_u.shape[1] // 2
+                        p = np.array([x_u[i, j], y_u[i, j], z_u[i, j]])
+                        centers1 = (orb_num, xu_c, yu_c, zu_c)
+                        vb_bonds_points.append(centers1)
+
                     
                     # Compute radial direction from center
                     center = np.array([x0, y0, z0])
@@ -2300,7 +2318,7 @@ class drawing_molecule:
                                             ax.plot([x1, x2], [y1, y2], [z1, z2], color='blue', linewidth=2.5)
                                         else:
                                             height = 0.1
-                                            normal = [0, 1, 0]
+                                            normal = [1, 1, 1]
                                             #success = False
                                             for i in range(20):
                                                 arc_pts = self.generate_arc(p1, p2, normal, height)
@@ -2330,6 +2348,8 @@ class drawing_molecule:
             canvas_widget = canvas.get_tk_widget()
             canvas_widget.pack(fill=tk.BOTH, expand=True)
 
+            close_btn = tk.Button(box_frame, text="Close", command=mol_display.destroy)
+            close_btn.pack(expand=True)
 
     def orbital_builder(self, symbol, orb_num, orb_typ, x0, y0, z0 ):
         print('------',symbol, orb_num, orb_typ,'------')
@@ -2363,14 +2383,13 @@ class drawing_molecule:
             z_lower = b * np.outer(np.ones_like(u), np.cos(v_lower))
 
             sflg = 1
+            pzflg = 0
             pxflg = 0
             pyflg = 0
             if '-pz' in orb_typ.lower():
-                print('here1')
+                pzflg = 1
                 return (x_upper+x0, y_upper+y0, z_upper+z0, x_lower+x0, y_lower+y0, z_lower+z0)
-            if 'pz' in orb_typ.lower():
-                print('here2')
-            #    z1 = z1 - 0.4
+            if 'pz' in orb_typ.lower() and pzflg == 0:
                 z_upper = b * np.outer(np.ones_like(u), np.cos(v_upper))
                 z_lower = a * np.outer(np.ones_like(u), np.cos(v_lower))
                 return (x_upper+x0, y_upper+y0, z_upper+z0, x_lower+x0, y_lower+y0, z_lower+z0)
@@ -2842,6 +2861,8 @@ class Output:
                                               rumers, sls, set_text_wt, lines)
                 )
         view_nextset_button.grid(row=0, column=3, padx=10, pady=10)
+        if len(lines) == 1:
+            view_nextset_button.config(state=tk.DISABLED)  # Initially disable the button
 
         view_prevtset_button = tk.Button(
                 self.frames["button_frame"], text='Prev Set', 
@@ -2849,6 +2870,8 @@ class Output:
                                               rumers, sls, set_text_wt, lines)
                 )
         view_prevtset_button.grid(row=0, column=1, padx=10, pady=10)
+        if len(lines) == 1:
+            view_prevtset_button.config(state=tk.DISABLED)  # Initially disable the button
 
 
     def view_set(self, flag, structure, various_qualities, overall_qualities, rumers, sls, set_text_wt, lines):
@@ -2874,15 +2897,17 @@ class Output:
                     indset = []
                     set_text_wt.delete("1.0", "end")
                     set_text_wt.insert(
-                            tk.END, "\n           Independent Set of structures  \n\n"
+                            tk.END, f"\n    Total Number of  Independent Set of Structures: {len(lines)}  \n\n"
                             )
                     set_text_wt.insert(
                             tk.END, "\n           Set number::  " + f"{linear_indset[1]}\n\n"
                             )
+                    sl = 0
                     for index in linear_indset[2:]:
+                        sl += 1
                         indset.append(int(index))
                         set_text_wt.insert(
-                                tk.END, f"   {sls[int(index) - 1]}:        " + structure[int(index) - 1] + "\n"
+                                tk.END, f" {sl}  ({sls[int(index) - 1]}):        " + structure[int(index) - 1] + "\n"
                                 )
                     info_button = tk.Button(self.frame_view_info, text="Set Info", 
                            command=lambda: self.set_info(
@@ -2898,22 +2923,26 @@ class Output:
                                                     )
                         symm_grp_button.grid(row=0, column=1, sticky=tk.W, padx=10)
 
+                    ## Structure view Buttons ... ##
                     self.molkey = 0
 
                     view_button = tk.Button(self.frame_view_str, text="View Structure", 
-                           command=lambda: self.View_Structure(indset, 'molflg', structure))
+                                            command=lambda i=indset, s=structure, l=linear_indset[1]:
+                                            self.View_Structure(i, 'molflg', s, l))
                     view_button.grid(row=0, column=1, sticky=tk.W, padx=10)
 
                     view_button_next = tk.Button(self.frame_view_str, text="next", 
-                           command=lambda: self.View_Structure(indset, 'molflg1', structure))
+                                            command=lambda i=indset, s=structure, l=linear_indset[1]:
+                                            self.View_Structure(i, 'molflg1', s, l))
                     view_button_next.grid(row=0, column=2, sticky=tk.W, padx=10)
 
                     view_button_prev = tk.Button(self.frame_view_str, text="prev", 
-                           command=lambda: self.View_Structure(indset, 'molflg2', structure))
+                                            command=lambda i=indset, s=structure, l=linear_indset[1]:
+                                            self.View_Structure(i, 'molflg2', s, l))
                     view_button_prev.grid(row=0, column=0, sticky=tk.W, padx=10)
-                    print('linear_indset', linear_indset)
+                    #print('linear_indset', linear_indset)
 
-    def View_Structure(self, indset, flg, structures):
+    def View_Structure(self, indset, flg, structures, set_number):
         print('indset',indset, flg)
         print('structure',structures[0], structures[1])
         seen = set()
@@ -2955,7 +2984,7 @@ class Output:
         else:
             return
         d=drawing_molecule()
-        d.str_info(nlp_lst, rad_lst, bond_lst)
+        d.str_info(nlp_lst, rad_lst, bond_lst, self.molkey+1, set_number)
         d.VB_view()
 
         print('nlp:',nlp_lst,'rad:',rad_lst,'bond:',bond_lst)
