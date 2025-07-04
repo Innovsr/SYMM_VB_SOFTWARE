@@ -4,7 +4,7 @@ use commondat_mod
 use quality_mod
 use infosymm_mod
 use mod_mat_ind
-!use Rum_set_id
+use str_module
 !use mod_MatLDR 
 implicit none
 
@@ -17,20 +17,10 @@ integer::ttqlty,sf1,sf2,j1,j2,grp(30)
 !Double Precision, allocatable::D(:)
 !Double Precision::D(10000),ovlp
 character(10)::a
-character(len=300)::outfile
 integer, pointer::str3(:,:)
-integer, allocatable, save::strno(:),str12(:,:),col9(:)
+!integer, allocatable::strno(:),str12(:,:),col9(:)
 
-print*,'enter write_symm_xmi_1',strnn,MaxStrOepo
-
-if (.not. allocated(strno)) then
-allocate(strno(MaxStrOepo))
-strno = 0
-endif
-if (.not. allocated(str12)) then
-allocate(str12(MaxStrOepo, nae))
-str12 = 0
-endif
+print*,'enter write_symm_xmi_1',strnn,MaxStrOepo,CovDim
 
 do m19=i7+1,MaxStrOepo
   strno(m19)=0
@@ -149,10 +139,10 @@ if(asymm.eq.1) m21=m21+1
     sf1=1
     return
  endif
- if (.not. allocated(col9))then
-   allocate(col9(CovDim))
-   col9 = 0 
- endif
+! if (.not. allocated(col9))then
+!   allocate(col9(CovDim))
+!   col9 = 0 
+! endif
 
 if (asymm.eq.1)then
   i7=i7+1
@@ -200,34 +190,52 @@ if (symm.eq.1) then
  endif
 endif
 
- if(i7.eq.strnn) then
-  incmplt=0
-  ttqlty=0
-  tqlty=0
-  bqlty=0
-  sqlty=0
-  do m119=1,i7
-   ttqlty=ttqlty+qq10(m119)
-  enddo
-  if(ttqlty.le.ttqlty0)then
-    set_number=set_number+1
-    mns=mns+1
-    if(nfset.eq.1.and.set_number.eq.1)ttqlty0=ttqlty
-    if(nfset.eq.1.and.set_number.gt.1)then
-     if(ttqlty.lt.ttqlty0)ttqlty0=ttqlty
-    endif
+if(i7.eq.strnn) then
+  call write_output(sf1, sf2, i7, str12, col9)
+endif
 
-   do m19=1,i7
+
+return
+end subroutine write_symm_xmi_1
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+subroutine write_output(sf1, sf2, i7, str12, col9)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+implicit none
+
+integer::ttqlty, sf1, sf2, m119, m19, m20, i7, i
+integer, allocatable:: str12(:,:),col9(:)
+character(10)::a
+character(len=300)::outfile
+
+
+incmplt=0
+ttqlty=0
+tqlty=0
+bqlty=0
+sqlty=0
+do m119=1,i7
+  ttqlty=ttqlty+qq10(m119)
+enddo
+if(ttqlty.le.ttqlty0)then
+  set_number=set_number+1
+  mns=mns+1
+  if(nfset.eq.1.and.set_number.eq.1)ttqlty0=ttqlty
+  if(nfset.eq.1.and.set_number.gt.1)then
+    if(ttqlty.lt.ttqlty0)ttqlty0=ttqlty
+  endif
+
+  do m19=1,i7
     if(niao.eq.0)then
-     write(9+u1,900)qq11(m19),bondq14(m19),qq12(m19),qq10(m19),'|',(str12(m19,m20),m20=1,nae)
+      write(9+u1,900)qq11(m19),bondq14(m19),qq12(m19),qq10(m19),'|',(str12(m19,m20),m20=1,nae)
     endif
     if(niao.gt.1)then
-     write(9+u1,901)qq11(m19),bondq14(m19),qq12(m19),qq10(m19),'|',1,':',niao,(str12(m19,m20),m20=1,nae)
+      write(9+u1,901)qq11(m19),bondq14(m19),qq12(m19),qq10(m19),'|',1,':',niao,(str12(m19,m20),m20=1,nae)
     endif
     if(niao.eq.1)then
-     write(9+u1,909)qq11(m19),bondq14(m19),qq12(m19),qq10(m19),'|',1,1,(str12(m19,m20),m20=1,nae)
+      write(9+u1,909)qq11(m19),bondq14(m19),qq12(m19),qq10(m19),'|',1,1,(str12(m19,m20),m20=1,nae)
     endif
-   enddo
+  enddo
 
 !   if(ovopt.eq.vpt) then
 !    !allocate(D(i7))
@@ -246,25 +254,25 @@ endif
 !    call Rumer_set_id(str12,i7,nl,Rid)
 !    endif
 
-   if(Rid.eq.0)write(9+u1,910)'quality value',ttqlty
-   if(Rid.eq.1)write(9+u1,920)'quality value',ttqlty,'Rumer_Set',(set_num(i),i=1,nrs)
-   bqlty=0
-   write(9+u1,*)'Set_number=',set_number
-   write(9+u1,*)'    '
-   write(5,913)'Set_number',set_number,(col9(m19),m19=1,i7)
-  endif
+  if(Rid.eq.0)write(9+u1,910)'quality value',ttqlty
+  if(Rid.eq.1)write(9+u1,920)'quality value',ttqlty,'Rumer_Set',(set_num(i),i=1,nrs)
+  bqlty=0
+  write(9+u1,*)'Set_number=',set_number
+  write(9+u1,*)'    '
+  write(5,913)'Set_number',set_number,(col9(m19),m19=1,i7)
+endif
 
-  if(nfset.eq.0.and.ttqlty.le.ttqlty0)then 
-   sf2=1
-   sf1=0
-   return
-  endif
+if(nfset.eq.0.and.ttqlty.le.ttqlty0)then 
+  sf2=1
+  sf1=0
+  return
+endif
 
- if(mns.eq.max_set)then
+if(mns.eq.max_set)then
   if(u1.eq.mset-1)then
-   sf2=0
-   sf1=1
-   return
+    sf2=0
+    sf1=1
+    return
   endif
   close(9+u1)
   mns=0
@@ -280,14 +288,12 @@ endif
 !   write(a,'(I3)')u1
 !  endif
   if(u1.eq.1000)then
-   write(*,*)'Maximum output file has been set to 1000, it seems that you have more sets. Please increase the limit'
-   sf2=1
-   return
+    write(*,*)'Maximum output file has been set to 1000, it seems that you have more sets. Please increase the limit'
+    sf2=1
+    return
   endif
   outfile=trim(out_folder_path)//trim('/')//trim(STDOUT)//trim('_')//trim(a)//trim('.out')
   open(unit=9+u1,file=trim(outfile),status='unknown')
- endif
-
 endif
 
 900 format(2x,I0,3x,I0,3x,I0,3x,I0,8x,a,1x,*(I0, 1x))
@@ -298,6 +304,7 @@ endif
 912 format(a,3x,F10.3)
 913 format(a,2x,I0,4x,*(I0, 1x))
 
-return
-end subroutine write_symm_xmi_1
+!deallocate(str12)
+end subroutine write_output
+
 end module mod_write_symm_xmi_1

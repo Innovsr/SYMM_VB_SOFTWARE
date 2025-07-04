@@ -20,7 +20,7 @@ integer, allocatable::nn_count(:)
 integer::nnscore,ipnum,b1,b2,l1
 double precision::tscore,strscore,lpna
 double precision, allocatable:: ssym(:),order(:)
-integer::numbond,loop_score,ncrow
+integer::numbond,loop_score,ncrow, bonds
 real*8::coord_score
 real*8, allocatable::stsymsc(:),bndscore(:),score(:,:),new_score(:,:)
 integer, allocatable::symq(:)
@@ -28,11 +28,18 @@ integer, allocatable::coordination_mat(:,:)
 integer, pointer:: str1(:,:)
 !real*8, pointer::stsymsc(:)
 
-!do i= 1, ncqs
-!print*,'str1',(str1(i, j),j=1,nae)
-!enddo
+print*,'--- symmetry_cal_pi ---'
+do i= 1, ncqs
+print*,'str1',(str1(i, j),j=1,nae)
+enddo
 open(unit=15,file='sympi.temp',status='unknown')
 
+if(.not. allocated(stsymsc))then
+allocate(stsymsc(MaxStrOepo))
+stsymsc = 0
+endif
+bonds=(nae-nl*2-nlast)/2
+if (bonds.eq.0) goto 500
 
 !!! initialise the score array, it stores the scores of each atoms
 allocate(score(atom,2))
@@ -359,11 +366,8 @@ do i=1,ncqs
   
   call coordination_val(coordination_mat,numbond,bndscore,coord_score)
   !stop
-  if(.not. allocated(stsymsc))then
-  allocate(stsymsc(MaxStrOepo))
-  stsymsc = 0
-  endif
   
+  print*,'sourav_pi_1',strscore
   stsymsc(i)=1.0/strscore+coord_score
 !  write(15,*)stsymsc(i)
   deallocate(new_score)
@@ -378,9 +382,15 @@ deallocate(score)
 !enddo
 !105 format(F8.4)
 
-allocate(ssym(ncqs))
+deallocate(tot_orb)
+deallocate(nn_group)
+deallocate(sl_group)
+deallocate(nelimt)
+deallocate(full_nn_group)
+500 allocate(ssym(ncqs))
 ssym = 0
 
+  print*,'sourav_pi_2'
 jj=1
 loop4:do m19=1,ncqs
   if(m19.eq.1)ssym(1)=stsymsc(1)
@@ -395,6 +405,7 @@ loop4:do m19=1,ncqs
 enddo loop4
 nssym=jj
 
+  print*,'sourav_pi_3'
 allocate(order(ncqs))
 order=0.0
 
@@ -414,6 +425,7 @@ loop6:do k3=1,nssym
   enddo loop7
 enddo loop6
 
+  print*,'sourav_pi_4'
 deallocate(ssym)
 !! each group get integer numbers serialy 
 n=0
@@ -427,6 +439,7 @@ do i=1,nssym
   enddo
 enddo
 
+  print*,'sourav_pi_5'
 deallocate(order)
 
 if(.not. allocated(symm_groups))then
@@ -437,12 +450,19 @@ if(.not. allocated(symm_groups_count)) then
    allocate(symm_groups_count(ncqs))
    symm_groups_count = 0
 endif
+print*,'symm_groups',shape(symm_groups)
 jj = 0
 do i = 1, ncqs
   if (jj.lt.symq(i)) jj = symq(i)
 enddo
-symm_maxval = jj
+symm_maxval = jj  !! symm_maxval = maximum number of symmetric groups
 
+do i=1,ncqs
+print*,'symq_pi',symq(i),symm_maxval
+enddo
+
+
+  print*,'sourav_pi_6'
 do i = 1, symm_maxval
    jj = 0
    do j = 1, ncqs
@@ -454,10 +474,13 @@ do i = 1, symm_maxval
    symm_groups_count(i) = jj
 enddo
 
+  print*,'sourav_pi_7'
 do i = 1, symm_maxval
-   print*,'symm_groups_count_pi',(symm_groups(i, j), j = 1, symm_groups_count(i))
+   print*,'symm_groups_count_pi',symm_groups_count(i),(symm_groups(i, j), j = 1, symm_groups_count(i))
 enddo
 
+!deallocate(symm_groups)
+!deallocate(symm_groups_count)
 !do j=1,ncqs
 !write(*,231)j,(str1(j,k),k=1,nae),symq(j)
 !enddo
@@ -469,11 +492,6 @@ enddo
 !deallocate(str1)
 
 !deallocate(stsymsc)
-deallocate(tot_orb)
-deallocate(nn_group)
-deallocate(sl_group)
-deallocate(nelimt)
-deallocate(full_nn_group)
 
 return
 end subroutine symmetry_cal_pi

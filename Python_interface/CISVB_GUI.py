@@ -201,7 +201,7 @@ class Ctrl_Input:
 
         
         group_label_info = {
-                "Top_label":("frame","Basic Informations About The Molecular System",0,18),
+                "Top_label":("frame","Basic Informations About The Molecular System",1,18),
                 "bottom_label":("frame4","Orbital Info & Keywords:",5,16),
                 "geometry_label":("frame2","Geometry of the Molecular System",0,12),
                 "Active_space_label":("frame3","Define Active Space of the System",0,12)
@@ -237,6 +237,8 @@ class Ctrl_Input:
 
         # create buttons
         buttons_info = {
+                "help_button":("frame", "Help", self.Call_help_info, 0, 2,
+                               "Please click to get help in using this software"),
                 "brows_geo_button":("frame2", "Brows", self.read_geometry, 1, 1,
                                     "If you have the geometry saved in any dat file you can brows\n"
                                     "that file and insert the geometry here using 'Brows' button; in the \n"
@@ -256,11 +258,15 @@ class Ctrl_Input:
         for button_name, (frame, text, command, row, column, tooltip) in buttons_info.items():
             if frame in frame_info:
                 button = ttk.Button(self.frames[frame], text=text, command=command)
-                button.grid(row=row, column=column, sticky=tk.W, padx=5, pady=5)
+                sticky_opt = 'e' if text == 'Help' else 'w'
+                button.grid(row=row, column=column, sticky=sticky_opt, padx=5, pady=5)
                 self.balloon.bind(button, tooltip)
 
         self.create_ctrl_pans()
 
+    def Call_help_info(self):
+        a=Help_info()
+        a.open_help_window()
 
     def create_geo_unit(self):
         '''
@@ -2040,6 +2046,129 @@ class Keywd_Input:
         return (chinst, symm, asymm, checksym, strtype, set_order, nset, mout, overlap,
                 itbp, nnbp, sybp, mnbondp, radicalp, nmbond)
 
+class Help_info:
+    def __init__(self):
+        pass
+
+    def open_help_window(self):
+        help_win = tk.Toplevel()
+        help_win.title("Help - Run Options")
+        help_win.geometry("900x700")
+
+        # Left listbox menu
+        menu_frame = tk.Frame(help_win, width=200, bg='lightgray')
+        menu_frame.pack(side=tk.LEFT, fill=tk.Y)
+
+        # Right content area
+        content_frame = tk.Frame(help_win)
+        content_frame.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH)
+
+        # Listbox menu items
+        topics = ["1. Basic Info", 
+                  "2. Valence Bond Structure", 
+                  "3. Active Part Inputs",
+                  "4. Orbital Inputs",
+                  "5. Spatial Keywords",
+                  "6. Run & Optput"
+                  "7. Visualisation", 
+                  "8. Debug Mode"]
+
+        listbox = tk.Listbox(menu_frame, width=30)
+        for topic in topics:
+            listbox.insert(tk.END, topic)
+        listbox.pack(pady=10, padx=10, fill=tk.BOTH)
+
+        # Text widget with help content
+        text = tk.Text(content_frame, wrap=tk.WORD)
+        text.pack(fill=tk.BOTH, expand=True)
+
+        # Store section indexes
+        section_indices = {}
+
+        help_content = {
+            "1. Basic Info": "This software is designed to generate, analyze, and visualize "
+            "Valence Bond (VB) structures with enhanced chemical insight and symmetry-adapted structure sets, "
+            "addressing key limitations of traditional Rumer sets.\n\n"
+            "It implements methodologies introduced in two publications:\n\n"
+            "1) 'New Methodology to Produce Sets of Valence Bond Structures with Enhanced Chemical Insights' "
+            "(Roy & Shurki, JCTC 2023)\n"
+            "2) 'The Topological Way—A New Methodology to Construct Symmetric Sets of Valence-Bond Structures' "
+            "(Roy & Shurki, JCP 2025)\n\n"
+            "Together, these form the foundation of a flexible, automated, and chemically intuitive platform for "
+            "constructing high-quality VB structure sets tailored to a wide range of molecular systems.",
+            "2. Valence Bond Structure":
+            'Valence Bond (VB) structures represent specific pairing distributions of localized orbitals '
+            'in a chemical system. A VB structure is typically expressed as a sequence of integers, '
+            'where each number corresponds to an atomic orbital. The sequence is organized into groups as follows:\n\n'
+            '  - Inactive orbitals (fully occupied)\n'
+            '  - Active orbitals containing lone pairs\n'
+            '  - Active orbital pairs, each singly occupied (i.e., bonded orbitals)\n'
+            '  - Active unpaired orbitals (radicals)\n\n'
+            'For example, consider a system with 11 orbitals:\n'
+            '  - 5 inactive orbitals\n'
+            '  - 1 active lone pair\n'
+            '  - 2 singlet pairs (i.e., 4 orbitals forming 2 bonds)\n'
+            '  - 1 unpaired orbital\n\n'
+            'A possible structure might be written as:\n'
+            '  1 1 2 2 3 3 4 4 5 5 6 6 7 8 9 10 11\n'
+            'Or, using a compact notation:\n'
+            '  1:5 6 6 7 8 9 10 11\n'
+            '(where "1:5" represents orbitals 1 through 5 as inactive and doubly occupied.' 
+            '"7 8" and "9 10" are singlet pairs or bonds and "11" is unpaired or radical).\n\n'
+            'The output structures generated by this software follow this format.\n'
+            'The numbers of active orbitals (number of lone pairs and  unpaired orbitals) '
+            'determine the number of permissible VB structures for a given chemical system.'
+            'The number of linearly independent Valence Bond (VB) structures for'
+            ' N singly occupied orbitals and a total system spin S is given by:\n\n'
+            '    (2S + 1) · N! / [(N/2 + S + 1)! · (N/2 – S)!]\n\n'
+            'In systems containing lone pairs or empty orbitals, the total number of structures is adjusted by '
+            'multiplying with the number of ways lone pairs and/or empty orbitals can be distributed.'
+            'Therefore, for M active orbital system L lone-pair presents then above formula must be'
+            ' multiplied by M! / l!*(M-L)! to get the complete set. The same formula will be'
+            ' applicable for ionic part too.',
+            "3. Active Part Inputs": "To Run the software, the basic informations about the molecular system" 
+            "must be inserted correctly, Which are listed below:\n"
+            "  - Number of Active Orbitals (NAO)\n"
+            "  - Number of Active Electrons (NAE)\n"
+            "  - Multiplicity (nmul) 2S + 1 \n"
+            "  - Chemical Formula: Formula given apropreatly in 'Caps lock' e.g: Benzene\n" 
+            "    must be given as:C6H6 or salicylic acid must be written as 'C7H6O3',\n" 
+            "    for reaction the reactants must be added with underscores '_' eg: A_B\n" 
+            "    if 'A' and 'B' are two reactants of a reaction\n"
+            "  - Geometry: Geometry of the system must be provided. There are two options:\n"
+            "    1) Geometry can be uploaded directly from the computer (Previously saved)\n"
+            "    2) Geometry can be written manually by clicking 'Geometry' button \n"
+            "    * The geometry can be provided in two units 'Bohr' or 'Angstrom'."
+            "    after inserting the geometry the molecile can be visualized on a 3-dimentional\n"
+            "    view and the bond length, angles and azimithal angles can be measured"
+            "  - Orbitals: after insertion of the above informations the orbital button\n"
+            "    will be enabled. User need to provide only active orbital informations\n"
+            "    detail are given in the orbital input section.\n",
+            "4. Orbital Inputs":"In the orbital pane two things need to be inserted as mentioned below\n"
+            "    1) Type of the orbitals.\n"
+            "    2) Atom number on which the particular orbital situated.\n"
+            "    here the orbitals can be four types 's', 'px', 'py', and 'pz'. ",
+            "5. Spatial Keywords":"Spatial Keywords",
+            "6. Run & Optput":"Click the Run Button to run the calculation",
+            "7. Visualisation": "Visualise molecular orbitals, densities, or vibrational modes.",
+            "8. Debug Mode": "Use debug mode to print intermediate variables or logs."
+        }
+
+        for topic, content in help_content.items():
+            section_indices[topic] = text.index(tk.INSERT)
+            text.insert(tk.END, f"{topic}\n", "title")
+            text.insert(tk.END, content + "\n\n")
+
+        text.tag_configure("title", font=("Helvetica", 12, "bold"))
+
+        def on_select(event):
+            selected = listbox.get(listbox.curselection())
+            if not selected:
+                return  
+            if selected in section_indices:
+                text.see(section_indices[selected])  # Scroll to the section
+
+        listbox.bind("<<ListboxSelect>>", on_select)
 
 class drawing_molecule:
     def __init__(self):
@@ -2757,6 +2886,7 @@ class Output:
                         sls.append(int(sl))
                         various_quality = " ".join(cols[3:8])
                         various_qualities.append(various_quality)
+                        print('various_quality',various_quality)
                         overall_quality = cols[10]
                         overall_qualities.append(int(overall_quality))
                         rumer = cols[12]
@@ -3108,7 +3238,7 @@ class class_manager:
 if __name__ == "__main__":
     root = tk.Tk()
     root.title("Chemical Insight & Symmetric VB (CISVB) Structures Generation Software")
-    root.geometry("630x920")
+    root.geometry("630x950")
     root.configure(background="lightblue")
     GlobVar.configure_styles()
     inputc = Ctrl_Input(root)

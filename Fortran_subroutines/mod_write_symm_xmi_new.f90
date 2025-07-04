@@ -25,7 +25,20 @@ character(10)::a
 integer, pointer::str3(:,:)!q_fac2(:), 
 !integer, allocatable::rumer(:),rumer_rad(:)
 
-print*,'enter_symm_xmi_new',strn, ncqs, nfset
+print*,'enter_symm_xmi_new',strn, ncqs, nfset, flg_cov, flg_ion
+
+if(flg_cov.eq.1)then
+  cov_space=cov_space+1
+  write(5,913)'Cov_Space',cov_space
+  write(9+u1,914)'================= Cov Space num:',cov_space,'================'
+endif
+if(flg_ion.eq.1)then
+  ion_space=ion_space+1
+  write(5,913)'Ion_Space',ion_space
+  write(9+u1,914)'================= Ion Space num:',ion_space,'================'
+endif
+913 format(a,2x,I0)
+914 format(a,2x,I0,2x,a)
 
 if (.not. allocated(nqset))then
    allocate(nqset(MaxStrOepo))
@@ -59,15 +72,9 @@ strnn=strn ! total number of permiissible structures in a set
 
 incmplt=1 ! running variable to count maximum number of independent structures in each set
 mns=0
-u1=1
 
 max_set=75000 ! maximum number of set will be written in one file
 
-!if(nfset.eq.3.or.nfset.eq.5)then
-!   rumset=0
-!   call rumer_structures(nl,str3,ncqss)!,rumer,rumer_rad)
-!   call write_rumer_xmi(nl,str3,ncqss)!,rumer,rumer_rad)
-!endif
 
 set_number=0
 bqlty=0

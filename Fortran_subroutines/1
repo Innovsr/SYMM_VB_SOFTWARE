@@ -33,14 +33,23 @@ allocate(num(x,y))
 allocate(n(MaxStrOepo))
 allocate(nn(MaxStrOepo))
 
+!if(.not. allocated(symq)) then
+!allocate(symq(MaxStrOepo))
+!symq = 0
+!endif
 !!! initialization of arrays !!!
 strct = 0
 n = 0
 nn=0
 num=0
 
+!!! ionic and covalent flags
+flg_ion=0
+flg_cov=1
+
 !!!! new structures generation part starts !!!!!
 vacorb=nao-nae
+!lonep=nae-nao
 lonep=nlp
 if(vacorb.gt.0)lonep=0
 bonds=(nae-lonep*2-nlast)/2
@@ -369,8 +378,7 @@ enddo
 
 deallocate(strc)
 alstr=i ! total number of possible structures revealed
-print*,'alstr',alstr
-allocate(strc(alstr+alstr*(nae-bonds*2)*(nlast+lonep), nae))
+allocate(strc(alstr*(nae-bonds*2)*(nlast+lonep), nae))
 endif
 
 if(bonds.eq.0)then
@@ -385,7 +393,6 @@ n=0
 nn=0
 
 if(bonds.ne.0) then
-  print*,'shape',shape(strc)
 do i1=1,alstr
   do k4=1,bonds*2
     strc(i1,k4)=strct(i1,k4)
@@ -691,35 +698,25 @@ if(nlast.ne.0.or.lonep.ne.0)then
   enddo
   if (lonep.ne.0) alstr=i ! new number of structures revealed
 
-  !do i=1,alstr
-  !print*,'strc',(strc(i,i2),i2=1,nae)
-  !enddo
+  do i=1,alstr
+  print*,'strc',(strc(i,i2),i2=1,nae)
+  enddo
 
-  !! sorting of the structures according to it's lone-pairs
-  !! using s.Roy's prioratise integer merging formula.
   if (lonep.gt.0) then
+    print*,'i am inside short'
     allocate(lonep_mat(lonep+1, alstr))
-    lonep_mat=0 ! matrix to store lonepairs for all structures along row
-
     do j=1,alstr
-        lonep_mat(1,j) = lonep_mat(1,j) + strc(j,1) ! 1st row for 1st lone paire 
+        lonep_mat(1,j) = lonep_mat(1,j) + strc(j,1)
       do i=1,lonep
-        lonep_mat(i+1,j) = lonep_mat(i+1,j) + strc(j,i+(i-1)) !1st lone pair comes towice
-      enddo                                                   !1st and 2nd rows, it generalise
-    enddo                                                     !for all system:: 1st lp merges 
-                                                              !with it's own.
-    !do i=1,lonep+1
-    !print*,'lonep_mat',(lonep_mat(i,j),j=1,alstr)
-    !enddo
+        lonep_mat(i+1,j) = lonep_mat(i+1,j) + strc(j,i+(i-1))
+      enddo
+    enddo
 
-    !! lower lonepair has the priority. if there are three lonepairs the sorting 
-    !! process will put more priority to the 1st lone-pair, then the 2nd lone-pair
-    !! and then the third lone-pair 
     do i=1,lonep
       max_val=1
       do j=1,alstr
-        if(max_val.lt.lonep_mat(i+1,j))max_val=lonep_mat(i+1,j) ! finding highest value of less  
-      enddo                                                     ! priority lone-pair's
+        if(max_val.lt.lonep_mat(i+1,j))max_val=lonep_mat(i+1,j)
+      enddo
       do j=1,alstr
         lonep_mat(i+1,j)=max_val*(lonep_mat(i,j)-1)+lonep_mat(i+1,j)
       enddo
@@ -789,9 +786,10 @@ if(nlast.ne.0.or.lonep.ne.0)then
       enddo loop31
 
     enddo
-    alstr = alstr_new
   endif
 endif
+stop
+alstr = alstr_new
 !!!!! production of the lone pairs and radical part of the structures ends !!!!!!
 deallocate(num)
 !990 format(30I3)
@@ -843,7 +841,7 @@ write(7,306)'IAB','NAB','SBB','PDB','PDR'
 306 format(8x,a,1x,a,1x,a,1x,a,1x,a)
 309 format(a,1x,a,1x,I4,3x,a,1x,I4,3x,a,1x,I4,3x,a,1x,I4)
 
-print*,'sourav3',alstr
+print*,'sourav3'
 allocate (fullcovstr(alstr,nae))
 
 do i=1,alstr
@@ -908,8 +906,7 @@ endif
 
 print*,'sourav5'
 perm_nstr=wig2*c
-if(flg_cov.eq.1) write(9+u1,*)perm_nstr,' covalent structures' 
-if(flg_ion.eq.1) write(9+u1,*)perm_nstr,' ionic structures' 
+write(10,*)perm_nstr,' covalent structures' 
 write(23,*)perm_nstr,' covalent structures' 
 if(nfset.ne.5)write(10,913)'IAB','NNB','SBB','fqual'
 write(23,913)'IAB','NNB','SBB','fqual'
@@ -921,11 +918,11 @@ allocate(col9(perm_nstr))
 col9 = 0
 endif
 if (.not. allocated(strno)) then
-allocate(strno(alstr))
+allocate(strno(perm_nstr))
 strno = 0
 endif
 if (.not. allocated(str12)) then
-allocate(str12(alstr, nae))
+allocate(str12(perm_nstr, nae))
 str12 = 0
 endif
 call str_selection(fullcovstr,nlp,alstr,perm_nstr)

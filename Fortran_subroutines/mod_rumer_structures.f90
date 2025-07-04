@@ -11,13 +11,15 @@ integer::kk,k2,k3,k4,k5,k6,k7,k8,k9,nl,nstr,rum,rum1,rum2,rum3,rum4
 integer, allocatable::rumer1(:,:),rumer2(:,:),rrad(:)
 integer, pointer :: str(:,:)
 
-allocate(rumer1(MaxStrOepo, nae))
-allocate(rumer2(MaxStrOepo, nae))
+!allocate(rumer1(MaxStrOepo, nae))
+!allocate(rumer2(MaxStrOepo, nae))
+allocate(rumer1(nstr, nae))
+allocate(rumer2(nstr, nae))
 allocate(rrad(nae))
-!allocate(rumer(MaxStrOepo))
-!allocate(rumer_rad(MaxStrOepo))
+allocate(rumer(nstr))
+allocate(rumer_rad(nstr))
 
-print*,'enter rumer_structures'
+print*,'enter rumer_structures',nstr
 
 rumer=0
 rumer_rad=0
@@ -105,7 +107,8 @@ if(nlast.ne.0)then
   enddo
   rumer2=0
 
-  do k3=1,MaxStrOepo
+!  do k3=1,MaxStrOepo
+  do k3=1,nstr
     k7=0
     do k6=nae-nl*2,1,-1
       k7=k7+1

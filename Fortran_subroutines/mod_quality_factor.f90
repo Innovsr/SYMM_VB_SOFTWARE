@@ -10,18 +10,19 @@ use mod_main_bond_cal
 use mod_prio_rad_str
 use mod_nnat_bond_cal_2
 use mod_nnat_bond_cal
+use quality_mod
 implicit none
 
 contains
-subroutine quality_factor(nl, str1, ncqs, quality_fac, str_quality_1, str_quality_2, bondq, mbondq, pref_radical)
+subroutine quality_factor(nl, str1, ncqs)!, quality_fac, str_quality_1, str_quality_2, bondq, mbondq, pref_radical)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !common/ats/atsymset,nsym,syn,at_sym
 
 integer::i,j,nl,ncqs,noqt, qt_max
 !integer::atsymset(20,20),nsym,syn(50),at_sym(50)
-integer, pointer :: str1(:,:), str_quality_1(:), str_quality_2(:)
-integer, pointer :: bondq(:), mbondq(:), pref_radical(:), quality_fac(:)
+integer, pointer :: str1(:,:)!, str_quality_1(:), str_quality_2(:)
+!integer, pointer :: bondq(:), mbondq(:), pref_radical(:), quality_fac(:)
 integer, allocatable:: qual_mat(:,:)
 !integer, allocatable:: quality_fac(:)
 
@@ -38,12 +39,13 @@ enddo
    allocate(pref_radical(ncqs))
    allocate(mbondq(ncqs))
 !   allocate(quality_fac(MaxStrOepo))
-if (.not. associated(quality_fac)) then
+!if (.not. associated(quality_fac)) then
 !if (.not. allocated(quality_fac)) then
   allocate(quality_fac(ncqs))
   quality_fac = 0
-endif
-print*,'q_fac',(quality_fac(i),i=1, ncqs)
+!endif
+print*,'ncqs :', ncqs, size(quality_fac)
+!print*,'q_fac',(quality_fac(i),i=1, ncqs)
 
 if(qflg.eq.1)then 
 !  do j=1,ncqs

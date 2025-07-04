@@ -21,9 +21,12 @@ print*,'enter nnat_bond_cal_2'
 open(unit=13,file='nnbd.temp',status='unknown')
 
 ! initialisation
-allocate(bondq_dist(MaxStrOepo))
-allocate(bondq1_dist(MaxStrOepo))
-allocate(sl(MaxStrOepo))
+!allocate(bondq_dist(MaxStrOepo))
+!allocate(bondq1_dist(MaxStrOepo))
+!allocate(sl(MaxStrOepo))
+allocate(bondq_dist(ncqs))
+allocate(bondq1_dist(ncqs))
+allocate(sl(ncqs))
 allocate(nn(2))
 bondq=0
 sl = 0
@@ -63,9 +66,11 @@ iab_length=1.00
       cycle loop3
     endif
     ii=ii+dist_act_rel_mat(nn(1),nn(2))
+    print*,'dist_act_rel_mat',dist_act_rel_mat(nn(1),nn(2))
   enddo loop3
   bondq_dist(i1)=ii
   write(13,*)bondq_dist(i1)
+  write(*,*)bondq_dist(i1)
 enddo
 rewind(13)
 
@@ -95,14 +100,16 @@ do
   if(iii.eq.ncqs) exit
 enddo
 
-!do i=1,ncqs
-!write(*,231)i,(str1(i,i2),i2=1,nae),bondq(i)
-!!print*,'bondq(i)',i,bondq(i)
-!enddo
+do i=1,ncqs
+write(*,231)i,(str1(i,i4),i4=1,nae),bondq(i)
+!print*,'bondq(i)',i,bondq(i)
+enddo
 
+231 format(*(I0, 1x))
 
 CALL SYSTEM ("rm nnbd.temp")
 print*,'exit nnat_bond_cal_2'
+!stop
 deallocate(bondq_dist)
 deallocate(bondq1_dist)
 return

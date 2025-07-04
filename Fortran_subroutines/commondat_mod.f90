@@ -10,16 +10,16 @@ integer::atoset(200,20),at_num(88),at_covrad(88),key_frag,frag_cntr(10)&
 ,atn(200),absyn(50),qult(100),radical,actv_atom(30),num_frag_cntr,input_flg,ovopt,vpt,all_at_num(100)&
 ,strt_struc(100,15),nstrt,repl_struc(100,15),nnmat_act(100,2),nnmat_inact(100,2),nactorb,active_orbs(20),&
 active_atoms(30),nnat_bond_inact(100,2),nnatominact,tot_atom,biasmat(100),sig_sym_flg,valence_state(54)&
-,bond_count(1000,100), totrum, vacorb, MaxStrOepo ,nsym, CovDim
+,bond_count(1000,100), totrum, vacorb, MaxStrOepo ,nsym, set_number, CovDim, cov_space, ion_space
 character(len=2),public ::at_list(88),at_list_bold(88),int_num(40)
-integer,public::atm_nb_sym(20),nalpha,nbeta,num_norbsym1(100),qflg
+integer,public::atm_nb_sym(20),nalpha,nbeta,num_norbsym1(100),qflg,u1
 integer::qq11(15000),qq12(15000),qq10(15000),bondq14(15000)
 !real,dimension(:,:),allocatable::ovlp_mat
 real*8::ovval,dist_rel_mat(20,20),biasval(20),dist_nnat(20)
 real*8::prime_num(142),dist_mat(20,20),iab_length
 character(len=6),public::symtype,norbsym1(100,20)
 double precision::dist_act_rel_mat(20,20)
-integer::strdet(10000),detmnt(10000,15),det_sign(10000),Rumwrite,set_order,rum_jj,rumset, symm_maxval
+integer::strdet(10000),detmnt(10000,15),det_sign(10000),Rumwrite,set_order,rum_jj,rumset,symm_rumset,symm_maxval
 character(len = 100)::STDOUT
 character(len = 300)::out_folder_path 
 integer, pointer::atsymset(:,:),syn(:),at_sym(:)

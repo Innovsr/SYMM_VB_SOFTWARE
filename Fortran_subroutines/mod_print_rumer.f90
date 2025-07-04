@@ -22,6 +22,11 @@ integer, allocatable::col(:)!, symq(:)
 logical::symmetry_group
 !double precision, pointer::symsc(:)
 
+print*,'enter print_rumer'
+!do i=1,setno
+!print*,'symm_groups_count',symm_groups_count(i)
+!enddo
+
 nlonep = nlpr
 allocate(rstr1(MaxStrOepo, nae))
 rstr1 = 0
@@ -76,7 +81,7 @@ enddo
 if(nfset.eq.5)write(10,*)'set number',rum_jj
 
 !total_str=MaxStrOepo
-rumset=rumset+1
+rumset=rumset+1   ! counter of Rumer sets
 call str_sl_check(nlonep, rstr1, setno, rumset, col)
 
 !print*,'i am sourav'
@@ -87,26 +92,28 @@ call str_sl_check(nlonep, rstr1, setno, rumset, col)
 !print*,'symq',sig_sym_flg,'|',symq
 !stop
 
-if (flg1.eq.1.and.symm.eq.1) then
-  !print*,'i am sourav1', col, symm_maxval, setno
+if (symm.eq.1) then
+  print*,'i am sourav1', col, symm_maxval, setno
   count1 = 0
   symmetry_group = .false.
   do j = 1, symm_maxval
-     !print*,'jj',j
+     print*,'jj',j,symm_maxval
      count = 0
      loop2:do i = 1, setno
+        print*,'setno',i,symm_groups_count(j)
         do k = 1, symm_groups_count(j)
+           print*,'kkk',k,symm_groups_count(j),col(i),symm_groups(j,k)
            if(col(i).eq.symm_groups(j,k)) then
               count = count + 1
-              !print*,'i am sourav2'
+              print*,'i am sourav2'
               cycle loop2
            endif
         enddo
      enddo loop2
-     !print*,'count',count, symm_groups_count(j)
+     print*,'count',count, symm_groups_count(j)
      if (count.eq.symm_groups_count(j)) then
         count1=count1+count
-        !print*,symmetry_group
+        print*,symmetry_group
      endif
      if (count1.eq.setno) then
         symmetry_group = .true.
@@ -114,9 +121,14 @@ if (flg1.eq.1.and.symm.eq.1) then
      endif
   enddo 
 
+  if( symmetry_group ) then
+    symm_rumset = symm_rumset + 1 !counter of symmetric Rumer sets
+    write(5,913)'Set_number',symm_rumset,(col(i),i=1,setno)
+  endif
 endif
+913 format(a,2x,I0,4x,*(I0, 1x))
 
-!print*,'i am sourav3'
+print*,'i am sourav3'
 !deallocate(symm_groups) 
 do m=1,setno
 
@@ -131,10 +143,10 @@ do m=1,setno
     write(10,909)str_quality_1(m),bondq(m),str_quality_2(m),quality_fac(m),'|',1,1,(rstr1(m,m1),m1=1,nae)
   endif
 enddo
-if (flg1.eq.1.and.symm.eq.1) then
+if (symm.eq.1) then
    if( symmetry_group ) then
-      write(10,*)'It is a symmetric set'
-      write(*,*)'It is a symmetric set'
+      write(10,*)'it is a symmetric set'
+      write(*,*)'it is a symmetric set'
    else
       write(10,*)'it is a non-symmetric set'
       write(*,*)'it is a non-symmetric set'
@@ -155,6 +167,8 @@ write(10,*)
 914 format(x,25I4)
 915 format(x,I1,a,I3,x,25I4)
 !916 format(x,I3,I3,x,25I4)
+!deallocate(symm_groups_count)
+!deallocate(symm_groups)
 print*,'exit print_rumer'
 totrum=rum_jj
 !print*,'rumer totrum',totrum
@@ -183,7 +197,7 @@ col = 0
 match_count = 0
 
 loop1:do i = 1, nstr
-print*,'str2',i,(str2(i,j),j=1,nae)
+!print*,'str2',i,(str2(i,j),j=1,nae)
     !row_matched = .false.
 
     loop2:do j = 1, strplp
@@ -208,13 +222,13 @@ print*,'str2',i,(str2(i,j),j=1,nae)
         end if
     end do loop2
 
-    if (.not. row_matched) then
-        write(5,*), "Row ", j, " in array1 has no pairwise match in array2!"
-        !stop
-    end if
+    !if (.not. row_matched) then
+    !    write(5,*), "Row ", j, " in array1 has no pairwise match in array2!"
+    !    !stop
+    !end if
 end do loop1
 
-write(5,913)'Set_number',rumset,(col(i),i=1,match_count)
+if (symm.ne.1) write(5,913)'Set_number',rumset,(col(i),i=1,match_count)
 print*,'Set_number',rumset
 913 format(a,2x,I0,4x,*(I0, 1x))
 

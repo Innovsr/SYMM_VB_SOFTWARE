@@ -15,7 +15,7 @@ integer::m119,m20, total_str
 integer, pointer::str2(:,:),str(:,:)
 
 
-!print*,'enter Rumer_set_id', totrum,i7 
+print*,'enter Rumer_set_id', totrum,i7 
 if (.not. allocated(set_num))then
   allocate(set_num(1000))
 endif

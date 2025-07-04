@@ -118,6 +118,7 @@ deallocate(mat)
 deallocate(detmnt1)
 deallocate(det_sign1)
 
+print*,'exit mat_ind'
 return
 end subroutine mat_ind
 end module mod_mat_ind

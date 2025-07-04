@@ -112,5 +112,6 @@ enddo
 deallocate(A)
 deallocate(B)
       
+print*,'exit Invmat'
 End subroutine Invmat
 

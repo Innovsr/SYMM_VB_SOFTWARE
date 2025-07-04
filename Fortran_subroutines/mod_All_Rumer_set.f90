@@ -21,10 +21,26 @@ integer, allocatable::permutation(:), orbs2(:)
 integer, pointer::str(:,:),rstr(:,:)
 
 print*,'enter All_Rumer_set',nstr
+
+if(flg_cov.eq.1)then
+  cov_space=cov_space+1
+  write(5,913)'Cov_Space',cov_space
+  write(9+u1,914)'================= Cov Space num:',cov_space,'================'
+endif
+if(flg_ion.eq.1)then
+  ion_space=ion_space+1
+  write(5,913)'Ion_Space',ion_space
+  write(9+u1,914)'================= Ion Space num:',ion_space,'================'
+endif
+
+913 format(a,2x,I0)
+914 format(a,2x,I0,2x,a)
+
 open(unit=31,file='Rumer_Sets.dat',status='unknown')
 allocate(rumerstr(CovDim, nae))
 rumerstr = 0
 rumset = 0
+symm_rumset = 0
 
 i7 = 0
 do i1=1,nstr

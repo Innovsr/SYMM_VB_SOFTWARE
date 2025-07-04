@@ -18,7 +18,7 @@ integer::nd,k3,k4,k5,n,nssym,j,jj,ii2,nsig,nnatom,nn4,nn5,nna
 integer, allocatable::sig_orb(:),sig_orb_1(:)
 real*8, allocatable::score(:,:),new_score(:,:)
 real*8, allocatable::lone_score(:),order(:),ssym(:),stsymsc(:),bndscore(:)
-integer::nnscore,ipnum,loop_score,loopsc,ncrow
+integer::nnscore,ipnum,loop_score,loopsc,ncrow,bonds
 integer, allocatable::nn_count(:), symq(:), coordination_mat(:,:)
 real*8::tscore,rscore,strscore,scr,coord_score,lpna,losc,n7,n8
 integer::numbond,numbond1
@@ -35,6 +35,12 @@ print*,'enter symmetry_cal_sig',ncqs
 
 open(unit=15,file='symsig.temp',status='unknown')
 
+if(.not. allocated(stsymsc))then
+allocate(stsymsc(MaxStrOepo))
+stsymsc = 0
+endif
+bonds=(nae-nl*2-nlast)/2
+if (bonds.eq.0) goto 500
 !!! initialise the score array, it stores the scores of each atoms
 allocate(score(atom,2))
 
@@ -499,7 +505,12 @@ enddo
 !909 format (F10.6)
 
 !stop
-allocate(ssym(ncqs))
+deallocate(tot_orb)
+deallocate(nn_group)
+deallocate(sl_group)
+deallocate(nelimt)
+deallocate(full_nn_group)
+500 allocate(ssym(ncqs))
 ssym = 0
 
 jj=1
@@ -598,11 +609,6 @@ enddo
 !print*,'symq:sig',(symq(j),j=1,ncqs)
 CALL SYSTEM ("rm symsig.temp")
 
-deallocate(tot_orb)
-deallocate(nn_group)
-deallocate(sl_group)
-deallocate(nelimt)
-deallocate(full_nn_group)
 deallocate(order)
 deallocate(lone_score)
 deallocate(ssym)

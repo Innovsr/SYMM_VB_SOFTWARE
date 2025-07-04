@@ -16,74 +16,83 @@ use mod_eq_dstr_set
 use rum_rad_mod
 use mod_All_Rumer_set
 use final_str_mod
+use str_module
 implicit none
 
 contains
 subroutine str_selection(astr,nl,m4,perm_nstr)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-integer::i1,i2,i3,i4,i5,i6,i7,ii,nl,str1_cnt,cnt,m4,m8,m9,lp_cnt,&
-elporb,perm_nstr,total_str,rep,allowed_nstr
+integer::i,i1,i2,i3,i4,i5,i6,i7,ii,nl,str1_cnt,cnt,m4,m8,m9,lp_cnt
+integer::elporb,perm_nstr,total_str,rep,allowed_nstr, sf1, sf2, flg2
 integer::str_cnt(15000), lps(50)
 integer::qulsymm(15000),symqq(15000),tqlty1,bqlty1,sqlty1, factorial
 integer, pointer::astr(:,:), str1(:,:), str2(:,:)
 integer, pointer:: fvec(:,:)!,q_fac(:)
+!integer, allocatable::str12(:,:), col9(:)
 
 
-if(.not. allocated(rumer))then
-   allocate(rumer(MaxStrOepo))
-endif
-if(.not. allocated(rumer_rad))then
-   allocate(rumer_rad(MaxStrOepo))
-endif
-
-print*,'enter str_selection'
 tqlty1=0
 bqlty1=0
 sqlty1=0
 
 !**********************************************************************************************************
-!!!!!!!!!!!!!!!! If number of permisible structures and available structures are same START !!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!! If number of permisible structures and available structures are same then  !!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!   they are not send to the independency check. They are directly printed   !!!!!!!!!!!!!!!
 !**********************************************************************************************************
 
+print*,'perm_nstr, m4',perm_nstr, m4
+flg2=1 ! this flag instruct 'space num will be written in write_rumer_xmi subroutine'
 if(perm_nstr.eq.m4)then
+   flg2=0 ! this flag instruct 'space num will not be written in write_rumer_xmi subroutine'
+   if(flg_cov.eq.1)then
+     cov_space=cov_space+perm_nstr
+     write(5,913)'Cov_Space',cov_space-perm_nstr+1,'-',cov_space+1
+     write(9+u1,914)'============= Cov Space num:',cov_space-perm_nstr+1,'-',cov_space+1,'============='
+   endif
+   if(flg_ion.eq.1)then
+     ion_space=ion_space+perm_nstr
+     write(5,913)'Ion_Space',ion_space-perm_nstr+1,'-',ion_space+1
+     write(9+u1,914)'============= Ion Space num:',ion_space-perm_nstr+1,'-',ion_space+1,'============='
+   endif
 
    call rumer_structures(nl,astr,m4)
-   call quality_factor(nl,astr,m4,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
-   call write_structures_file(str1_cnt, str2)!,q_fac)!, mbondq, pref_radical)
+   call quality_factor(nl,astr,m4)
+   call write_structures_file(m4, astr)
 
    if(input_flg.eq.1)call nnat_bond_cal(nl,astr,m4,bondq)
    if(input_flg.eq.0)call nnat_bond_cal_2(nl,astr,m4,bondq)
    tqlty=0
    bqlty=0
    sqlty=0
-   do m8=1,m4
-      if(niao.eq.0)then
-         write(9,900)str_quality_1(m8),bondq(m8),str_quality_2(m8),'|',(astr(m8,m9),m9=1,nae)
-      endif
-      if(niao.gt.1)then
-         write(9,901)str_quality_1(m8),bondq(m8),str_quality_2(m8),'|',1,':',niao,(astr(m8,m9),m9=1,nae)
-      endif
-      if(niao.eq.1)then
-         write(9,901)str_quality_1(m8),bondq(m8),str_quality_2(m8),'|',1,1,(astr(m8,m9),m9=1,nae)
-      endif
-      tqlty=tqlty+str_quality_1(m8)
-      bqlty=bqlty+bondq(m8)
-      sqlty=sqlty+str_quality_2(m8)
+   do m8 = 1, m4
+     do i=1,nae
+       str12(m8,i)=astr(m8,i)
+     enddo
+     col9(m8) = m8
+     qq10(m8)=quality_fac(m8)
+     qq11(m8)=str_quality_1(m8)
+     qq12(m8)=str_quality_2(m8)
+     bondq14(m8)=bondq(m8)
    enddo
-   write(9,914)'qualities:','intra_bond','sym_break','nn_bond'
-   write(9,915)tqlty,sqlty,bqlty
+   set_number = 0
+   if (flg1.eq.0) call write_output(sf1, sf2, perm_nstr, str12, col9)
+   if (flg1.eq.1) call write_rumer_xmi(nl, astr, perm_nstr,flg2)
 
-900 format(I3,x,I3,x,I3,x,a,3x,25I4)
-901 format(I3,x,I3,x,I3,x,a,3x,I1,a,I2,x,25I4)
-914 format(a,x,a,x,a,x,a)
-915 format(15x,I3,7x,I3,7x,I3)
+deallocate(rumer)
+deallocate(rumer_rad)
+
+913 format(a,2x,I0,2x,a,2x,I0)
+914 format(a,2x,I0,2x,a,2x,I0,2x,a)
 
 return
 endif
+
+
 !**********************************************************************************************************
-!!!!!!!!!!!!!!!! If number of permisible structures and available structures are same END !!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!! If number of permisible structures and available structures are not same   !!!!!!!!!!!!!!!
 !**********************************************************************************************************
+
 
 allocate(str1(MaxStrOepo, nae))
 allocate(str2(MaxStrOepo, nae))
@@ -94,6 +103,11 @@ str_cnt(i5)=0
 enddo
 
 loop1:do i1=1,m4
+   if(.not. allocated(symq))then
+     allocate(symq(m4))
+     symq = 0
+   endif
+   print*,'loop1',i1
    str1 = 0
    str2 = 0
 
@@ -196,9 +210,12 @@ loop1:do i1=1,m4
 !!!!!!!!!!!!!!!! Rumer Structures selection  Start !!!!!!!!!!!!!!!!!!!!!
 !***********************************************************************
    if (nl.ne.0)write(7,*)'                 lone pair =',(lps(i3),i3=1,lp_cnt)
+
+   print*,'flg1',flg1
    if (flg1.eq.1) then
      if (nfset.eq.0) then
-        call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
+        print*,'Rumer'
+        call quality_factor(nl,str1,str1_cnt)
 !        call qult_str_arrange(nl,str1,str1_cnt,str2)
         call rumer_structures(nl,str1,str1_cnt)
         call write_structures_file(str1_cnt,str1)
@@ -206,15 +223,20 @@ loop1:do i1=1,m4
           if(sig_sym_flg.eq.1)call symmetry_cal_sig(nl, str1, str1_cnt, symq, nssym)
           if(sig_sym_flg.ne.1)call symmetry_cal_pi(nl, str1, str1_cnt, symq, nssym)
         endif
-        call write_rumer_xmi(nl,str1,str1_cnt)
+        call write_rumer_xmi(nl,str1,str1_cnt,flg2)
+        deallocate(rumer)
+        deallocate(rumer_rad)
+        deallocate(symq)
      endif
 
      if (nfset.eq.1.or.nfset.eq.2) then
-        call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
+        print*,'Rumer2'
+        call quality_factor(nl,str1,str1_cnt)!,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
 !        call qult_str_arrange(nl,str1,str1_cnt,str2)
         call rumer_structures(nl,str1,str1_cnt)
         call write_structures_file(str1_cnt,str1)
         if(symm.eq.1)then
+          print*,'Symm_str_select',symm
           if(sig_sym_flg.eq.1)call symmetry_cal_sig(nl, str1, str1_cnt, symq, nssym)
           if(sig_sym_flg.ne.1)call symmetry_cal_pi(nl, str1, str1_cnt, symq, nssym)
         endif
@@ -222,6 +244,9 @@ loop1:do i1=1,m4
         !stop
 
         call All_Rumer_set(str1_cnt,str1,nl)
+        deallocate(rumer)
+        deallocate(rumer_rad)
+        deallocate(symq)
      endif
    endif
 !***********************************************************************
@@ -230,12 +255,13 @@ loop1:do i1=1,m4
 !***********************************************************************
 
 !***********************************************************************
-!!!!!!!!!!!!!!!! Covalent Structures selection Starts !!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!! Chem-Inst Structures selection Starts !!!!!!!!!!!!!!!!!!
 !***********************************************************************
 
-   if (flg1.eq.0.and.flg_cov.eq.1.and.flg_ion.eq.0)then
+   if (flg1.eq.0)then
       if (symm.eq.1.and.asymm.eq.0) then
-         call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
+         print*,'chem-Inst symm'
+         call quality_factor(nl,str1,str1_cnt)
          if(sig_sym_flg.eq.1)call symmetry_cal_sig(nl,str1,str1_cnt,symq,nssym)
          if(sig_sym_flg.ne.1)call symmetry_cal_pi(nl,str1,str1_cnt,symq,nssym)
          !print*,'symq',sig_sym_flg,'|',(symq(i7),i7=1,str1_cnt)
@@ -244,39 +270,57 @@ loop1:do i1=1,m4
          call qult_str_arrange(nl,str1,str1_cnt,str2)
          print*,'qult_str_arr out'
          call vector_rep(nl,str2,str1_cnt,fvec)
+         print*,'vector_rep_out'
          call rumer_structures(nl,str2,str1_cnt)
+         print*,'rumer_structures out'
          call write_structures_file(str1_cnt,str2)
+         print*,'write_structures_file out'
          call write_symm_xmi_new(nl,allowed_nstr,str2,str1_cnt)
+         print*,'write_symm_xmi_new out'
+         deallocate(rumer)
+         deallocate(rumer_rad)
+         deallocate(symq)
+         print*,'i am here'
       endif
 
       if (symm.eq.0.and.nfset.ne.4.and.asymm.eq.0)then
-         call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
+         print*,'chem-Inst'
+         call quality_factor(nl,str1,str1_cnt)!,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
          call qult_str_arrange(nl,str1,str1_cnt,str2)
          call rumer_structures(nl,str2,str1_cnt)
          call write_structures_file(str1_cnt, str2)
          call vector_rep(nl,str2,str1_cnt,fvec)
          call main_bond_cal(nl,str2,str1_cnt,mbondq)
+         deallocate(rumer)
+         deallocate(rumer_rad)
+         deallocate(symq)
       endif
 
       if (symm.eq.0.and.nfset.eq.4.and.asymm.eq.0)then
-         call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
+         call quality_factor(nl,str1,str1_cnt)!,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
          call qult_str_arrange(nl,str1,str1_cnt,str2)
          call rumer_structures(nl,str2,str1_cnt)
          call write_structures_file(str1_cnt, str2)
          call main_bond_cal(nl,str2,str1_cnt,mbondq)
          call check_str_bond(nl,str2,str1_cnt)
          call eq_dstr_set(str1_cnt,nl,allowed_nstr,str2)
+         deallocate(rumer)
+         deallocate(rumer_rad)
+         deallocate(symq)
       endif
 
       if (symm.eq.0.and.asymm.eq.1) then
          print*,'sourav inside the cheminst assymmetric str generation'
-         call quality_factor(nl,str1,str1_cnt,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
+         call quality_factor(nl,str1,str1_cnt)!,quality_fac,str_quality_1,str_quality_2,bondq, mbondq, pref_radical)
          call qult_str_arrange(nl,str1,str1_cnt,str2)
          print*,'qult_str_arr out'
          call vector_rep(nl,str2,str1_cnt,fvec)
          call rumer_structures(nl,str2,str1_cnt)
          call write_structures_file(str1_cnt,str2)
          call write_symm_xmi_new(nl,allowed_nstr,str2,str1_cnt)
+         deallocate(rumer)
+         deallocate(rumer_rad)
+         deallocate(symq)
       endif
    endif
 
@@ -284,16 +328,19 @@ loop1:do i1=1,m4
 !!!!!!!!!!!!!!!! Covalent Structures selection Ends !!!!!!!!!!!!!!!!!!
 !***********************************************************************
 
+print*,'sourav1'
    tqlty1=tqlty1+tqlty
    bqlty1=bqlty1+bqlty
    sqlty1=sqlty1+sqlty
 enddo loop1
 
+print*,'sourav2'
 if (nfset.eq.1.or.flg1.eq.1) then
    write(9,910)'qualities:',' intra_bond','sym_break','nn_bond'
    write(9,911)tqlty1,sqlty1,bqlty1
    write(9,*)'    '
 endif
+print*,'sourav3'
 
 910 format(a,x,a,x,a,x,a)
 911 format(15x,I3,7x,I5,7x,I3)
@@ -306,11 +353,10 @@ return
 end subroutine str_selection
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-subroutine write_structures_file(str1_cnt, str2)!, mbondq, pref_radical)
+subroutine write_structures_file(str1_cnt, str2)
 integer:: m8, m9, str1_cnt
-!integer::mbondq(15000), pref_radical(15000)
 character(len=5)::rumstr
-integer, pointer:: str2(:,:)!, q_fac(:)!, mbondq(:), pref_radical(:)
+integer, pointer:: str2(:,:)
 
 print*,'enter write_structures_file'
 if (nfset.eq.1.or.nfset.eq.2) then

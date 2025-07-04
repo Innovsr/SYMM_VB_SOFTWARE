@@ -7,6 +7,7 @@ set -e
 SOURCE_FILES=(
   commondat1_mod.f90
   commondat_mod.f90
+  str_module.f90
   final_str_mod.f90
   orb_mod.f90
   rum_rad_mod.f90

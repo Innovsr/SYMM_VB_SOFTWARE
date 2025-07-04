@@ -107,6 +107,10 @@ enddo
 !990 format(a,x,I2,x,a,x,I2,x,a)
 
 print*,'active_atoms',(active_atoms(i),i=1,atom)
+do i = 1, tot_atom
+print*,'coordx:',coordx(i),'coordy:',coordy(i),'coordz:',coordz(i)
+enddo
+
 j=0
 do ij=1,tot_atom-1
   do ii1=ij+1,tot_atom
@@ -157,17 +161,16 @@ do i=1,tot_atom-1
   enddo
 enddo
 
-!do i = 1, tot_atom
-!print*,'dist_act_rel_mat',(dist_act_rel_mat(i, j), j=1, tot_atom)
-!enddo
-!do i = 1, tot_atom
-!print*,'dist_rel_mat',(dist_rel_mat(i, j), j=1, tot_atom)
-!enddo
-!do i = 1, tot_atom
-!print*,'dist_mat',(dist_mat(i, j), j=1, tot_atom)
-!enddo
-!
-!stop
+do i = 1, tot_atom
+print*,'dist_act_rel_mat',(dist_act_rel_mat(i, j), j=1, tot_atom)
+enddo
+do i = 1, tot_atom
+print*,'dist_rel_mat',(dist_rel_mat(i, j), j=1, tot_atom)
+enddo
+do i = 1, tot_atom
+print*,'dist_mat',(dist_mat(i, j), j=1, tot_atom)
+enddo
+
 
 !!!!!!!!!!!! below active_atoms() moved to the regular order as
 !given in INFO ... for dist matrix formation it was (may be) necessary

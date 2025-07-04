@@ -14,7 +14,7 @@ integer:: nao_py, nae_py, nmul, flgst_py, total_atoms, niao_py, active_atm_num
 character(len = 100):: output_file_name,tempoutfile,all_struc_file
 character(len = 300)::output_folder, outfile
 integer::chinst, symm_py, asymm_py, set_order_py, nset_py, mout_py, ovlp_py, itb_py
-integer::nnb_py, syb_py, mnbond_py, radical_py, nmbond_py
+integer::nnb_py, syb_py, mnbond_py, radical_py, nmbond_py, cov_nlp, cov_bond
 integer::noeo, spin, term1, term2, product_term, denom, factorial, comb
 real*8::coordx(100), coordy(100), coordz(100), symatno_array(100)
 character(len=5)::geometry_unit,symat_array(100)
@@ -80,18 +80,18 @@ enddo
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!    Output files   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! structures.dat:: stores all possible structures with identifications of rumer structurs                 !
-! structure_set_i.dat:: output file, i=1, 2, .... depeding on volume of sets; one file contain 75000 sets !
+! molecule_i.dat:: output file, i=1, 2, .... depeding on volume of sets; one file contain 75000 sets !
+! out.temp : file to write sets for python_GUI.
 ! Rumer_Sets_all.dat:: unique Rumer sets for all possible permutations of orbitals                        !
-! quality_str.dat:: all structures arranged according to their qualities                                  !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+u1=1 !
 outfile=trim(out_folder_path)//trim('/')//trim(STDOUT)//trim('_1.out')
-open(unit=10,file=outfile,status='unknown')
+open(unit=9+u1,file=outfile,status='unknown')
 tempoutfile=trim(out_folder_path)//trim('/')//trim('out.temp')
 open(unit=5,file=tempoutfile,status='unknown')
 all_struc_file=trim(out_folder_path)//trim('/')//trim('structures.dat')
 open(unit=7,file=all_struc_file,status='unknown')
 open(unit=23,file='Rumer_Sets_all.dat',status='unknown')
-open(unit=35,file='quality_str.dat',status='unknown')
 
 
 noq0=100
@@ -191,6 +191,8 @@ end do
 denom = factorial(int((noeo / 2) - spin))
 MaxStrOepo = int((term1 * term2 * product_term) / denom) !total structure one electron per orbital
 
+print*,'nnb',nnb
+
 call wigner(noeo, CovDim)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -198,7 +200,28 @@ call geocal(coordx,coordy,coordz)
 
 !flgst: user input for 'str' keyword; 1: covalent (cov), 2: ionic (ion), 3: both (full)
 if(flgst.eq.1.or.flgst.eq.2) then
+  flg_ion=0
+  flg_cov=1
+  cov_space=0
   call cov_struc
+endif
+
+if(allocated(symq))then
+  deallocate(symq)
+endif
+
+if(flgst.eq.1.or.flgst.eq.3) then
+  flg_ion=1
+  flg_cov=0
+  ion_space=0
+  cov_nlp = nlp
+  cov_bond = (nao - 2 * cov_nlp - nlast)/2
+  print*,'cov_bond',cov_bond
+  do i = 1, cov_bond
+    nlp = cov_nlp + i
+    print*,'number of lonepair',i
+    call cov_struc
+  enddo
 endif
 close(7)
 close(5)
