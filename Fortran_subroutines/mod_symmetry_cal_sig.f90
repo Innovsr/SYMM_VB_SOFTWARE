@@ -16,22 +16,19 @@ subroutine symmetry_cal_sig(nl,str1,ncqs,symq,nssym)
 integer::m19,m18,i,i1,i2,i3,i4,i5,nl,ncqs,k,k1,k2,n1,n2,n3,n4,n5,n6,l1
 integer::nd,k3,k4,k5,n,nssym,j,jj,ii2,nsig,nnatom,nn4,nn5,nna
 integer, allocatable::sig_orb(:),sig_orb_1(:)
-real*8, allocatable::score(:,:),new_score(:,:)
+real*8, allocatable::score(:),new_score(:)
 real*8, allocatable::lone_score(:),order(:),ssym(:),stsymsc(:),bndscore(:)
 integer::nnscore,ipnum,loop_score,loopsc,ncrow,bonds
 integer, allocatable::nn_count(:), symq(:), coordination_mat(:,:)
 real*8::tscore,rscore,strscore,scr,coord_score,lpna,losc,n7,n8
 integer::numbond,numbond1
 integer, pointer:: str1(:,:)
+integer, allocatable::connectivity_row(:,:)
 !double precision, pointer::stsymsc(:)
 !real*8, pointer::stsymsc(:)
 
 
 print*,'enter symmetry_cal_sig',ncqs
-
-!! iabd--> inactive bonds associated with the atoms
-!! ialp--> inactive lone pairs associated with the atoms
-!! score()--> scoring of the atoms depending on the the 'iabd', 'ialp' and atomic number (at_number)
 
 open(unit=15,file='symsig.temp',status='unknown')
 
@@ -42,42 +39,20 @@ endif
 bonds=(nae-nl*2-nlast)/2
 if (bonds.eq.0) goto 500
 !!! initialise the score array, it stores the scores of each atoms
-allocate(score(atom,2))
+allocate(score(atom))
 
 score = 0.0
 
 !!! atom scoring starts here; scoring criteria: number of inactive bonds,
 !!! number of inactive lone paires, number of charge if any associated with atoms
-i4=0
 do i3=1,atom
-  lpna=0.0
-  k=i3
-  if(input_flg.eq.1)then
-    do i1=1,niabd
-      if(k.eq.iabd(i1))then
-        lpna=lpna+1.0/prime_num(2)
-      endif
-    enddo
-    do i2=1,nialp
-      if(k.eq.ialp(i2))then
-        lpna=lpna+1/prime_num(1)
-      endif
-    enddo
-    do i2=1,niach
-      if(k.eq.iach(i2))then
-        lpna=lpna+1/prime_num(3)
-      endif
-    enddo
-  else
-
-  lpna=lpna+biasval(i3)+dist_nnat(i3)
-  endif
-  score(i3,2)=lpna+at_num(i3)
-print*,'score:symme',score(i3,2),at_num(i3),biasval(i3),dist_nnat(i3)
+  score(i3)=at_num(i3)+biasval(i3)+dist_nnat(i3)
+  print*,'score:symme',i3,score(i3),at_num(i3),biasval(i3),dist_nnat(i3)
 enddo
 
+print*,'nnnatom',nnnatom,nao
 if (.not. allocated(nnat_bond_new))then
-   allocate(nnat_bond_new(nnnatom+nao, 2))
+   allocate(nnat_bond_new(nnnatom+nao*2, 2))
    nnat_bond_new = 0
 endif
 
@@ -190,16 +165,16 @@ nsig=n6
 natom=n5
 !!!! natom=number of extended orbitals
 
-!do i2=1,nnnatom
-!print*,'nnat_bond',(nnat_bond(i2,i3),i3=1,2)
-!enddo
-!do i2=1,nnatom
-!print*,'nnat_bond_new',(nnat_bond_new(i2,i3),i3=1,2),nnatom
-!enddo
+do i2=1,nnnatom
+print*,'nnat_bond',(nnat_bond(i2,i3),i3=1,2)
+enddo
+do i2=1,nnatom
+print*,'nnat_bond_new',(nnat_bond_new(i2,i3),i3=1,2),nnatom
+enddo
 !!print*,'sig_orb_1(n4)',(sig_orb_1(i2),i2=1,n4)
-!do i2=1,n5
-!print*,'tot_orb',tot_orb(i2),n5,nnatom
-!enddo
+do i2=1,n5
+print*,'tot_orb',tot_orb(i2),n5,nnatom
+enddo
 
 call nnat_bond_sig(nnatom,sig_orb_1,nsig,nna)
 
@@ -236,12 +211,12 @@ enddo
 !!! 'nn_group' specify orbitals in tot_orb array are connected with which other
 !!! orbitals
 
-!do i3=1,n5
-!print*,'*nn_group*',nelimt(i3),(nn_group(i3,i4),i4=1,nelimt(i3))
-!enddo
-!do i3=1,n5
-!print*,'*sl_group*',(sl_group(i3,i4),i4=1,nelimt(i3))
-!enddo
+do i3=1,n5
+print*,'*nn_group*',nelimt(i3),(nn_group(i3,i4),i4=1,nelimt(i3))
+enddo
+do i3=1,n5
+print*,'*sl_group*',(sl_group(i3,i4),i4=1,nelimt(i3))
+enddo
 
 
 m19=0
@@ -253,7 +228,7 @@ do i3=1,natom
 enddo
 fullgrp=m19
 
-!write(*,*)'full_nn_g',m19,(full_nn_group(i3),i3=1,m19)
+write(*,*)'full_nn_g',m19,(full_nn_group(i3),i3=1,m19)
 !endif
 !!!!! Scoring of the structures has been started from here !!!
 if (.not. allocated(loop_score_row))then
@@ -261,22 +236,24 @@ allocate(loop_score_row(20))
 loop_score_row = 0
 endif
 if (.not. allocated(coordination_mat)) then
-  allocate(coordination_mat((nae-nlast)/2, nao+natom))
+  allocate(coordination_mat(2**((nae-nlast)/2), nao+natom))
   coordination_mat = 0
 endif
+allocate(loopsymsc(ncqs))
 
 do i=1,ncqs
   loopsc=0
 
-  allocate(new_score(atom,2))
+  allocate(new_score(atom))
   new_score = 0
 
   do i3=1,atom
-    new_score(i3,2)=score(i3,2)
+    new_score(i3)=score(i3)
+    print*,'new_score',i3, new_score(i3)
   enddo
 
-!  write(*,231)(str1(i,i1),i1=1,nae)
-!  231 format(*(I0, 1x))
+  write(*,232)(str1(i,i1),i1=1,nae)
+232 format(*(I0, 1x))
 
 !! if the structures have active lone pairs and or radicals the associated atoms are being scored in 'new_score()'.
 !! Scoring of the bonds of the structures started from here
@@ -364,8 +341,9 @@ do i=1,ncqs
         if(nn4.eq.3.and.nn5.eq.2)scr=3.0
       endif
     endif
-    tscore=new_score(n1,2)+new_score(n2,2)+scr/(new_score(n1,2)+new_score(n2,2))
-    !print*,'ttttscore',tscore, new_score(n1,2), new_score(n2,2), scr
+    tscore=new_score(n1)+new_score(n2)+scr/(new_score(n1)+new_score(n2))
+    print*,'n1,n2',n1,n2
+    print*,'ttttscore',tscore, new_score(n1), new_score(n2), scr
     nnscore=0.0
     nd=0
     do i2=1,nactorb
@@ -416,6 +394,7 @@ do i=1,ncqs
     do i2=1,natom
       if(k1.eq.tot_orb(i2))l1=i2
     enddo
+    !print*,'l1',l1,nelimt(l1)
     do i2=1,nelimt(l1)
       if(k2.eq.nn_group(l1,i2))then
         n=1
@@ -429,11 +408,12 @@ do i=1,ncqs
       endif
     enddo
 
-    !allocate(connectivity_row(ncrow, ncrow))
+    allocate(connectivity_row(nae, nae))
     !! calculating connectivity score of each bonds with 'symm_loops'
-    if(k1.ne.k2)call symm_loops(k1,k2,loop_score,ncrow)
+    if(k1.ne.k2)call symm_loops(k1,k2,loop_score,ncrow, connectivity_row)
 
 
+    !print*,'ncrow',ncrow,numbond
     do i3=1,ncrow
       numbond=numbond+1
       loop_score_row(numbond)=loop_score+1
@@ -442,15 +422,15 @@ do i=1,ncqs
       enddo
     enddo
 
-!    deallocate(connectivity_row)
+    deallocate(connectivity_row)
     !print*,'i am here1'
     if(k1.eq.k2)loop_score=0
 555 if(loop_score.ne.0)tscore=tscore+1.0/loop_score
     rscore=1.0/tscore
-    !print*,'tscore',tscore
+    print*,'tscore, loop_score, rscore',tscore, loop_score, rscore
 
     if (.not. allocated(bndscore))then
-      allocate(bndscore(nao))
+      allocate(bndscore(nao*2))
       bndscore = 0.0
     endif
     do i2=1,ncrow
@@ -485,10 +465,9 @@ do i=1,ncqs
   allocate(stsymsc(MaxStrOepo))
   stsymsc = 0
   endif
-  stsymsc(i)=strscore+coord_score
-  print*,'stsymsc',stsymsc(i)
+  stsymsc(i)=real(strscore+coord_score, kind=4)
   loopsymsc(i)=loopsc
-
+  print*,'stsymsc',stsymsc(i),loopsymsc(i),strscore,coord_score
 !  write(15,*)stsymsc(i)
 enddo
 
@@ -498,10 +477,10 @@ deallocate(score)
 !allocate(stsymsc1(ncqs))
 
 do i=1,ncqs
-  write(*,231)'structures','>',(str1(i,i1),i1=1,nae)
+  write(*,231)'structures',i,'>',(str1(i,i1),i1=1,nae)
   write(*,*)stsymsc(i)
 enddo
-231 format(a,2x,a,1x,*(I0, 1x))
+231 format(a,2x,I0,1x,a,1x,*(I0, 1x))
 !909 format (F10.6)
 
 !stop
@@ -612,6 +591,7 @@ CALL SYSTEM ("rm symsig.temp")
 deallocate(order)
 deallocate(lone_score)
 deallocate(ssym)
+!deallocate(atm_nb_orbs)
 
 !deallocate(stsymsc(MaxStrOepo))
 return

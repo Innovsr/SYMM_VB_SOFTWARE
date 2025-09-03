@@ -75,8 +75,9 @@ class GlobVar:
     set_id = 0               # output set id to store present (on show) set number
     symm_key = 0
     total_atoms = None
+    CovIon = None
     IAB_flag = True
-    geo_unit = "Bohr"
+    geo_unit = None
     Gl_atoset = np.zeros((200, 50), dtype=int)
     Gl_activeatoms = np.zeros(30, dtype=int)
     at_list_bold = [            # List of Atoms according to periodic table
@@ -198,6 +199,7 @@ class Ctrl_Input:
 
         # Input Fields
         self.entries = {}
+        self.buttons = {}
 
         
         group_label_info = {
@@ -215,13 +217,13 @@ class Ctrl_Input:
 
         # create Labels
         label_info ={
-                "brows_geo_label":("frame2","Brows to Upload Geometry", 1, 0, 
+                "brows_geo_label":("frame2","Brows to Upload Geometry", 2, 0, 
                                    "If you have the geometry saved in any dat file you can brows\n"
                                    "that file and insert the geometry here using 'Brows' button; in\n" 
                                    "the geometry file you should have 4 or 5 columns first column: \n"
                                    "Atoms, second column: atomic numbers,third column: x coordinates,\n"
                                    "fourth column: y coordinates, fifth column: z coordinates"),
-                "manual_geo_label":("frame2", "Insert Geometry Manually", 2, 0,
+                "manual_geo_label":("frame2", "Insert Geometry Manually", 3, 0,
                                     "If you wish to insert the geometry manually please click\n"
                                     "'Geometry' button in the geometry file you should have 4 or 5 \n"
                                     "columns first column: Atoms, second column: atomic numbers,third\n" 
@@ -239,13 +241,13 @@ class Ctrl_Input:
         buttons_info = {
                 "help_button":("frame", "Help", self.Call_help_info, 0, 2,
                                "Please click to get help in using this software"),
-                "brows_geo_button":("frame2", "Brows", self.read_geometry, 1, 1,
+                "brows_geo_button":("frame2", "Brows", self.read_geometry, 2, 1,
                                     "If you have the geometry saved in any dat file you can brows\n"
                                     "that file and insert the geometry here using 'Brows' button; in the \n"
                                     "geometry file you should have 4 or 5 columns first column: Atoms, \n"
                                     "second column: atomic numbers, third column: x coordinates, fourth\n" 
                                     "column: y coordinates, fifth column: z coordinates"),
-                "manual_geo_button":("frame2", "Geometry", self.insert_geo_manually, 2, 1, 
+                "manual_geo_button":("frame2", "Geometry", self.insert_geo_manually, 3, 1, 
                                      "If you wish to insert the geometry manually please click \n"
                                      "'Geometry' button in the geometry file you should have 4 or 5 columns\n"
                                      "first column: Atoms, second column: atomic numbers,third column: x \n"
@@ -261,6 +263,9 @@ class Ctrl_Input:
                 sticky_opt = 'e' if text == 'Help' else 'w'
                 button.grid(row=row, column=column, sticky=sticky_opt, padx=5, pady=5)
                 self.balloon.bind(button, tooltip)
+                self.buttons[button_name] = button
+                if button_name in ('brows_geo_button','manual_geo_button'): 
+                    button.config(state=tk.DISABLED)  # Initially disable the button
 
         self.create_ctrl_pans()
 
@@ -275,7 +280,7 @@ class Ctrl_Input:
         '''
         units = ["Bohr", "Angs"]
         label = ttk.Label(self.frames["frame2"], text="Unit of the Geometry Data", style="Colour_Label.TLabel")
-        label.grid(row=3, column=0, sticky=tk.W, padx=15, pady=5)
+        label.grid(row=1, column=0, sticky=tk.W, padx=15, pady=5)
         for i, unit in enumerate(units, start=1):
             button = ttk.Radiobutton(
                 self.frames["frame2"],
@@ -285,13 +290,16 @@ class Ctrl_Input:
                 command=self.update_geo_unit,
                 style="Custom.TRadiobutton"
             )
-            button.grid(row=3, column=i, padx=10, pady=10)
+            button.grid(row=1, column=i, padx=10, pady=10)
 
     def update_geo_unit(self):
         GlobVar.geo_unit = self.unit_type.get()
         if GlobVar.geo_unit:
             self.unit_type_entry = True
-            print('geo_unit', GlobVar.geo_unit)
+            for name in ('brows_geo_button', 'manual_geo_button'):
+                if name in self.buttons:
+                    self.buttons[name].config(state=tk.NORMAL)
+            print('geo_unit**', GlobVar.geo_unit)
             return (GlobVar.geo_unit)
 
     def read_filename(self):
@@ -308,23 +316,44 @@ class Ctrl_Input:
     def count_Total_Electron(self, mol_entry):
         molecule = {}
         try:
-            pattern = re.compile(r"([A-Z][a-z]?)(\d*)")
+            #pattern = re.compile(r"([A-Z][a-z]?)(\d*)\((\d*)([+-])\)")
+            #pattern = re.compile(r"([A-Z][a-z]?)(\d*)\((\d*)([+-])\)")
+            pattern = re.compile(r"([A-Z][a-z]?)(\d*)(?:\((\d*)([+-])\))?")
+            print("pattern",pattern)
             # Remove underscores for handling O_H2 as OH2
             input_string = mol_entry.replace("_", "")
             # Find all matches in the string
             matches = pattern.findall(input_string)
-            for element, count in matches:
-                # If no count is given, assume it's 1
-                count = int(count) if count else 1
-                # Add element to dictionary or update count if already present
-                molecule[element] = molecule.get(element, 0) + count
+            print('matches',matches)
+            charge_num, charge_sign = None, None
+            for element, count, num, sign in matches:
+                print('element, count, num, sign',element, count, num, sign )
+                if element:
+                    count = int(count) if count else 1 # If no count is given, assume it's 1
+#                    molecule[element] = molecule.get(element, 0) + count
+                else:
+                    raise ValueError(f"Element {element} is not spelled Correctly.")
+
+                if sign:
+                    charge_num = int(num) if num else 1
+                    charge_sign = sign
+
+                molecule[element] = (molecule.get(element, 0) + count, charge_num, charge_sign)
+
+                print("molecule",molecule)
+
             total = 0
-            for element, count in molecule.items():
+            for element, (count, charge_num, charge_sign) in molecule.items():
                 if element in GlobVar.at_list_bold:
                     atomic_number = GlobVar.at_list_bold.index(element) + 1  # Atomic number = index + 1
                     total += atomic_number * count
-                else:
-                    raise ValueError(f"Element {element} is not spelled Correctly.")
+                    print("total",total)
+                if charge_sign == '+':
+                    total -= charge_num 
+                    print("total+",total)
+                if charge_sign == '-':
+                    total += charge_num 
+                    print("total-",total)
             return total
         except ValueError:
             messagebox.showerror("Incorrect Molecular Formula", "The molecular formula is not in Correct\n"
@@ -344,7 +373,7 @@ class Ctrl_Input:
                 self.frames["frame2"],
                 text="View_Geometry",
                 command=GlobVar.readgeo.display_geometry
-                ).grid(row=1, column=2, columnspan=2)
+                ).grid(row=2, column=2, columnspan=2)
 
     def insert_geo_manually(self):
         """Allows manual insertion of geometry data via Read_Geo."""
@@ -354,7 +383,7 @@ class Ctrl_Input:
             self.frames["frame2"],
             text="View Geometry",
             command=GlobVar.readgeo.display_geometry
-            ).grid(row=2, column=2, columnspan=2)
+            ).grid(row=3, column=2, columnspan=2)
 
     def create_ctrl_pans(self):
         self.keywords = [
@@ -458,6 +487,10 @@ class Read_Geo:
         - 4 columns: atom name, x, y, z coordinates
         - 5 columns: atom name, atomic number, x, y, z coordinates
         '''
+        bohrtoangs = 1.0
+        if GlobVar.geo_unit == 'Bohr':
+            bohrtoangs = 0.529177
+
         try:
             with open(self.file_path, 'r') as file:
                 lines = file.readlines()
@@ -471,9 +504,9 @@ class Read_Geo:
                 if len(columns) == 4:
                     ''' 4-column format: atom name, x, y, z'''
                     atom_name = columns[0].capitalize()  # Capitalize atom name
-                    x = self.Deconvert(columns[1])
-                    y = self.Deconvert(columns[2])
-                    z = self.Deconvert(columns[3])
+                    x = self.Deconvert(columns[1])*bohrtoangs
+                    y = self.Deconvert(columns[2])*bohrtoangs
+                    z = self.Deconvert(columns[3])*bohrtoangs
                     self.atoms.append({
                         "sl_num":nline,
                         "atom": atom_name,
@@ -485,9 +518,9 @@ class Read_Geo:
                     ''' 5-column format: atom name, atomic number, x, y, z'''
                     atom_name = columns[0].capitalize()  # Capitalize atom name
                     atomic_number = self.Deconvert(columns[1])
-                    x = self.Deconvert(columns[2])
-                    y = self.Deconvert(columns[3])
-                    z = self.Deconvert(columns[4])
+                    x = self.Deconvert(columns[2])*bohrtoangs
+                    y = self.Deconvert(columns[3])*bohrtoangs
+                    z = self.Deconvert(columns[4])*bohrtoangs
                     self.atoms.append({
                         "sl_num":nline,
                         "atom": atom_name,
@@ -501,13 +534,6 @@ class Read_Geo:
                             "Unknown Format", "Geometry file format is unknown Please Check help"
                             )
                     continue
-
-            if GlobVar.geo_unit == "Bohr":
-                bohr_to_angstrom = 0.529177
-                for atom in self.atoms:
-                    atom['x'] *= bohr_to_angstrom
-                    atom['y'] *= bohr_to_angstrom
-                    atom['z'] *= bohr_to_angstrom
 
             print('atom', self.atoms)
             GlobVar.total_atoms = len(self.atoms)
@@ -615,13 +641,18 @@ class Read_Geo:
         self.coordy.clear()
         self.coordz.clear()
         self.symatno.clear()
+
+        bohrtoangs = 1.0
+        if GlobVar.geo_unit == 'Bohr':
+            bohrtoangs = 0.529177
+
         for atom, x_entry, y_entry, z_entry in self.entry_widgets:
             atom_name = atom.get().strip()
             if atom:  # Only process if the atom field is not empty
                 try:
-                    x = float(self.Deconvert(x_entry.get().strip()))
-                    y = float(self.Deconvert(y_entry.get().strip()))
-                    z = float(self.Deconvert(z_entry.get().strip()))
+                    x = float(self.Deconvert(x_entry.get().strip()))*bohrtoangs
+                    y = float(self.Deconvert(y_entry.get().strip()))*bohrtoangs
+                    z = float(self.Deconvert(z_entry.get().strip()))*bohrtoangs
                 except ValueError:
                     messagebox.showerror("Input Error", "Coordinates must be valid numbers.")
                     return
@@ -632,13 +663,6 @@ class Read_Geo:
                     "y": y,
                     "z": z
                 })
-
-        if GlobVar.geo_unit == "Bohr":
-            bohr_to_angstrom = 0.529177
-            for atom in self.atoms:
-                atom['x'] *= bohr_to_angstrom
-                atom['y'] *= bohr_to_angstrom
-                atom['z'] *= bohr_to_angstrom
 
         GlobVar.total_atoms = self.atom_num
         for atom in self.atoms:
@@ -2020,6 +2044,7 @@ class Keywd_Input:
 
         str_type_mapping = {'Both': 1, 'Covalent': 2, 'Ionic': 3}
         strtype = map_string_to_int(self.Update_Str_Type(), str_type_mapping)
+        GlobVar.CovIon = strtype
 
         settype_mapping = {'Single Set': 0, 'Best Sets': 1, 'All Sets': 2}
         nset = map_string_to_int(self.ChemInst_set_type_read(), settype_mapping)
@@ -2037,6 +2062,15 @@ class Keywd_Input:
         sybp = get_priority(self.get_SBB_Priority())
         mnbondp = get_priority(self.get_PDB_Priority())
         radicalp = get_priority(self.get_PDR_Priority())
+        prio_list = [itbp, nnbp, sybp, mnbondp, radicalp]
+        count = 0
+        for i in range (1,len(prio_list)+1):
+            for j in range (len(prio_list)):
+                if i == prio_list[j]:
+                    count += 1
+                    prio_list[j] = count
+
+        itbp, nnbp, sybp, mnbondp, radicalp = prio_list
 
         if self.get_PDB_Priority() != 'None':
             nmbond = self.bond_number
@@ -2727,19 +2761,31 @@ class Run_Fort:
         if not GlobVar.geometry_inserted:
             messagebox.showerror("Invalid Geometry", "please insert the geometry")
             return
+
         symat, coordx, coordy, coordz, symatno = GlobVar.readgeo.get_geometry_data()
-        # Convert each to a numpy array
+
+        #bohrtoangs = 1.0
+        #if GlobVar.geo_unit == 'Bohr':
+        #    bohrtoangs = 0.529177
+
+        # Initialize fixed-size arrays
         self.symat_py = np.zeros(100, dtype="U5")
-        self.symat_py[:len(symat)] = symat
         self.coordx_py = np.zeros(100, dtype=np.float64)
-        self.coordx_py[:len(coordx)] = coordx
         self.coordy_py = np.zeros(100, dtype=np.float64)
-        self.coordy_py[:len(coordy)] = coordy
         self.coordz_py = np.zeros(100, dtype=np.float64)
-        self.coordz_py[:len(coordz)] = coordz
         self.symatno_py = np.zeros(100, dtype=np.float64)
-        self.symatno_py[:len(symatno)] = symatno
-#        print('geometry:',self.symat_py, self.coordx_py, self.coordy_py, self.coordz_py, self.symatno_py)
+
+        # Number of atoms
+        n = len(coordx)  
+
+        # Copy and convert data with scaling
+        self.symat_py[:n] = symat
+        self.coordx_py[:n] = np.array(coordx) #* bohrtoangs
+        self.coordy_py[:n] = np.array(coordy) #* bohrtoangs
+        self.coordz_py[:n] = np.array(coordz) #* bohrtoangs
+        self.symatno_py[:n] = np.array(symatno, dtype=np.float64)
+
+#       # print('geometry:',self.symat_py, self.coordx_py, self.coordy_py, self.coordz_py, self.symatno_py)
 
     def get_ctrl_keywds(self, ctrl_keywds):
         self.geometry_unit, self.nao, self.nae, self.nmul = ctrl_keywds.get_ctrl_keywds()
@@ -2822,14 +2868,20 @@ class Output:
 
     def load_structure_file(self, fname):
         Output_window = tk.Toplevel(self.root)
-        Output_window.title("All Structures")
+        Output_window.title("Output")
         Output_window.geometry("1050x950")
         Output_window.configure(background="lightblue")
-        structures = []
-        various_qualities = []
-        overall_qualities = []
-        rumers = []
-        sls = []
+        structures_cov = []
+        various_qualities_cov = []
+        overall_qualities_cov = []
+        rumers_cov = []
+        sls_cov = []
+        structures_ion = []
+        various_qualities_ion = []
+        overall_qualities_ion = []
+        rumers_ion = []
+        sls_ion = []
+        sets= perm_cov_str= perm_ion_str= all_cov_str= all_ion_str = 0
 
         self.frames = {}
 
@@ -2864,10 +2916,22 @@ class Output:
         scrollbar.config(command=text_widget.yview)
         font = tkFont.Font(family="Helvetica", size=14)
 
+        # calculation number of available structures & allowed structures
         nlp = GlobVar.num_orbital - GlobVar.num_electron
         nao = GlobVar.num_orbital
+        nae = GlobVar.num_electron
         nmult = GlobVar.multiplicity
-        sets, tot_perm_str, all_str = self.wigner(nlp, nao, nmult)
+        cov_nlp = nlp
+        nlast = nmult - 1
+        cov_bond = int((nao - 2 * cov_nlp - nlast)/2)
+        if GlobVar.CovIon==1 or GlobVar.CovIon==2:
+            sets, perm_cov_str, all_cov_str = self.wigner(nlp, nao, nae, nmult)
+        if GlobVar.CovIon==1 or GlobVar.CovIon==3:
+            for i in range(1, cov_bond+1):
+                ion_nlp = cov_nlp + i
+                w1 , w2, w3 = self.wigner(ion_nlp, nao, nae, nmult)
+                perm_ion_str += w2
+                all_ion_str += w3 
 
         filename = fname + '/' + 'structures.dat'
 
@@ -2875,63 +2939,129 @@ class Output:
             text_widget.insert(tk.END, "No Structures are available\n")
             return
         else:
+            sw = GlobVar.num_orbital*2+20
+            header1 = (
+            f"{'Sl. No.':<16}"
+            f"{'Structure':^{sw}}"
+            f"{'Various Qualities':^30}"
+            f"{'Overall Quality':^22}"
+            f"{'Rumer':^20}\n\n"
+            )
+
+            header2 = (
+                    f"{'-------':<16}"
+                    f"{'---------':^{sw}}"
+                    f"{'IAB NAB SBB PDB PDR':^30}"
+                    f"{'---------------':^22}"
+                    f"{'-----':^20}\n\n"
+                    )
+
+            text_widget.insert(tk.END, header1)
+            text_widget.insert(tk.END, header2)
             i = 0
             with open(filename, "r") as file:
                 lines = file.readlines()
                 for line in lines:
+                    if line.startswith('Cov Space'):
+                        cols = line.strip().split()
+                        space_num = cols[3]
+                        result = (f"Cov Space = {space_num}\n\n")
+                        covionflg = 1
+                        sl = 0
+                        structures = []
+                        various_qualities = []
+                        overall_qualities = []
+                        rumers = []
+                        sls = []
+                        text_widget.insert(tk.END, result)
+                    if line.startswith('Ion Space'):
+                        cols = line.strip().split()
+                        space_num = cols[3]
+                        result = (f"Ion Space = {space_num}\n\n")
+                        covionflg = 2
+                        #sl = 0
+                        structures = []
+                        various_qualities = []
+                        overall_qualities = []
+                        rumers = []
+                        sls = []
+                        text_widget.insert(tk.END, result)
                     if line.startswith("structure"):
                         # print('line', line)
                         cols = line.strip().split()
-                        sl = cols[1]
-                        sls.append(int(sl))
-                        various_quality = " ".join(cols[3:8])
-                        various_qualities.append(various_quality)
-                        print('various_quality',various_quality)
-                        overall_quality = cols[10]
-                        overall_qualities.append(int(overall_quality))
-                        rumer = cols[12]
-                        rumers.append(rumer)
-                        if rumer == 'Rumer':
-                            rumer = 'R'
-                        structure = " ".join(cols[13:])
-                        structures.append(structure)
-                        sw = len(structure) + 10
-                        i += 1
-                        result = (
-                                f"{i:<16}"
-                                f"{structure:^{sw}}"
-                                f"{various_quality:^30}"
-                                f"{overall_quality:^22}"
-                                f"{rumer:^20}\n\n"
-                                )
-
-                        if i == 1:
-                            header1 = (
-                            f"{'Sl. No.':<16}"
-                            f"{'Structure':^{sw}}"
-                            f"{'Various Qualities':^30}"
-                            f"{'Overall Quality':^22}"
-                            f"{'Rumer':^20}\n\n"
-                            )
-
-                            header2 = (
-                                    f"{'-------':<16}"
-                                    f"{'---------':^{sw}}"
-                                    f"{'IAB NAB SBB PDB PDR':^30}"
-                                    f"{'---------------':^22}"
-                                    f"{'-----':^20}\n\n"
+                        if covionflg == 1:
+                            sl = cols[1]
+                            sls.append(int(sl))
+                            various_quality = " ".join(cols[3:8])
+                            various_qualities.append(various_quality)
+                            print('various_quality',various_quality)
+                            overall_quality = cols[10]
+                            overall_qualities.append(int(overall_quality))
+                            rumer = cols[12]
+                            rumers.append(rumer)
+                            if rumer == 'Rumer':
+                                rumer = 'R'
+                            structure = " ".join(cols[13:])
+                            structures.append(structure)
+                            sw = len(structure) + 10
+                            #i += 1
+                            result = (
+                                    f"{sl:<16}"
+                                    f"{structure:^{sw}}"
+                                    f"{various_quality:^30}"
+                                    f"{overall_quality:^22}"
+                                    f"{rumer:^20}\n\n"
                                     )
+                            text_widget.insert(tk.END, result)
+                        if covionflg == 2:
+                            sl = cols[1]
+                            sls.append(int(sl))
+                            various_quality = " ".join(cols[3:8])
+                            various_qualities.append(various_quality)
+                            print('various_quality',various_quality)
+                            overall_quality = cols[10]
+                            overall_qualities.append(int(overall_quality))
+                            rumer = cols[12]
+                            rumers.append(rumer)
+                            if rumer == 'Rumer':
+                                rumer = 'R'
+                            structure = " ".join(cols[13:])
+                            structures.append(structure)
+                            sw = len(structure) + 10
+                            #i += 1
+                            result = (
+                                    f"{sl:<16}"
+                                    f"{structure:^{sw}}"
+                                    f"{various_quality:^30}"
+                                    f"{overall_quality:^22}"
+                                    f"{rumer:^20}\n\n"
+                                    )
+                            text_widget.insert(tk.END, result)
+                    if line.startswith(" ============================================================"):
+                        if covionflg == 1:
+                            structures_cov.append(structures)
+                            various_qualities_cov.append(various_qualities)
+                            overall_qualities_cov.append(overall_qualities)
+                            rumers_cov.append(rumers)
+                            sls_cov.append(sls)
+                        if covionflg == 2:
+                            structures_ion.append(structures)
+                            various_qualities_ion.append(various_qualities)
+                            overall_qualities_ion.append(overall_qualities)
+                            rumers_ion.append(rumers)
+                            sls_ion.append(sls)
+                print('structures_cov',structures_cov)
+                print('structures_ion',structures_ion)
 
-                            text_widget.insert(tk.END, header1)
-                            text_widget.insert(tk.END, header2)
-                        text_widget.insert(tk.END, result)
                 label_tot_cov_str = ttk.Label(
-                        self.frames["frame"], text=f'Total number of covalent structure of thesystem = {all_str}', 
+                        self.frames["frame"], text=(f'Number of available covalent structures of thes ystem = {all_cov_str}\n'
+                                                    f"Number of available ionic structures of the system = {all_ion_str}"), 
                         style="Colour_Label.TLabel"
                         )
                 label_tot_cov_str.grid(row=0, column=0, padx=5, pady=5)
                 label_tot_all_cov_str = ttk.Label(
-                        self.frames["frame"], text=f'Total number of allowed covalent structure={tot_perm_str}', 
+                        self.frames["frame"], text=(f'Number of allowed covalent structures = {perm_cov_str}\n'
+                                                    f'Number of allowed ionic structures = {perm_ion_str}'), 
                         style="Colour_Label.TLabel"
                         )
                 label_tot_all_cov_str.grid(row=0, column=1, padx=5, pady=5)
@@ -2979,33 +3109,45 @@ class Output:
         flag3 = 3
         view_set_button = tk.Button(
                 self.frames["button_frame"], 
-                text='View Set', 
-                command=lambda: self.view_set(flag1, structures, various_qualities, overall_qualities,
-                                              rumers, sls, set_text_wt, lines)
+                text='View Cov Set', 
+                command=lambda: self.view_set(flag1, structures_cov, various_qualities_cov, overall_qualities_cov,
+                                              rumers_cov, sls_cov, set_text_wt, lines, 'cov')
                 )
         view_set_button.grid(row=0, column=2, padx=10, pady=10)
+
+        view_set_button = tk.Button(
+                self.frames["button_frame"], 
+                text='View Ion Set', 
+                command=lambda: self.view_set(flag1, structures_ion, various_qualities_ion, overall_qualities_ion,
+                                              rumers_ion, sls_ion, set_text_wt, lines, 'ion')
+                )
+        view_set_button.grid(row=0, column=3, padx=10, pady=10)
 
         view_nextset_button = tk.Button(
                 self.frames["button_frame"], text='Next Set', 
                 command=lambda: self.view_set(flag2, structures, various_qualities, overall_qualities,
-                                              rumers, sls, set_text_wt, lines)
+                                              rumers, sls, set_text_wt, lines, '')
                 )
-        view_nextset_button.grid(row=0, column=3, padx=10, pady=10)
+        view_nextset_button.grid(row=0, column=4, padx=10, pady=10)
         if len(lines) == 1:
             view_nextset_button.config(state=tk.DISABLED)  # Initially disable the button
 
         view_prevtset_button = tk.Button(
                 self.frames["button_frame"], text='Prev Set', 
                 command=lambda: self.view_set(flag3, structures, various_qualities, overall_qualities,
-                                              rumers, sls, set_text_wt, lines)
+                                              rumers, sls, set_text_wt, lines, '')
                 )
         view_prevtset_button.grid(row=0, column=1, padx=10, pady=10)
         if len(lines) == 1:
             view_prevtset_button.config(state=tk.DISABLED)  # Initially disable the button
 
 
-    def view_set(self, flag, structure, various_qualities, overall_qualities, rumers, sls, set_text_wt, lines):
+    def view_set(self, flag, structure_ci, various_qualities_ci, overall_qualities_ci, 
+                 rumers_ci, sls_ci, set_text_wt, lines, ciflg):
         print('inside view_set',flag)
+        print('sls',sls_ci)
+        diff_sets = []
+        max_set = 0
         if flag == 1:
             GlobVar.set_id = 1
             self.set_info_wt.delete("1.0", "end")
@@ -3019,19 +3161,104 @@ class Output:
 
         set_text_wt.tag_configure("right", justify="right")
         print('lines',lines)
+        count_c = 0
+        count_i = 0
         for line in lines:
-            if line.startswith('Set_number'):
+            if line.startswith('Set_number_c') and ciflg == 'cov':
                 linear_indset = line.strip().split()
+                diff_sets = linear_indset[1]
+            if line.startswith('Set_number_i') and ciflg == 'ion':
+                linear_indset = line.strip().split()
+                diff_sets = linear_indset[2]
+        max_set = max(diff_sets)
+        print('max_set', max_set)
+        linear_indset = 0
+
+        for line in lines:
+            if 'Cov_Space' in line and ciflg == 'cov':
+                structure=structure_ci[count_c]
+                various_qualities=various_qualities_ci[count_c] 
+                overall_qualities=overall_qualities_ci[count_c] 
+                rumers=rumers_ci[count_c]
+                sls=sls_ci[count_c]
+                print('sls,count',sls, count_c)
+                count_c += 1
+            if 'Ion_Space' in line and ciflg == 'ion':
+                structure=structure_ci[count_i]
+                various_qualities=various_qualities_ci[count_i] 
+                overall_qualities=overall_qualities_ci[count_i] 
+                rumers=rumers_ci[count_i]
+                sls=sls_ci[count_i]
+                print('sls,count',sls, count_i)
+                count_i += 1
+            if line.startswith('Set_number_c') and ciflg == 'cov':
+                linear_indset = line.strip().split()
+                print('linear_indset',linear_indset)
+
+                if linear_indset[1] == str(GlobVar.set_id):
+                    if count_c == 1:
+                        indset = []
+                        set_text_wt.delete("1.0", "end")
+                        set_text_wt.insert(
+                                tk.END, f"\n    Total Number of  Independent Set of Structures: {max_set}  \n\n"
+                                )
+                        set_text_wt.insert(
+                                tk.END, "\n           Set number::  " + f"{linear_indset[1]}\n\n"
+                                )
+                    sl = 0
+                    for index in linear_indset[2:]:
+                        sl += 1
+                        indset.append(int(index))
+                        set_text_wt.insert(
+                                tk.END, f" {sl}  ({sls[int(index) - 1]}):        " + structure[int(index) - 1] + "\n"
+                                )
+                    info_button = tk.Button(self.frame_view_info, text="Set Info", 
+                           command=lambda: self.set_info(
+                                various_qualities, overall_qualities, rumers, indset
+                                )
+                            )
+                    info_button.grid(row=0, column=0, sticky=tk.W, padx=10)
+                    if GlobVar.symm_key == 1:
+                        symm_grp_button = tk.Button(self.frame_view_info, text="Symmetry groups",
+                                                    command=lambda:self.show_symm_groups(
+                                                        overall_qualities, structure
+                                                        )
+                                                    )
+                        symm_grp_button.grid(row=0, column=1, sticky=tk.W, padx=10)
+
+                    ## Structure view Buttons ... ##
+                    self.molkey = 0
+
+                    view_button = tk.Button(self.frame_view_str, text="View Structure", 
+                                            command=lambda i=indset, s=structure, l=linear_indset[1]:
+                                            self.View_Structure(i, 'molflg', s, l))
+                    view_button.grid(row=0, column=1, sticky=tk.W, padx=10)
+
+                    view_button_next = tk.Button(self.frame_view_str, text="next", 
+                                            command=lambda i=indset, s=structure, l=linear_indset[1]:
+                                            self.View_Structure(i, 'molflg1', s, l))
+                    view_button_next.grid(row=0, column=2, sticky=tk.W, padx=10)
+
+                    view_button_prev = tk.Button(self.frame_view_str, text="prev", 
+                                            command=lambda i=indset, s=structure, l=linear_indset[1]:
+                                            self.View_Structure(i, 'molflg2', s, l))
+                    view_button_prev.grid(row=0, column=0, sticky=tk.W, padx=10)
+                    #print('linear_indset', linear_indset)
+
+            if line.startswith('Set_number_i') and ciflg == 'ion':
+                linear_indset = line.strip().split()
+                print('linear_indset',linear_indset)
 
                 if linear_indset[1] == str(GlobVar.set_id):
                     indset = []
-                    set_text_wt.delete("1.0", "end")
-                    set_text_wt.insert(
-                            tk.END, f"\n    Total Number of  Independent Set of Structures: {len(lines)}  \n\n"
-                            )
-                    set_text_wt.insert(
-                            tk.END, "\n           Set number::  " + f"{linear_indset[1]}\n\n"
-                            )
+                    if count_i == 1:
+                        set_text_wt.delete("1.0", "end")
+                        set_text_wt.insert(
+                                tk.END, f"\n    Total Number of  Independent Set of Structures: {max_set}  \n\n"
+                                )
+                        set_text_wt.insert(
+                                tk.END, "\n           Set number::  " + f"{linear_indset[1]}\n\n"
+                                )
                     sl = 0
                     for index in linear_indset[2:]:
                         sl += 1
@@ -3154,7 +3381,7 @@ class Output:
 
         return #oqt
 
-    def wigner(self, nlp, nao, nmult):
+    def wigner(self, nlp, nao, nae, nmult):
         ''' none = number of one electron orbital
             nlp = number of lone paires
             nao = number of active electrons
@@ -3164,26 +3391,31 @@ class Output:
         sets = 1
 
         ''' calculate permissible number of structre with Wigner's theorem'''
-        noeo = nao - nlp
+        noeo = nae - 2*nlp
+        navo = nao - nlp
+        c = math.comb(nao, navo)
+        c1 = math.comb(navo, noeo)
         spin = (nmult - 1)/2
         neum = nmult*math.factorial(noeo)
         denom1 = math.factorial(int((noeo/2) + spin+1))
         denom2 = math.factorial(int((noeo/2) - spin))
-        wigner = int(neum/(denom1 * denom2))
+        wigner = int(neum/(denom1 * denom2))*c*c1
+
 
         ''' Number of sets depending on lone pairs'''
         if nlp != 0:
             sets = math.comb(nao, nlp)
 
         ''' Calculate total number of structures'''
-        term1 = math.comb(nao, nao - noeo)
+        term1 = math.comb(nao, nlp)
         term2 = math.comb(noeo, int(2*spin))
+        term3 = math.comb(navo, noeo)
 
         product_term = np.prod([(math.comb(noeo - int(2*spin) - 2*i, 2))
                                 for i in range(int((noeo / 2)-spin))])
         denom = math.factorial(int((noeo / 2) - spin))
 
-        totstr = int((term1 * term2 * product_term) / denom)
+        totstr = int((term1 * term2 * term3 * product_term) / denom)
 
         return (sets, wigner, totstr)
 

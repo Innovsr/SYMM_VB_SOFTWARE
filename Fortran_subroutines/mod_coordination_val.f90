@@ -14,7 +14,7 @@ integer, intent(in)::coordination_mat(:,:)
 real*8::coord_score,c_score,score,val1, val2
 real*8, intent(in)::bndscore(:)
 
-print*,'enter coordination_val ', (loop_score_row(i),i=1,numbond),coordination_mat
+print*,'enter coordination_val '!, (loop_score_row(i),i=1,numbond),coordination_mat
 
 coord_score=0.0
 do i=1,numbond
@@ -33,7 +33,7 @@ do i=1,numbond
                 call new_row(i2, i, val1)
                 call new_row(i3, i1, val2)
                 score=score+((bndscore(i)/val1) + (bndscore(i1)/val2))
-                print*,'score',bndscore(i),val1,bndscore(i1),val2,score
+!                print*,'score',bndscore(i),val1,bndscore(i1),val2,score
               endif
             enddo
           enddo
@@ -64,7 +64,7 @@ real*8::val
 
 val = 0.0
 k=int(loop_score_row(n)/2)+mod(loop_score_row(n),2)
-print*,'kkk',k
+!print*,'kkk',k
 if (mod(loop_score_row(n),2).eq.0)then
   i1=0
   do i=1,loop_score_row(n)/2

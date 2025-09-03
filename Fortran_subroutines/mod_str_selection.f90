@@ -44,24 +44,31 @@ sqlty1=0
 print*,'perm_nstr, m4',perm_nstr, m4
 flg2=1 ! this flag instruct 'space num will be written in write_rumer_xmi subroutine'
 if(perm_nstr.eq.m4)then
+
+  allocate(qq10(m4))
+  allocate(qq11(m4))
+  allocate(qq12(m4))
+  allocate(bondq14(m4))
+
    flg2=0 ! this flag instruct 'space num will not be written in write_rumer_xmi subroutine'
    if(flg_cov.eq.1)then
      cov_space=cov_space+perm_nstr
      write(5,913)'Cov_Space',cov_space-perm_nstr+1,'-',cov_space+1
-     write(9+u1,914)'============= Cov Space num:',cov_space-perm_nstr+1,'-',cov_space+1,'============='
+     write(9+u1,914)'================= Cov Space num:',cov_space-perm_nstr+1,'-',cov_space+1,'============='
+     write(7,913)'Cov Space num:',cov_space-perm_nstr+1,'-',cov_space+1
    endif
    if(flg_ion.eq.1)then
      ion_space=ion_space+perm_nstr
      write(5,913)'Ion_Space',ion_space-perm_nstr+1,'-',ion_space+1
-     write(9+u1,914)'============= Ion Space num:',ion_space-perm_nstr+1,'-',ion_space+1,'============='
+     write(9+u1,914)'================= Ion Space num:',ion_space-perm_nstr+1,'-',ion_space+1,'============='
+     write(7,913)'Ion Space num:',ion_space-perm_nstr+1,'-',ion_space+1
    endif
 
    call rumer_structures(nl,astr,m4)
    call quality_factor(nl,astr,m4)
    call write_structures_file(m4, astr)
+   call nnat_bond_cal_2(nl,astr,m4,bondq)
 
-   if(input_flg.eq.1)call nnat_bond_cal(nl,astr,m4,bondq)
-   if(input_flg.eq.0)call nnat_bond_cal_2(nl,astr,m4,bondq)
    tqlty=0
    bqlty=0
    sqlty=0
@@ -79,11 +86,16 @@ if(perm_nstr.eq.m4)then
    if (flg1.eq.0) call write_output(sf1, sf2, perm_nstr, str12, col9)
    if (flg1.eq.1) call write_rumer_xmi(nl, astr, perm_nstr,flg2)
 
-deallocate(rumer)
-deallocate(rumer_rad)
+   write(7,*)'============================================================'
+   deallocate(rumer)
+   deallocate(rumer_rad)
+   deallocate(qq10)
+   deallocate(qq11)
+   deallocate(qq12)
+   deallocate(bondq14)
 
 913 format(a,2x,I0,2x,a,2x,I0)
-914 format(a,2x,I0,2x,a,2x,I0,2x,a)
+914 format(a,2x,I0,a,I0,2x,a)
 
 return
 endif
@@ -111,17 +123,18 @@ loop1:do i1=1,m4
    str1 = 0
    str2 = 0
 
-   if(repl.ne.0)then
-      do i4=1,repl
-         rep=0
-         do i3=1,nae
-            if(repl_struc(i4,i3).eq.astr(i1,i3))then
-               rep=rep+1
-            endif
-         enddo 
-         if(rep.eq.nae) cycle loop1
-      enddo
-   endif
+   !print*,'repl',repl
+   !if(repl.ne.0)then
+   !   do i4=1,repl
+   !      rep=0
+   !      do i3=1,nae
+   !         if(repl_struc(i4,i3).eq.astr(i1,i3))then
+   !            rep=rep+1
+   !         endif
+   !      enddo 
+   !      if(rep.eq.nae) cycle loop1
+   !   enddo
+   !endif
 
    str1_cnt=0
 
@@ -149,17 +162,17 @@ loop1:do i1=1,m4
    str_cnt(cnt)=i1
 
    loop2:do i2=i1,m4
-      if (repl.ne.0)then
-         do i4=1,repl
-            rep=0
-            do i3=1,nae
-               if (repl_struc(i4,i3).eq.astr(i2,i3))then
-                  rep=rep+1
-               endif
-            enddo 
-            if (rep.eq.nae) cycle loop2
-         enddo
-      endif
+      !if (repl.ne.0)then
+      !   do i4=1,repl
+      !      rep=0
+      !      do i3=1,nae
+      !         if (repl_struc(i4,i3).eq.astr(i2,i3))then
+      !            rep=rep+1
+      !         endif
+      !      enddo 
+      !      if (rep.eq.nae) cycle loop2
+      !   enddo
+      !endif
 
       do i5=1,cnt
          if (str_cnt(i5).eq.i2) cycle loop2
@@ -206,10 +219,29 @@ loop1:do i1=1,m4
       endif
    enddo loop2
 
+   allocate(qq10(allowed_nstr))
+   allocate(qq11(allowed_nstr))
+   allocate(qq12(allowed_nstr))
+   allocate(bondq14(allowed_nstr))
 !***********************************************************************
 !!!!!!!!!!!!!!!! Rumer Structures selection  Start !!!!!!!!!!!!!!!!!!!!!
 !***********************************************************************
-   if (nl.ne.0)write(7,*)'                 lone pair =',(lps(i3),i3=1,lp_cnt)
+!   if (nl.ne.0)write(7,*)'                 lone pair =',(lps(i3),i3=1,lp_cnt)
+if(flg_cov.eq.1)then
+  cov_space=cov_space+1
+  write(5,923)'Cov_Space',cov_space
+  write(9+u1,924)'================= Cov Space num:',cov_space,'================'
+  write(7,923)'Cov Space num:',cov_space
+endif
+if(flg_ion.eq.1)then
+  ion_space=ion_space+1
+  write(5,923)'Ion_Space',ion_space
+  write(9+u1,924)'================= Ion Space num:',ion_space,'================'
+  write(7,923)'Ion Space num:',ion_space
+endif
+
+923 format(a,2x,I0)
+924 format(a,2x,I0,2x,a)
 
    print*,'flg1',flg1
    if (flg1.eq.1) then
@@ -227,6 +259,11 @@ loop1:do i1=1,m4
         deallocate(rumer)
         deallocate(rumer_rad)
         deallocate(symq)
+        deallocate(qq10)
+        deallocate(qq11)
+        deallocate(qq12)
+        deallocate(bondq14)
+        deallocate(loopsymsc)
      endif
 
      if (nfset.eq.1.or.nfset.eq.2) then
@@ -247,6 +284,11 @@ loop1:do i1=1,m4
         deallocate(rumer)
         deallocate(rumer_rad)
         deallocate(symq)
+        deallocate(qq10)
+        deallocate(qq11)
+        deallocate(qq12)
+        deallocate(bondq14)
+        deallocate(loopsymsc)
      endif
    endif
 !***********************************************************************
@@ -280,6 +322,14 @@ loop1:do i1=1,m4
          deallocate(rumer)
          deallocate(rumer_rad)
          deallocate(symq)
+         deallocate(qq10)
+         deallocate(qq11)
+         deallocate(qq12)
+         deallocate(bondq14)
+         deallocate(strdet)
+         deallocate(detmnt)
+         deallocate(det_sign)
+         deallocate(loopsymsc)
          print*,'i am here'
       endif
 
@@ -294,6 +344,13 @@ loop1:do i1=1,m4
          deallocate(rumer)
          deallocate(rumer_rad)
          deallocate(symq)
+         deallocate(qq10)
+         deallocate(qq11)
+         deallocate(qq12)
+         deallocate(bondq14)
+         deallocate(strdet)
+         deallocate(detmnt)
+         deallocate(det_sign)
       endif
 
       if (symm.eq.0.and.nfset.eq.4.and.asymm.eq.0)then
@@ -307,6 +364,13 @@ loop1:do i1=1,m4
          deallocate(rumer)
          deallocate(rumer_rad)
          deallocate(symq)
+         deallocate(qq10)
+         deallocate(qq11)
+         deallocate(qq12)
+         deallocate(bondq14)
+         deallocate(strdet)
+         deallocate(detmnt)
+         deallocate(det_sign)
       endif
 
       if (symm.eq.0.and.asymm.eq.1) then
@@ -321,9 +385,16 @@ loop1:do i1=1,m4
          deallocate(rumer)
          deallocate(rumer_rad)
          deallocate(symq)
+         deallocate(qq10)
+         deallocate(qq11)
+         deallocate(qq12)
+         deallocate(bondq14)
+         deallocate(strdet)
+         deallocate(detmnt)
+         deallocate(det_sign)
       endif
    endif
-
+   write(7,*)'============================================================'
 !***********************************************************************
 !!!!!!!!!!!!!!!! Covalent Structures selection Ends !!!!!!!!!!!!!!!!!!
 !***********************************************************************
@@ -378,7 +449,7 @@ do m8=1,str1_cnt
      mbondq(m8),pref_radical(m8),']','{',quality_fac(m8),'}',rumstr,(str2(m8,m9),m9=1,nae)
 enddo
 
-write(7,*)'----------------------------  END FILE  ----------------------------'
+!write(7,*)'----------------------------------------------------------------------------------------'
 !close(7)
 301 format(a,2x,I0,3x,a,2x,I0,2x,I0,2x,I0,2x,I0,2x,I0,2x,a,3x,a,2x,I0,2x,a,14x,a,14x,a,I0,1x,*(I0, 1x))
 302 format(a,2x,I0,3x,I0,2x,I0,2x,I0,2x,I0,2x,I0,3x,a,I0,a,14x,a,14x,*(I0, 1x))

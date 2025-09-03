@@ -208,7 +208,7 @@ integer, allocatable:: str12(:,:),col9(:)
 character(10)::a
 character(len=300)::outfile
 
-
+print*,'enter write_output',i7,ttqlty, ttqlty0
 incmplt=0
 ttqlty=0
 tqlty=0
@@ -226,6 +226,7 @@ if(ttqlty.le.ttqlty0)then
   endif
 
   do m19=1,i7
+    print*,'enter loop',m19
     if(niao.eq.0)then
       write(9+u1,900)qq11(m19),bondq14(m19),qq12(m19),qq10(m19),'|',(str12(m19,m20),m20=1,nae)
     endif
@@ -259,7 +260,9 @@ if(ttqlty.le.ttqlty0)then
   bqlty=0
   write(9+u1,*)'Set_number=',set_number
   write(9+u1,*)'    '
-  write(5,913)'Set_number',set_number,(col9(m19),m19=1,i7)
+  if(flg_cov.eq.1) write(5,913)'Set_number_c',set_number,(col9(m19),m19=1,i7)
+  if(flg_ion.eq.1) write(5,913)'Set_number_i',set_number,(col9(m19),m19=1,i7)
+  print*,'col9',(col9(m19),m19=1,i7)
 endif
 
 if(nfset.eq.0.and.ttqlty.le.ttqlty0)then 

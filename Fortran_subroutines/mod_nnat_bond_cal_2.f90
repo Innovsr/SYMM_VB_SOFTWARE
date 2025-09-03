@@ -8,7 +8,7 @@ subroutine nnat_bond_cal_2(nl,str1,ncqs,bondq)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! This subroutine calculates the nearest naighbour score of the structures
 
-integer::i, i1, i3, i4, i5, i7, iii, iiii, nl, ncqs
+integer::i, i1, i3, i4, i5, i7, iii, iiii, nl, ncqs, iab_length
 real*8::least
 integer, allocatable:: sl(:)
 real, allocatable:: bondq1_dist(:)
@@ -20,10 +20,6 @@ print*,'enter nnat_bond_cal_2'
 
 open(unit=13,file='nnbd.temp',status='unknown')
 
-! initialisation
-!allocate(bondq_dist(MaxStrOepo))
-!allocate(bondq1_dist(MaxStrOepo))
-!allocate(sl(MaxStrOepo))
 allocate(bondq_dist(ncqs))
 allocate(bondq1_dist(ncqs))
 allocate(sl(ncqs))
@@ -57,9 +53,12 @@ do i1=1,ncqs
     if(iii.ne.2) cycle loop3
     if(nn(2).eq.nn(1))then
 
-!!! changes done for EDEN
-iab_length=1.00
-!!!!!!!!!!!!!!!!!!!!!!!!!
+      iab_length=1.00 !! this decide how should we handle the intra atomic bonds in 
+                      !! neighbouring atom bonds scheme. We can punish them or we can
+                      !! take them as a covalent bond (unit distance=1.0). Here we take 
+                      !! them as a unit distance bond like all covalent bonds as we 
+                      !! already punish these structures in IAB scoring. One can change
+                      !! it to iab_length=0.0 to make them worst. 
 
       if (iab_length.eq.0.0)ii=ii+100.0
       if (iab_length.ne.0.0)ii=ii+iab_length
@@ -109,7 +108,7 @@ enddo
 
 CALL SYSTEM ("rm nnbd.temp")
 print*,'exit nnat_bond_cal_2'
-!stop
+
 deallocate(bondq_dist)
 deallocate(bondq1_dist)
 return

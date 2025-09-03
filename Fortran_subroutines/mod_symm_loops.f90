@@ -3,18 +3,18 @@ module mod_symm_loops
 use commondat_mod
 use loops_mod
 implicit none
-integer, allocatable::connectivity_row(:,:)
+!integer, allocatable::connectivity_row(:,:)
 
 contains
-subroutine symm_loops(k1,k2,loop_score,nrow)
+subroutine symm_loops(k1,k2,loop_score,nrow, connectivity_row)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 integer::k1,k2,i,i1,i2,i4,i5,i6,j,loop_score1,nrow, count
-integer::n,nsl,nsl1,ii,iii,flg,loop_score
+integer::n,nsl,nsl1,ii,iii,flg,loop_score,a
 integer::ii0,ii1,ii2,ii3,ii4,ii5,ii6,ii7,ii8,ii9,ii10,ii11,ii12,j1,j2
 integer::j3,j4,j5,j6,j7,j8,j9,j10,j11,j12,j13,l,maxlp
 integer::ls1,ls2,ls3,ls4,ls5,ls6,ls7,ls8,ls9,ls10,ls11,ls12,ls13,ls14,nn
 integer, allocatable::nloop(:),orbs1(:),orbs2(:),nnn(:),orbs3(:),connectivity(:,:)
-!integer, allocatable::connectivity_row(:,:)
+integer, allocatable::connectivity_row(:,:)
 
 print*,'enter_symm_loops',k1,k2
 nsl=0
@@ -29,11 +29,12 @@ loop_score1=0
 l=0
 
 !print*,'natom',natom
-allocate(nloop(nae))
-allocate(orbs1(nae))
-allocate(orbs2(nae))
-allocate(orbs3(nae))
-allocate(connectivity(nae, nae))
+a = nnnatom+nao*2
+allocate(nloop(a))
+allocate(orbs1(a))
+allocate(orbs2(a))
+allocate(orbs3(a))
+allocate(connectivity(a, a))
 
 do i=1,natom
   if(k1.eq.tot_orb(i)) exit
@@ -691,10 +692,10 @@ loop32:do j1=1,ii0
 enddo loop32
 
 
-do i1=1,iii
-  print*,'nloopi_new',nloop(i1)
-enddo
-print*,'iii',iii
+!do i1=1,iii
+!  print*,'nloopi_new',nloop(i1)
+!enddo
+!print*,'iii',iii
 
 n=1000
 do i1=1,iii
@@ -714,32 +715,39 @@ do i1=1,iii
   endif
 enddo
 
-print*,'nnn**',(nnn(i),i=1,l)
+!print*,'nnn**',(nnn(i),i=1,l)
 
-if (.not. allocated(connectivity_row)) then
-  allocate(connectivity_row(nae, nae))
-  connectivity_row = 0
-endif
+!if (.not. allocated(connectivity_row)) then
+!  allocate(connectivity_row(nae, nae))
+!  connectivity_row = 0
+!endif
 
 do i2=1,l
   do i1=1,nloop(nnn(i2))+1
+!    print*,'nloop',i2,i1,nnn(i2),nloop(nnn(i2))+1
     connectivity_row(i2,i1)=connectivity(nnn(i2),i1)
   enddo
 enddo
 
 nrow=l
 
-print*,'nloop',(nloop(i1),i1=1,iii)
-do i1=1,iii
-print*,'connectivity',(connectivity(i1,i2),i2=1,nloop(i1)+1)
-enddo
-do i2=1,l
-print*,'connectivity_row',(connectivity_row(i2,i1),i1=1,nloop(nnn(i2))+1)
-enddo
+!print*,'nloop',(nloop(i1),i1=1,iii)
+!do i1=1,iii
+!print*,'connectivity',(connectivity(i1,i2),i2=1,nloop(i1)+1)
+!enddo
+!do i2=1,l
+!print*,'connectivity_row',(connectivity_row(i2,i1),i1=1,nloop(nnn(i2))+1)
+!enddo
 
 print*,'shortestgest loop',n
 !if(k1.eq.24.and.k2.eq.29)stop
+!deallocate(nloop)
+!deallocate(orbs1)
+!deallocate(orbs2)
+!deallocate(orbs3)
+!deallocate(connectivity)
 
+print*,'exit symm_loops'
 return
 end subroutine symm_loops
 end module mod_symm_loops

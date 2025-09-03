@@ -20,6 +20,7 @@ print*,'enter prio_rad_str'
 ! initialise the priority scores
 pref_radical=nlast+1
 
+jj=0
 if(nlpset.ne.0) then
   loop1:do i5=1,nlpset
     ii=0

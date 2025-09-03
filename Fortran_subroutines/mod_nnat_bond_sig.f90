@@ -4,6 +4,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 module mod_nnat_bond_sig
 use commondat_mod
+use coordinates_mod
 implicit none
 integer, allocatable::nnat_bond_new_1(:,:), nnat_bond_new(:,:)
 
@@ -13,12 +14,11 @@ subroutine nnat_bond_sig(n,sig_orb,nsig,j)
 integer::i,i1,i2,i3,i4,i5,i6,j,k,l,n!,nnat_bond_new(100,2)!,nnat_bond_new_1(100,2)
 integer::nsig,k1,k2,c1,c2
 integer::k3,k4
-real*8::coordx(100),coordy(100),coordz(100),a,b,c,d,norm,kk
+real*8::a,b,c,d,norm,kk!,coordx(100),coordy(100),coordz(100)
 real*8, allocatable::sig_coord(:,:),sig_dist_mat(:,:)
 integer, intent(in)::sig_orb(:)
 integer, allocatable::orbs_sig(:),atoset_sig(:,:),atn_sig(:),s_orbs(:)
 
-common/coordinate/coordx,coordy,coordz
 
 allocate(atoset_sig(atom,nae))
 allocate(atn_sig(atom))
@@ -118,6 +118,11 @@ do i=1,k
           a=coordx(c2)-coordx(c1)
           b=coordy(c2)-coordy(c1)
           c=coordz(c2)-coordz(c1)
+          print*,c1, c2
+          if (a==0.and.b==0.and.c==0) then
+                  print*,'a,b,c',a,b,c
+                  stop
+          endif
           norm=1.0/sqrt(a**2.0 + b**2.0 + c**2.0)
           d=0.3
           s_orbs(l)=k1
@@ -125,11 +130,11 @@ do i=1,k
           sig_coord(l,2)=coordy(c1)+b*d*norm
           sig_coord(l,3)=coordz(c1)+c*d*norm
 
-!print*,'norm,a,b,c',norm,a,b,c
-!print*,'a,b,c',a,b,c
-!print*,'c1 coord',coordx(c1),coordy(c1),coordz(c1)
-!print*,'c2 coord',coordx(c2),coordy(c2),coordz(c2)
-!print*,'sig_coord',l,sig_coord(l,1),sig_coord(l,2),sig_coord(l,3)
+print*,'norm,a,b,c',norm,a,b,c
+print*,'a,b,c',a,b,c
+print*,'c1 coord',coordx(c1),coordy(c1),coordz(c1)
+print*,'c2 coord',coordx(c2),coordy(c2),coordz(c2)
+print*,'sig_coord',l,sig_coord(l,1),sig_coord(l,2),sig_coord(l,3)
 !
 
         endif
@@ -180,13 +185,16 @@ do i=1,k
         j=j+1
         nnat_bond_new_1(j,1)=s_orbs(i1)
         nnat_bond_new_1(j,2)=s_orbs(i2)
+        print*,'nnat_bond_new_1',nnat_bond_new_1(j,1),nnat_bond_new_1(j,2)
       endif
     enddo loop4
   enddo
   deallocate(sig_dist_mat)
 
 enddo
-
+do i1=1,j
+print*,'new_mat',(nnat_bond_new_1(i1,i2),i2=1,2)
+enddo
 
 return
 end subroutine nnat_bond_sig

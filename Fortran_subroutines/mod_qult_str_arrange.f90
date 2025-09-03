@@ -11,7 +11,7 @@ subroutine qult_str_arrange(nl,str2,n,str1)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 integer::i1,l,k,m,bnd,ll,p,nstrt1,mq_fac,msymq,mloopsymsc,ind,sl,sll
 integer::i,i2,i3,i4,i9,m18,m19,k6,k7,k8,k9,ii,kk,n,jj,j,j1,nqul1,nl
-integer::lll,nssym1,mm,iii,x,y
+integer::lll,nssym1,mm,iii,x,y, strt_struc(100,15)
 integer, allocatable::str3(:,:), sym_str_sl(:,:), sym_str_sl_final(:,:)
 integer, allocatable::qual4(:),qual3(:),str_cnt(:),q_fac3(:),q_fac4(:),q_fac5(:),q_fac6(:),q_fac1(:)
 integer, allocatable::stq1(:), stq2(:), stq3(:), stq4(:), sl_num(:), sl_qfac(:), sl_qfac1(:), str_cnt1(:)
@@ -297,7 +297,8 @@ enddo
   
   !!!bigger set is going top
   if(set_order.eq.2)then
-    l=ll
+    !l=ll
+    l=0
     do i=100,1,-1
       do i2=1,nssym1
         if(sym_str_num(i2).eq.i)then
@@ -313,8 +314,10 @@ enddo
   
   
   !!!smaller sets is going top
+  print*,'ll',ll,l
   if(set_order.eq.1)then
-    l=ll
+    !l=ll
+    l=0
     do i=1,100
       do i2=1,nssym1
         if(sym_str_num(i2).eq.i)then
@@ -366,6 +369,9 @@ do i=1,n
   bondq(i)=bdq(i)
 enddo
 
+!if(allocated(loopsymsc))then
+!  deallocate(loopsymsc)
+!endif
 !do i=1,n
 !write(*,231)'symmstr',i,(str1(i,m18),m18=1,nae),q_fac1(i),bdq(i),str_quality_1(i),str_quality_2(i)
 !enddo
@@ -700,11 +706,11 @@ if(nstrt.ne.0.and.symm.eq.0)then
   endif
 endif
 
-!do m18=1,n
-!Print*,'str:quality_arrange',m18,(str1(m18,m19),m19=1,nae),q_fac1(m18),bondq(m18) !&
-!!,str_quality_1(m18),str_quality_2(m18),bondq(m18),qulsym(m18),symq(m18)
+do m18=1,n
+Print*,'str:quality_arrange',m18,(str1(m18,m19),m19=1,nae),q_fac1(m18),bondq(m18) !&
+!,str_quality_1(m18),str_quality_2(m18),bondq(m18),qulsym(m18),symq(m18)
 !!!print*,'q_fac1',q_fac1(m18)
-!enddo
+enddo
 !do i=1,kk
 !print*,'st_ct1(kk)',st_ct1(i),kk
 !enddo

@@ -1,0 +1,23 @@
+$info
+name C2 nao 8 nae 8 nmul 1 niao 2
+$geo
+natoms 2 unit Bohr
+C         0.6000000000000000D+01  0.0000000000000000D+00  0.0000000000000000D+00  0.1314720164177859D+01
+C         0.6000000000000000D+01  0.0000000000000000D+00  0.0000000000000000D+00  -0.1314720164177859D+01
+$orbs
+1 s
+2 s
+1 s
+2 s
+1 px
+2 px
+1 py
+2 py
+$keywd
+str cov
+nset 0
+itb 1
+nab 0
+sbb 2
+symm
+chinst 1

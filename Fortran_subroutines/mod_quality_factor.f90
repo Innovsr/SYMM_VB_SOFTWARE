@@ -14,43 +14,36 @@ use quality_mod
 implicit none
 
 contains
-subroutine quality_factor(nl, str1, ncqs)!, quality_fac, str_quality_1, str_quality_2, bondq, mbondq, pref_radical)
+subroutine quality_factor(nl, str1, ncqs)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 !common/ats/atsymset,nsym,syn,at_sym
 
-integer::i,j,nl,ncqs,noqt, qt_max
-!integer::atsymset(20,20),nsym,syn(50),at_sym(50)
-integer, pointer :: str1(:,:)!, str_quality_1(:), str_quality_2(:)
-!integer, pointer :: bondq(:), mbondq(:), pref_radical(:), quality_fac(:)
+integer::i,j,nl,ncqs,noqt, qt_max,imbd
+integer, pointer :: str1(:,:)
 integer, allocatable:: qual_mat(:,:)
-!integer, allocatable:: quality_fac(:)
 
 
 print*,'itb,syb,nnb,radical,mnbond',itb,syb,nnb,radical,mnbond
-print*,'flg1`, nsym, input_flg, prad, imbd, nlast, ncqs',flg1, nsym, input_flg, prad, imbd, nlast, ncqs
+print*,'flg1`, nsym, prad, imbd, nlast, ncqs',flg1, nsym, prad, imbd, nlast, ncqs
+
 do i=1,ncqs
 print*,(str1(i,j),j=1,nae)
 enddo
 
-   allocate(str_quality_1(ncqs))
-   allocate(str_quality_2(ncqs))
-   allocate(bondq(ncqs))
-   allocate(pref_radical(ncqs))
-   allocate(mbondq(ncqs))
-!   allocate(quality_fac(MaxStrOepo))
-!if (.not. associated(quality_fac)) then
-!if (.not. allocated(quality_fac)) then
-  allocate(quality_fac(ncqs))
-  quality_fac = 0
-!endif
-print*,'ncqs :', ncqs, size(quality_fac)
+allocate(str_quality_1(ncqs))
+allocate(str_quality_2(ncqs))
+allocate(bondq(ncqs))
+allocate(pref_radical(ncqs))
+allocate(mbondq(ncqs))
+allocate(quality_fac(ncqs))
+quality_fac = 0
+
+!print*,'ncqs :', ncqs, size(quality_fac)
 !print*,'q_fac',(quality_fac(i),i=1, ncqs)
 
 if(qflg.eq.1)then 
-!  do j=1,ncqs
     quality_fac = 1
-!  enddo
   return
 endif
 
@@ -64,23 +57,19 @@ mbondq=0
 
 if(itb.ne.1.or.flg1.eq.1) call intra_bond_factor(nl,str1,ncqs,str_quality_1)
 if(syb.ne.1.and.nsym.ne.1) call symm_break_factor(nl,str1,ncqs,str_quality_2)
-if(input_flg.eq.1)then
-  if(nnb.ne.1.or.flg1.eq.1) call nnat_bond_cal(nl,str1,ncqs,bondq)
-endif
-if(input_flg.eq.0)then
-  if(nnb.ne.1.or.flg1.eq.1) call nnat_bond_cal_2(nl,str1,ncqs,bondq)
-endif
+
+!if(input_flg.eq.1)then
+!  if(nnb.ne.1.or.flg1.eq.1) call nnat_bond_cal(nl,str1,ncqs,bondq)
+!endif
+
+if(nnb.ne.1.or.flg1.eq.1) call nnat_bond_cal_2(nl,str1,ncqs,bondq)
+
 if(radical.ne.1.and.prad.ne.0.and.nlast.ne.0.or.flg1.eq.1) call prio_rad_str(nl,str1,ncqs,pref_radical)
 if(mnbond.ne.1.and.imbd.ne.0.or.flg1.eq.1) call main_bond_cal(nl,str1,ncqs,mbondq)
 
 allocate(qual_mat(6, ncqs))
 
 qual_mat = 0
-!do j=1,ncqs
-!  do i=1,6
-!  qual_mat(i,j)=0
-!  enddo
-!enddo
 
 do j=1,ncqs
 i=itb

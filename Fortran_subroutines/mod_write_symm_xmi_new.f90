@@ -27,18 +27,20 @@ integer, pointer::str3(:,:)!q_fac2(:),
 
 print*,'enter_symm_xmi_new',strn, ncqs, nfset, flg_cov, flg_ion
 
-if(flg_cov.eq.1)then
-  cov_space=cov_space+1
-  write(5,913)'Cov_Space',cov_space
-  write(9+u1,914)'================= Cov Space num:',cov_space,'================'
-endif
-if(flg_ion.eq.1)then
-  ion_space=ion_space+1
-  write(5,913)'Ion_Space',ion_space
-  write(9+u1,914)'================= Ion Space num:',ion_space,'================'
-endif
-913 format(a,2x,I0)
-914 format(a,2x,I0,2x,a)
+!if(flg_cov.eq.1)then
+!  cov_space=cov_space+1
+!  write(5,913)'Cov_Space',cov_space
+!  write(9+u1,914)'================= Cov Space num:',cov_space,'================'
+!  write(7,914)'================= Cov Space num:',cov_space,'================'
+!endif
+!if(flg_ion.eq.1)then
+!  ion_space=ion_space+1
+!  write(5,913)'Ion_Space',ion_space
+!  write(9+u1,914)'================= Ion Space num:',ion_space,'================'
+!  write(7,914)'================= Ion Space num:',ion_space,'================'
+!endif
+!913 format(a,2x,I0)
+!914 format(a,2x,I0,2x,a)
 
 if (.not. allocated(nqset))then
    allocate(nqset(MaxStrOepo))

@@ -69,6 +69,7 @@ loop2:do i=1,tndet
 sdet(n)=m
 enddo loop2
 
+allocate(ind_mat(totstr,totstr))
 !102 format(50I5)
 !103 format(a,2x,50I5)
 

@@ -19,7 +19,7 @@ subroutine vector_rep(nl,str1,totstr,vec)
 !common/ats/atsymset,nsym,syn,at_sym
 integer::j,i,i1,i2,i3,i4,i5,i6,i7,i8,k,k6,k7,k8,k11,k12,k13,k14,k15,l,nend
 integer::c1,c2,c3,c4,c5,c6,d,e,f,totstr,cof,ntdet,det,det1,nl,permtn1,permtn2
-integer::permtn,tndet,kk,kkk,detno,i9,i10,i11
+integer::permtn,tndet,kk,kkk,detno,i9,i10,i11,nalpha,nbeta,tot_ndet
 integer::factorial,c7,c8,c9,c10
 integer::totbond, determinants, detcount, max_det
 real*8::norm_const,detn
@@ -31,9 +31,9 @@ integer,dimension(:,:),allocatable::str2,beta,beta1,alfa,vector,all_det,sign_det
 
 print*,'enter vector_rep'
 
-do i=1,10000
-  strdet(i)=0
-enddo
+!do i=1,10000
+!  strdet(i)=0
+!enddo
 
 !!!!!!! "rum1()" is the orbital numbers except lone paires !!!!!
 !!!!!!! "rum2()" is the orbital numbers except lone paires arranged in increasing order !!!!!
@@ -55,7 +55,7 @@ do k6=1,nae-nl*2
   enddo loop1
 enddo
 
-print*,'rum1', rum1
+!print*,'rum1', rum1
 allocate(rum2(nae))
 rum2 = 0
 !do k6=1,100
@@ -96,7 +96,7 @@ loop11:do i1=1,k7
     do k15=1,nend/2
       all_det(k12,k15)=rum2(m(k15))
     enddo
-    print*,'1',(all_det(k12,l),l=1,k7/2)
+    !print*,'1',(all_det(k12,l),l=1,k7/2)
     cycle loop11
   endif
 
@@ -112,7 +112,7 @@ loop11:do i1=1,k7
       do k15=1,nend/2
         all_det(k12,k15)=rum2(m(k15))
       enddo
-      print*,'2',(all_det(k12,l),l=1,k7/2)
+      !print*,'2',(all_det(k12,l),l=1,k7/2)
       cycle loop12
     endif
 
@@ -130,7 +130,7 @@ loop11:do i1=1,k7
         do k15=1,nend/2
           all_det(k12,k15)=rum2(m(k15))
         enddo
-        print*,'3',(all_det(k12,l),l=1,k7/2)
+        !print*,'3',(all_det(k12,l),l=1,k7/2)
         cycle loop13
       endif
 
@@ -148,7 +148,7 @@ loop11:do i1=1,k7
           do k15=1,nend/2
             all_det(k12,k15)=rum2(m(k15))
           enddo
-          print*,'4',(all_det(k12,l),l=1,k7/2)
+          !print*,'4',(all_det(k12,l),l=1,k7/2)
           cycle loop14
         endif
 
@@ -166,7 +166,7 @@ loop11:do i1=1,k7
             do k15=1,nend/2
               all_det(k12,k15)=rum2(m(k15))
             enddo
-            print*,'5',(all_det(k12,l),l=1,k7/2)
+            !print*,'5',(all_det(k12,l),l=1,k7/2)
             cycle loop15
           endif
 
@@ -184,7 +184,7 @@ loop11:do i1=1,k7
               do k15=1,nend/2
                 all_det(k12,k15)=rum2(m(k15))
               enddo
-              print*,(all_det(k12,l),l=1,k7/2)
+              !print*,(all_det(k12,l),l=1,k7/2)
               cycle loop16
             endif
 
@@ -202,7 +202,7 @@ loop11:do i1=1,k7
                 do k15=1,nend/2
                   all_det(k12,k15)=rum2(m(k15))
                 enddo
-                print*,(all_det(k12,l),l=1,k7/2)
+                !print*,(all_det(k12,l),l=1,k7/2)
                 cycle loop17
               endif
 
@@ -318,7 +318,7 @@ do i1=1,ntdet
     enddo
   endif
   ! finally the determinants are stored in all_det_new
-  write(*,200)'all_det_new',i1,(all_det_new(i1,i2),i2=1,nalpha+nbeta+nl*2)
+  !write(*,200)'all_det_new',i1,(all_det_new(i1,i2),i2=1,nalpha+nbeta+nl*2)
 enddo
 
 200 format(a,20I3)
@@ -355,6 +355,13 @@ allocate(vector(totstr, ntdet))
 allocate(sign_det(totstr,determinants))
 allocate(str_det_sec(totstr,determinants))
 
+if(.not.allocated(strdet))then
+  allocate(strdet(determinants*totstr))
+endif
+allocate(detmnt(determinants*totstr,nae*2))
+allocate(det_sign(determinants*totstr))
+
+strdet = 0
 bonds = 0
 coef = 0
 vec = 0
@@ -406,7 +413,7 @@ do i7=1,totstr
         str2(k12,k15)=bonds(m(k15))
         coef(k12)=cof
       enddo
-      print*,'sourav1',coef(k12),(str2(k12,l),l=1,(nae-nl*2-nlast)/2)
+      !print*,'sourav1',coef(k12),(str2(k12,l),l=1,(nae-nl*2-nlast)/2)
       cof=c1
       cycle loop21
     endif
@@ -427,7 +434,7 @@ do i7=1,totstr
           coef(k12)=cof
         enddo
         cof=c2
-        print*,'sourav2',coef(k12),(str2(k12,l),l=1,(nae-nl*2-nlast)/2)
+        !print*,'sourav2',coef(k12),(str2(k12,l),l=1,(nae-nl*2-nlast)/2)
         cycle loop22
       endif
 
@@ -630,7 +637,7 @@ do k14=1,k12
     enddo  
     beta1(k14,i1)=str1(i7,i3)
   enddo
-    print*,'beta1',(beta1(k14,i1), i1=1,i8)
+    !print*,'beta1',(beta1(k14,i1), i1=1,i8)
 
   k7=0
   if(nl.ne.0)then
@@ -647,96 +654,88 @@ do k14=1,k12
     beta(k14,k7)=beta1(k14,k6)
   enddo
 
-write(*,230)'det:vector',(alfa(k14,k6),k6=1,k7),(beta(k14,k6),k6=1,k7)
+!write(*,230)'det:vector',(alfa(k14,k6),k6=1,k7),(beta(k14,k6),k6=1,k7)
 230 format(a,20I3)
 ! in the systen has radical by convention it will be added to the alfa
 ! nlast is radical
 
-if(nlast.ne.0)then
-  do k6=nae-nlast+1,nae
+  if(nlast.ne.0)then
+    do k6=nae-nlast+1,nae
+      k7=k7+1
+      alfa(k14,k7)=str1(i7,k6)
+    enddo
+  endif
+
+  rum1 = 0
+  
+  k7=0
+  i5=0
+  kkk=0
+  permtn1=0
+  do
+    k=100
+    kk=0
+    loop4: do k6=1,(nae-nl*2-nlast)/2+nl+nlast
+      do k8=1,k7
+        if(rum1(k8).eq.alfa(k14,k6)) then
+          cycle loop4
+        endif
+      enddo
+      kk=kk+1
+      if(k.gt.alfa(k14,k6))then
+        kkk=kk
+        k=alfa(k14,k6)
+      endif
+    enddo loop4
     k7=k7+1
-    alfa(k14,k7)=str1(i7,k6)
+    i5=i5+1
+    rum1(k7)=k
+    permtn1=permtn1+(kkk-1)
+    detmnt(tndet,i5)=k
+    strdet(tndet)=i7
+  !  print*,'strdet1',tndet,':',strdet(tndet)
+  !  if(k7.lt.((nae-nl*2-nlast)/2)+nl+nlast)goto 770
+    if(k7.ge.((nae-nl*2-nlast)/2)+nl+nlast) exit
   enddo
-endif
-
-!do k6=1,100
-!  rum1(k6)=0
-!enddo
-
-rum1 = 0
-
-k7=0
-i5=0
-kkk=0
-permtn1=0
-do
-  k=100
-  kk=0
-  loop4: do k6=1,(nae-nl*2-nlast)/2+nl+nlast
-    do k8=1,k7
-      if(rum1(k8).eq.alfa(k14,k6)) then
-        cycle loop4
+  
+  rum1 = 0
+  
+  k7=0
+  permtn2=0
+  kkk=0
+  
+  do
+    k=1000
+    kk=0
+    loop5:do k6=1,(nae-nl*2-nlast)/2+nl
+      do k8=1,k7
+        if(rum1(k8).eq.beta(k14,k6)) then 
+          cycle loop5
+        endif
+      enddo
+      kk=kk+1
+      if(k.gt.beta(k14,k6))then
+        kkk=kk
+        k=beta(k14,k6)
       endif
-    enddo
-    kk=kk+1
-    if(k.gt.alfa(k14,k6))then
-      kkk=kk
-      k=alfa(k14,k6)
-    endif
-  enddo loop4
-  k7=k7+1
-  i5=i5+1
-  rum1(k7)=k
-  permtn1=permtn1+(kkk-1)
-  detmnt(tndet,i5)=k
-  strdet(tndet)=i7
-  print*,'strdet1',tndet,':',strdet(tndet)
-!  if(k7.lt.((nae-nl*2-nlast)/2)+nl+nlast)goto 770
-  if(k7.ge.((nae-nl*2-nlast)/2)+nl+nlast) exit
-enddo
-
-!do k6=1,100
-!  rum1(k6)=0
-!enddo
-
-rum1 = 0
-
-k7=0
-permtn2=0
-kkk=0
-
-do
-  k=1000
-  kk=0
-  loop5:do k6=1,(nae-nl*2-nlast)/2+nl
-    do k8=1,k7
-      if(rum1(k8).eq.beta(k14,k6)) then 
-        cycle loop5
-      endif
-    enddo
-    kk=kk+1
-    if(k.gt.beta(k14,k6))then
-      kkk=kk
-      k=beta(k14,k6)
-    endif
-  enddo loop5
-  k7=k7+1
-  i5=i5+1
-  rum1(k7)=k
-  permtn2=permtn2+(kkk-1)
-  detmnt(tndet,i5)=k
-  strdet(tndet)=i7
-  print*,'strdet2',tndet,':',strdet(tndet)
-  if(k7.ge.((nae-nl*2-nlast)/2)+nl+nlast) exit
-enddo
-
-permtn=permtn1+permtn2
-
-det_sign(tndet)=(-1)**permtn
-j=j+1
-sign_det(i7,j)=det_sign(tndet)
-detcount=detcount+1
-str_det_sec(i7,detcount)=tndet
+    enddo loop5
+    k7=k7+1
+    i5=i5+1
+    rum1(k7)=k
+    permtn2=permtn2+(kkk-1)
+    detmnt(tndet,i5)=k
+    strdet(tndet)=i7
+  !  print*,'strdet2',tndet,':',strdet(tndet)
+    if(k7.ge.((nae-nl*2-nlast)/2)+nl+nlast) exit
+  enddo
+  
+  permtn=permtn1+permtn2
+  
+  det_sign(tndet)=(-1)**permtn
+  j=j+1
+  sign_det(i7,j)=det_sign(tndet)
+  detcount=detcount+1
+  str_det_sec(i7,detcount)=tndet
 enddo
 !300 format (a,20I3)
 

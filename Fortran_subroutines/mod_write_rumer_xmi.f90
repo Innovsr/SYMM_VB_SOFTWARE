@@ -15,16 +15,18 @@ integer, pointer::str(:,:)
 
 print*,'enter write_rumer_xmi',nstr, CovDim
 
-if(flg_cov.eq.1.and.flg2.eq.1)then
-  cov_space=cov_space+1
-  write(5,917)'Cov_Space',cov_space
-  write(9+u1,918)'================= Cov Space num:',cov_space,'================'
-endif
-if(flg_ion.eq.1.and.flg2.eq.1)then
-  ion_space=ion_space+1
-  write(5,917)'Ion_Space',ion_space
-  write(9+u1,918)'================= Ion Space num:',ion_space,'================'
-endif
+!if(flg_cov.eq.1.and.flg2.eq.1)then
+!  cov_space=cov_space+1
+!  write(5,917)'Cov_Space',cov_space
+!  write(9+u1,918)'================= Cov Space num:',cov_space,'================'
+!  write(7,918)'================= Cov Space num:',cov_space,'================'
+!endif
+!if(flg_ion.eq.1.and.flg2.eq.1)then
+!  ion_space=ion_space+1
+!  write(5,917)'Ion_Space',ion_space
+!  write(9+u1,918)'================= Ion Space num:',ion_space,'================'
+!  write(7,918)'================= Ion Space num:',ion_space,'================'
+!endif
 
 !allocate(col(CovDim))
 tqlty = 0
@@ -54,7 +56,8 @@ loop1:do m19=1,nstr
    endif
 enddo loop1
 set_number = 1
-write(5,913)'Set_number',set_number,(col9(m19),m19=1,i7)
+if(flg_cov.eq.1) write(5,913)'Set_number_c',set_number,(col9(m19),m19=1,i7)
+if(flg_ion.eq.1) write(5,913)'Set_number_i',set_number,(col9(m19),m19=1,i7)
 !open(unit=31,file='Rumer_Sets.dat',status='unknown')
 if(nfset.eq.5) stop
 if(nfset.eq.3) then

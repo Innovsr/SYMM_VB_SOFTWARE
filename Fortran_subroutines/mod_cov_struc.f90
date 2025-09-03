@@ -17,25 +17,26 @@ subroutine cov_struc
 
 integer::ijk,ij,i1,i2,i3,i4,i5,i6,i7,i8,i9,i10,perm_nstr,totset
 integer::k1,k2,k4,k5,a,d,e,f,nnn,elporb,x,alstr,y,alstr_new, comb, max_val
-integer::factorial,i,j,k,l,j1,m,j2,ii,j3,j4,wig2,tnqs,lonep,bonds,allp, c
+integer::factorial,i,j,k,l,j1,m,j2,ii,j3,j4,wig2,tnqs,lonep,bonds,allp, c, c1
 double precision, pointer::symsc(:)
 integer, pointer::fullcovstr(:, :)
-integer, allocatable::n(:), nn(:), num(:,:), strc(:,:), strct(:,:)
+integer, allocatable::n(:),  strc(:,:)
+!integer::nn(1500), num(1500,10), strct(1500,10)
+integer, allocatable::nn(:), num(:,:), strct(:,:)
 integer, allocatable::lonep_mat(:,:),lonep_score(:), strc_new(:,:)
 character(len=10)::alstr_string,allowed_string
-print*,'enter cov_str'
-x=MaxStrOepo
-y=nae
+print*,'enter cov_str',MaxStrOepo, nae
 
-allocate(strct(x,y))
-allocate(num(x,y))
-
-allocate(n(MaxStrOepo))
+!print*,'sourav1'
+allocate(num(MaxStrOepo, nae))
+!print*,'sourav2'
+!
 allocate(nn(MaxStrOepo))
+!print*,'sourav3'
+allocate(strct(MaxStrOepo, nae))
 
 !!! initialization of arrays !!!
 strct = 0
-n = 0
 nn=0
 num=0
 
@@ -51,6 +52,8 @@ c=factorial(d)/(factorial(e)*factorial(f))
 print*,'bonds',bonds
 
 allocate(strc(c, 2))
+allocate(n(c))
+n = 0
 strc = 0
 !!!! production of the set of bonded orbitals strats !!!!!
 if (bonds.ne.0) then
@@ -370,14 +373,16 @@ enddo
 deallocate(strc)
 alstr=i ! total number of possible structures revealed
 print*,'alstr',alstr
-allocate(strc(alstr+alstr*(nae-bonds*2)*(nlast+lonep), nae))
+!allocate(strc(alstr+alstr*(nae-bonds*2)*(nlast+lonep), nae))
+allocate(strc(MaxStrOepo, nae))
 endif
 
 if(bonds.eq.0)then
   deallocate(strc)
   !alstr = comb(nae,lonep)
   alstr = 1
-  allocate(strc(comb(nae,lonep)*(nlast+lonep), nae))
+  !!allocate(strc(comb(nae,lonep)*(nlast+lonep), nae))
+  allocate(strc(MaxStrOepo, nae))
 endif
 
 strc=0
@@ -458,7 +463,6 @@ if(nlast.ne.0.or.lonep.ne.0)then
                 do j2=1,2
                 j4=j4+1
                 strc(i,j4)=num(ii,n(j1))
-                print*,'strc',i,strc(i,j4)
                 enddo
               enddo
               j2=0
@@ -485,6 +489,7 @@ if(nlast.ne.0.or.lonep.ne.0)then
                 do j2=1,2
                   j4=j4+1
                   strc(i,j4)=num(ii,n(j1))
+                  print*,'strc',i,strc(i,j4)
                 enddo
               enddo
               j2=0
@@ -796,10 +801,10 @@ endif
 deallocate(num)
 !990 format(30I3)
 !!!!!!! new structures generation part ends !!!!!!!!!!!!!!!!!!!!!!!
-c=1
+!c=1
 d=nao
-e=nlp
-elporb=nao-nlp*2
+e=nao-nlp
+elporb=nae-nlp*2
 print*,'elporb',elporb,nlp,d,e
 !c=factorial(d)/(factorial(e)*factorial(f))
 c = comb(d, e)
@@ -808,33 +813,42 @@ print*,'cccc',c
 !!! for ionic structure increasing number of nlp, this combination
 !!! multiplied for extra radicals 
 d=nao-nlp
-e=nao-2*nlp
-c=c*comb(d, e)
+e=nae-2*nlp
+c1=comb(d, e)
 call wigner(elporb,wig2)
-print*,'wig',c,wig2
+print*,'wig',c,c1,wig2
 deallocate(n)
 deallocate(nn)
 print*,'sourav1'
 
 !!! header of the 'structures.dat' file is written here
-write(7,*)'**********************************************************'
-write(7,*)'*      All possible structures with their qualities      *'
-write(7,*)'**********************************************************'
-write(7,*)'  '
-write(7,*)'----------------------------------------------------------------------------------------------'
-write(7,309)'*','active orbs =',nao,'active electrons =',nae,'multiplicity =',mult,'inactive orbs =',niao
-write(7,*)'----------------------------------------------------------------------------------------------'
-write(7,*)
+if(prt_cnt.eq.1) then
+  write(7,*)'**********************************************************'
+  write(7,*)'*      All possible structures with their qualities      *'
+  write(7,*)'**********************************************************'
+  write(7,*)'  '
+  write(7,*)'----------------------------------------------------------------------------------------------'
+  write(7,309)'*','active orbs =',nao,'active electrons =',nae,'multiplicity =',mult,'inactive orbs =',niao
+  write(7,*)'----------------------------------------------------------------------------------------------'
+  write(7,*)
+endif
 
 print*,'sourav2'
 WRITE(alstr_string, '(I0)') alstr
 !    string_value = ADJUSTL(atstr_string)
 
-WRITE(allowed_string, '(I0)') wig2*c
+WRITE(allowed_string, '(I0)') wig2*c*c1
 !    string_value = ADJUSTL(atstr_string)
 
-write(7,307)'Total number of covalent structure of the system = ',trim(alstr_string)
-write(7,307)'Total number of allowed covalent structres are = ',trim(allowed_string)
+if (flg_cov.eq.1) then
+  write(7,307)'Total number of covalent structure of the system = ',trim(alstr_string)
+  write(7,307)'Total number of allowed covalent structres are = ',trim(allowed_string)
+endif
+if (flg_ion.eq.1) then
+  write(7,310)'Total number of ionic structure of the system = ',trim(alstr_string),&
+          'with number of lone-pair = ',nlp
+  write(7,307)'Total number of allowed ionic structres are = ',trim(allowed_string)
+endif
 write(7,*)' '
 write(7,308)'Sl No.','various qualities','Overall qualities','Rumer/Non Rumer', 'Structures'
 write(7,306)'IAB','NAB','SBB','PDB','PDR'
@@ -842,6 +856,7 @@ write(7,306)'IAB','NAB','SBB','PDB','PDR'
 308 format(2x,a,5x,a,5x,a,3x,a,10x,a)
 306 format(8x,a,1x,a,1x,a,1x,a,1x,a)
 309 format(a,1x,a,1x,I4,3x,a,1x,I4,3x,a,1x,I4,3x,a,1x,I4)
+310 format(10x,a,a,2x,a,I0)
 
 print*,'sourav3',alstr
 allocate (fullcovstr(alstr,nae))
@@ -907,7 +922,7 @@ write(10,*)'******* CHEM. QUAL. STRUCTURES **************'
 endif
 
 print*,'sourav5'
-perm_nstr=wig2*c
+perm_nstr=wig2*c*c1
 if(flg_cov.eq.1) write(9+u1,*)perm_nstr,' covalent structures' 
 if(flg_ion.eq.1) write(9+u1,*)perm_nstr,' ionic structures' 
 write(23,*)perm_nstr,' covalent structures' 

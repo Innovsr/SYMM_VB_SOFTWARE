@@ -26,6 +26,7 @@ do i=1,ndim
   enddo
 enddo
 
+deallocate(ind_mat)
 !111 format(a,30I5)
 
       N=Ndim

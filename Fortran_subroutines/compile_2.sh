@@ -7,6 +7,7 @@ set -e
 SOURCE_FILES=(
   commondat1_mod.f90
   commondat_mod.f90
+  coordinates_mod.f90
   str_module.f90
   final_str_mod.f90
   orb_mod.f90
@@ -38,7 +39,7 @@ SOURCE_FILES=(
   mod_coordination_val.f90
   mod_nnat_bond_sig.f90
   geocal.f90
-  #lowercase.f90
+  lowercase.f90
   #main_bond_str.f90
   Invmat.f90
   mod_mat_ind.f90
@@ -61,7 +62,8 @@ SOURCE_FILES=(
   mod_str_selection.f90
   mod_cov_struc.f90
   get_ctrl_inputs.f90
-  program_main.f90
+  #program_main.f90
+  program_main_read_inp.f90
 )
 
 # Define the output executable name

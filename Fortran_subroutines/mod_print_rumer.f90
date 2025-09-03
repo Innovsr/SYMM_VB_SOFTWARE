@@ -123,7 +123,8 @@ if (symm.eq.1) then
 
   if( symmetry_group ) then
     symm_rumset = symm_rumset + 1 !counter of symmetric Rumer sets
-    write(5,913)'Set_number',symm_rumset,(col(i),i=1,setno)
+    if(flg_cov.eq.1) write(5,913)'Set_number_c',symm_rumset,(col(i),i=1,setno)
+    if(flg_ion.eq.1) write(5,913)'Set_number_i',symm_rumset,(col(i),i=1,setno)
   endif
 endif
 913 format(a,2x,I0,4x,*(I0, 1x))
@@ -228,7 +229,8 @@ loop1:do i = 1, nstr
     !end if
 end do loop1
 
-if (symm.ne.1) write(5,913)'Set_number',rumset,(col(i),i=1,match_count)
+if (symm.ne.1.and.flg_cov.eq.1) write(5,913)'Set_number_c',rumset,(col(i),i=1,match_count)
+if (symm.ne.1.and.flg_ion.eq.1) write(5,913)'Set_number_i',rumset,(col(i),i=1,match_count)
 print*,'Set_number',rumset
 913 format(a,2x,I0,4x,*(I0, 1x))
 

@@ -52,7 +52,10 @@ enddo
 !do k3=1,nstr
 !print*,'**',(rumer2(k3,k6),k6=1,nae-nl*2-nlast)
 !enddo
-
+rum1=0
+rum2=0
+rum3=0
+rum4=0
 rumer=0
 do k9=1,nstr
   rum=0

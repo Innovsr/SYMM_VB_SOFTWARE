@@ -1,0 +1,171 @@
+ **********************************************************
+ *      All possible structures with their qualities      *
+ **********************************************************
+   
+ ----------------------------------------------------------------------------------------------
+* active orbs =    5   active electrons =    5   multiplicity =    2   inactive orbs =   70
+ ----------------------------------------------------------------------------------------------
+
+          Total number of covalent structure of the system = 15
+          Total number of allowed covalent structres are = 5
+  
+  Sl No.     various qualities     Overall qualities   Rumer/Non Rumer          Structures
+        IAB NAB SBB PDB PDR
+Cov Space num:  1
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 72 74 75 73
+structure  2   [  0  1  0  0  0  ]   {  2  }              -                  1:70 71 72 73 75 74
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 71 72 73 74 75
+structure  4   [  0  1  0  0  0  ]   {  4  }              -                  1:70 71 75 72 73 74
+structure  5   [  0  1  0  0  0  ]   {  5  }              Rumer              1:70 71 74 72 73 75
+structure  6   [  0  1  0  0  0  ]   {  6  }              -                  1:70 71 75 72 74 73
+structure  7   [  0  1  0  0  0  ]   {  7  }              Rumer              1:70 72 73 74 75 71
+structure  8   [  0  1  0  0  0  ]   {  8  }              -                  1:70 71 75 73 74 72
+structure  9   [  0  1  0  0  0  ]   {  9  }              -                  1:70 71 73 72 74 75
+structure  10   [  0  1  0  0  0  ]   {  10  }              -                  1:70 71 73 72 75 74
+structure  11   [  0  1  0  0  0  ]   {  10  }              -                  1:70 71 74 72 75 73
+structure  12   [  0  1  0  0  0  ]   {  11  }              -                  1:70 71 73 74 75 72
+structure  13   [  0  1  0  0  0  ]   {  12  }              Rumer              1:70 72 75 73 74 71
+structure  14   [  0  1  0  0  0  ]   {  13  }              -                  1:70 71 74 73 75 72
+structure  15   [  0  1  0  0  0  ]   {  14  }              -                  1:70 72 74 73 75 71
+ ============================================================
+          Total number of ionic structure of the system = 60  with number of lone-pair = 1
+          Total number of allowed ionic structres are = 40
+  
+  Sl No.     various qualities     Overall qualities   Rumer/Non Rumer          Structures
+        IAB NAB SBB PDB PDR
+Ion Space num:  1
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 72 73 74
+structure  2   [  0  1  0  0  0  ]   {  2  }              -                  1:70 71 71 72 74 73
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 71 71 73 74 72
+ ============================================================
+Ion Space num:  2
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 72 73 75
+structure  2   [  0  1  0  0  0  ]   {  2  }              -                  1:70 71 71 72 75 73
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 71 71 73 75 72
+ ============================================================
+Ion Space num:  3
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 72 74 75
+structure  2   [  0  1  0  0  0  ]   {  2  }              -                  1:70 71 71 72 75 74
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 71 71 74 75 72
+ ============================================================
+Ion Space num:  4
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 74 75 73
+structure  2   [  0  1  0  0  0  ]   {  2  }              Rumer              1:70 71 71 73 74 75
+structure  3   [  0  1  0  0  0  ]   {  3  }              -                  1:70 71 71 73 75 74
+ ============================================================
+Ion Space num:  5
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 72 72 71 73 74
+structure  2   [  0  1  0  0  0  ]   {  1  }              -                  1:70 72 72 71 74 73
+structure  3   [  0  1  0  0  0  ]   {  2  }              Rumer              1:70 72 72 73 74 71
+ ============================================================
+Ion Space num:  6
+structure  1   [  0  1  0  0  0  ]   {  1  }              -                  1:70 72 72 71 75 73
+structure  2   [  0  1  0  0  0  ]   {  2  }              Rumer              1:70 72 72 71 73 75
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 72 72 73 75 71
+ ============================================================
+Ion Space num:  7
+structure  1   [  0  1  0  0  0  ]   {  1  }              -                  1:70 72 72 71 75 74
+structure  2   [  0  1  0  0  0  ]   {  2  }              Rumer              1:70 72 72 71 74 75
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 72 72 74 75 71
+ ============================================================
+Ion Space num:  8
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 72 72 74 75 73
+structure  2   [  0  1  0  0  0  ]   {  2  }              Rumer              1:70 72 72 73 74 75
+structure  3   [  0  1  0  0  0  ]   {  3  }              -                  1:70 72 72 73 75 74
+ ============================================================
+Ion Space num:  9
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 73 73 71 72 74
+structure  2   [  0  1  0  0  0  ]   {  2  }              -                  1:70 73 73 71 74 72
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 73 73 72 74 71
+ ============================================================
+Ion Space num:  10
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 73 73 71 72 75
+structure  2   [  0  1  0  0  0  ]   {  2  }              -                  1:70 73 73 71 75 72
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 73 73 72 75 71
+ ============================================================
+Ion Space num:  11
+structure  1   [  0  1  0  0  0  ]   {  1  }              -                  1:70 73 73 71 75 74
+structure  2   [  0  1  0  0  0  ]   {  2  }              Rumer              1:70 73 73 71 74 75
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 73 73 74 75 71
+ ============================================================
+Ion Space num:  12
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 73 73 72 74 75
+structure  2   [  0  1  0  0  0  ]   {  2  }              -                  1:70 73 73 72 75 74
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 73 73 74 75 72
+ ============================================================
+Ion Space num:  13
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 74 74 71 72 73
+structure  2   [  0  1  0  0  0  ]   {  2  }              Rumer              1:70 74 74 72 73 71
+structure  3   [  0  1  0  0  0  ]   {  3  }              -                  1:70 74 74 71 73 72
+ ============================================================
+Ion Space num:  14
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 74 74 71 72 75
+structure  2   [  0  1  0  0  0  ]   {  2  }              -                  1:70 74 74 71 75 72
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 74 74 72 75 71
+ ============================================================
+Ion Space num:  15
+structure  1   [  0  1  0  0  0  ]   {  1  }              -                  1:70 74 74 71 75 73
+structure  2   [  0  1  0  0  0  ]   {  2  }              Rumer              1:70 74 74 71 73 75
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 74 74 73 75 71
+ ============================================================
+Ion Space num:  16
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 74 74 72 73 75
+structure  2   [  0  1  0  0  0  ]   {  2  }              -                  1:70 74 74 72 75 73
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 74 74 73 75 72
+ ============================================================
+Ion Space num:  17
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 75 75 71 72 73
+structure  2   [  0  1  0  0  0  ]   {  2  }              Rumer              1:70 75 75 72 73 71
+structure  3   [  0  1  0  0  0  ]   {  3  }              -                  1:70 75 75 71 73 72
+ ============================================================
+Ion Space num:  18
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 75 75 71 72 74
+structure  2   [  0  1  0  0  0  ]   {  2  }              -                  1:70 75 75 71 74 72
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 75 75 72 74 71
+ ============================================================
+Ion Space num:  19
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 75 75 71 73 74
+structure  2   [  0  1  0  0  0  ]   {  1  }              -                  1:70 75 75 71 74 73
+structure  3   [  0  1  0  0  0  ]   {  2  }              Rumer              1:70 75 75 73 74 71
+ ============================================================
+Ion Space num:  20
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 75 75 72 73 74
+structure  2   [  0  1  0  0  0  ]   {  2  }              -                  1:70 75 75 72 74 73
+structure  3   [  0  1  0  0  0  ]   {  3  }              Rumer              1:70 75 75 73 74 72
+ ============================================================
+          Total number of ionic structure of the system = 30  with number of lone-pair = 2
+          Total number of allowed ionic structres are = 30
+  
+  Sl No.     various qualities     Overall qualities   Rumer/Non Rumer          Structures
+        IAB NAB SBB PDB PDR
+Ion Space num:  21  -  51
+structure  1   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 72 72 73
+structure  2   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 72 72 74
+structure  3   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 72 72 75
+structure  4   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 73 73 72
+structure  5   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 73 73 74
+structure  6   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 73 73 75
+structure  7   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 74 74 72
+structure  8   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 74 74 73
+structure  9   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 74 74 75
+structure  10   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 75 75 72
+structure  11   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 75 75 73
+structure  12   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 71 71 75 75 74
+structure  13   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 72 72 73 73 71
+structure  14   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 72 72 73 73 74
+structure  15   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 72 72 73 73 75
+structure  16   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 72 72 74 74 71
+structure  17   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 72 72 74 74 73
+structure  18   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 72 72 74 74 75
+structure  19   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 72 72 75 75 71
+structure  20   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 72 72 75 75 73
+structure  21   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 72 72 75 75 74
+structure  22   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 73 73 74 74 71
+structure  23   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 73 73 74 74 72
+structure  24   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 73 73 74 74 75
+structure  25   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 73 73 75 75 71
+structure  26   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 73 73 75 75 72
+structure  27   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 73 73 75 75 74
+structure  28   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 74 74 75 75 71
+structure  29   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 74 74 75 75 72
+structure  30   [  0  1  0  0  0  ]   {  1  }              Rumer              1:70 74 74 75 75 73

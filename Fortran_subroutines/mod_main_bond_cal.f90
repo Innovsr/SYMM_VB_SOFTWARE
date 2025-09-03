@@ -8,7 +8,8 @@ implicit none
 contains
 subroutine main_bond_cal(nl,str1,ncqs,mbondq)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-integer::i1,i3,i4,i5,i7,i9,iii,iiii,nl,ncqs
+integer::i1,i3,i4,i5,i7,i9,iii,iiii,nl,ncqs, main_bond(100)
+integer, allocatable::bond_count(:,:)
 integer::nn(2)
 integer, pointer :: str1(:,:), mbondq(:)
 
@@ -18,7 +19,7 @@ print*,'enter main_bond_cal'
 !do i1=1,15000
   mbondq=1+(nae-nl*2-nlast)/2
 !enddo
-
+allocate(bond_count(ncqs,100))
 
 do i1=1,ncqs
   i9=0
@@ -57,6 +58,7 @@ enddo
 
 !231 format (30I3)
 
+deallocate(bond_count)
 !print*,'exit main_bond_cal'
 return
 end subroutine main_bond_cal

@@ -7,6 +7,8 @@ set -e
 SOURCE_FILES=(
   commondat1_mod.f90
   commondat_mod.f90
+  coordinates_mod.f90
+  str_module.f90
   final_str_mod.f90
   orb_mod.f90
   rum_rad_mod.f90
@@ -69,8 +71,11 @@ fi
 
 echo "Compiling Fortran source files into a Python module using f2py..."
 
+f2py -c --fcompiler=gnu95 \
+     --opt="-O0 -g -fcheck=all -finit-real=nan -finit-integer=-999" \
+     --lower -m "$MODULE_NAME" "${SOURCE_FILES[@]}"
 # Compile using f2py
-f2py -c --lower -m "$MODULE_NAME" "${SOURCE_FILES[@]}"
+#f2py -c --lower -m "$MODULE_NAME" "${SOURCE_FILES[@]}"
 #f2py -c -m "$MODULE_NAME" "${SOURCE_FILES[@]}"
 
 # Check if the shared object file was created
