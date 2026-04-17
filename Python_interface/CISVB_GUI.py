@@ -47,7 +47,6 @@ import os
 import sys
 import numpy as np
 import Pmw
-import symm_str
 import tkinter.font as tkFont
 import math
 from math import acos, degrees
@@ -57,6 +56,9 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import Axes3D, proj3d
+import symm_str
+import webbrowser
+from collections import defaultdict
 
 
 class GlobVar:
@@ -76,10 +78,17 @@ class GlobVar:
     symm_key = 0
     total_atoms = None
     CovIon = None
+    num_sets = None
+    Rum_Ch = None
     IAB_flag = True
     geo_unit = None
-    Gl_atoset = np.zeros((200, 50), dtype=int)
-    Gl_activeatoms = np.zeros(30, dtype=int)
+    #Gl_atoset = np.zeros((total_atoms, num_electron), dtype=int)
+    Gl_atoset = None 
+    #Gl_activeatoms = np.zeros(30, dtype=np.int32)
+    Gl_activeatoms = None
+    active_orbitals = []
+    quality_fac = []
+    ciflg = ''
     at_list_bold = [            # List of Atoms according to periodic table
         'H', 'HE', 'LI', 'BE', 'B', 'C', 'N', 'O', 'F', 'NE', 'NA', 'MG', 'AL',
         'SL', 'P', 'S', 'CL', 'AR', 'K', 'CA', 'SC', 'TI', 'V', 'CR', 'MN', 'FE', 'CO', 'NR',
@@ -334,11 +343,24 @@ class Ctrl_Input:
                 else:
                     raise ValueError(f"Element {element} is not spelled Correctly.")
 
+                prev_count, prev_charge_num, prev_charge_sign = molecule.get(
+                    element, (0, None, None)
+                )
+
                 if sign:
                     charge_num = int(num) if num else 1
                     charge_sign = sign
+                else:
+                    charge_num = prev_charge_num
+                    charge_sign = prev_charge_sign
 
-                molecule[element] = (molecule.get(element, 0) + count, charge_num, charge_sign)
+                molecule[element] = (
+                    prev_count + count,
+                    charge_num,
+                    charge_sign
+                )
+
+               # molecule[element] = (molecule.get(element, 0) + count, charge_num, charge_sign)
 
                 print("molecule",molecule)
 
@@ -1025,16 +1047,17 @@ class Orb_Input:
         self.keywd_button = keywd_button
         self.atm_entry = []
         self.typ_entry = []
-        self.atoset = np.zeros((200, 50), dtype=int)
-        self.norbsym_py = np.zeros(50, dtype=int)
-        self.orbsym = np.zeros((20, 20), dtype=int)
-        self.activeatoms = np.zeros(30, dtype=int)
-        self.atn_vector = np.zeros(200, dtype=int)
+        self.atoset = np.zeros((GlobVar.total_atoms, GlobVar.num_electron), dtype=np.int32)
+        self.norbsym_py = np.empty(4, dtype=np.int32)
+        self.orbsym = np.zeros((GlobVar.num_electron, GlobVar.num_electron), dtype=np.int32)
+        self.activeatoms = np.zeros(GlobVar.total_atoms, dtype=np.int32)
+        self.atn_vector = np.zeros(GlobVar.total_atoms, dtype=np.int32)
         self.description_orb = ""
         Pmw.initialise(root)
         self.balloon = Pmw.Balloon(root)
 
         self.create_orbital_section()
+        #Gl_activeatoms = np.zeros(30, dtype=np.int32)
         GlobVar.Gl_activeatoms = self.activeatoms
 
     def create_orbital_section(self):
@@ -1185,6 +1208,7 @@ class Orb_Input:
         pz_type = 0
         for data in GlobVar.orbital_data:
             i = i + 1
+            GlobVar.active_orbitals.append(i+GlobVar.num_iao)
             if 's' in data["orbital_type"].lower():
                 sig_type = sig_type + 1
                 sorbs.append(i+GlobVar.num_iao)
@@ -1221,16 +1245,24 @@ class Orb_Input:
                                  )
 
 
-        norbsym = [
-                px_type,
-                py_type,
-                pz_type,
-                sig_type
-                ]
+        #norbsym_py = np.zeros(4, dtype=np.int32)
+        #norbsym = [
+        #        px_type,
+        #        py_type,
+        #        pz_type,
+        #        sig_type
+        #        ]
 
-        self.norbsym_py = np.zeros(50, dtype=int)
-        self.norbsym_py[:len(norbsym)] = norbsym
-        max_len = 20
+        #self.norbsym_py = np.zeros(10, dtype=int)
+        #self.norbsym_py[:len(norbsym)] = norbsym
+        #self.norbsym_py = norbsym
+        self.norbsym_py = np.array(
+            [px_type, py_type, pz_type, sig_type],
+            dtype=np.int32,
+            order='F'
+        )
+
+        max_len = GlobVar.num_electron
 
         # Pad lists to be of equal length
         pxorbs_padded = pxorbs + [0] * (max_len - len(pxorbs))
@@ -1259,7 +1291,6 @@ class Orb_Input:
         self.show_button.config(state = tk.NORMAL)
         GlobVar.Gl_atoset = self.atoset
         print('atoset',self.atoset)
-#        sys.exit()
 #        self.orbital_button.config(state=tk.DISABLED)  # Initially disable the button
 
     def create_matrix(self):
@@ -1276,7 +1307,7 @@ class Orb_Input:
 #        print('atom_to_orbitals',atom_to_orbitals)
 
         ''' Step 2: Determine the maximum atom number '''
-        matrix = np.zeros((200, 20), dtype=int)
+        matrix = np.zeros((GlobVar.total_atoms, GlobVar.num_electron), dtype=int)
 
         for atom_number, orbitals in atom_to_orbitals.items():
             for col_index, orbital in enumerate(orbitals):
@@ -1336,6 +1367,7 @@ class Keywd_Input:
         self.cheminst_str_type = tk.StringVar(value="Symmetric")
         self.symmetry_set_order_type = tk.StringVar(value="Quality-Arrange")
         self.ovlp_cal = tk.StringVar(value="No")
+        self.i=0
 
         if GlobVar.IAB_flag is True:
             self.IAB_type = tk.StringVar(value="None")
@@ -1360,6 +1392,7 @@ class Keywd_Input:
         self.prio_structure_entries = []
         self.prio_bond_entries = []
         self.prio_rads_entries = []
+        self.prio_lnp_entries = []
         self.PDR_buttons = []
         self.SBB_buttons = []
         self.PDB_data = []
@@ -1367,6 +1400,14 @@ class Keywd_Input:
         self.balloon = Pmw.Balloon(self.root)
         self.mout_number = 1
         self.bond_number = 0
+        self.pref_rad_lp_py = []
+        self.pref_lnp_py = []
+        self.numlp_py = []
+        self.numradlp_py = []
+        self.pref_rad_py = []
+        self.numudr_py = 0
+        self.numrad_py = 0 
+        self.radio_widgets = []
 
     def create_keywd_pane(self):
         if self.keywd_window is None:
@@ -1548,7 +1589,7 @@ class Keywd_Input:
                                   "Click the button to insert your preffered bonds"],
                     "PDR_button":["PDB_PDR_Button_frame", " Insert PDR ", self.Insert_PDR, 0, 1,
                                   "Click the button to insert your preffered bonds"],
-                    "prio_struc_button":["priority_str_frame", "Insert Priorities Structures", 
+                    "prio_struc_button":["priority_str_frame", "Insert Preferred Structure", 
                                          self.Insert_Priority_Str, 0, 0, 
                                          "If you want some structures must be present in the set \n"
                                          "you can insert them by clicking this Button;\n"
@@ -1585,6 +1626,7 @@ class Keywd_Input:
                 style="Custom.TRadiobutton"
             )
             button.grid(row=row, column=i, padx=10, pady=10)
+            self.radio_widgets[option] = button
             #self.disable_widgets_in_frame(self.frames["rumer_set_type_frame"])
             if GlobVar.multiplicity == 1:
                 if options is self.radio_buttons_info["PDR_option"]:
@@ -1619,6 +1661,8 @@ class Keywd_Input:
         print('PDB_Priority', PDB_Priority)
         if PDB_Priority is not None:
             self.button["PDB_button"].config(state=tk.NORMAL)
+        if PDB_Priority is None:
+            self.button["PDB_button"].config(state=tk.DISABLED)
         return (PDB_Priority)
 
     def get_PDR_Priority(self):
@@ -1626,24 +1670,29 @@ class Keywd_Input:
         print('PDR_Priority', PDR_Priority)
         if PDR_Priority is not None and self.multiplicity != 1:
             self.button["PDR_button"].config(state=tk.NORMAL)
+        if PDR_Priority is None:
+            self.button["PDR_button"].config(state=tk.DISABLED)
         return (PDR_Priority)
 
     def update_method_type(self):
         method_type = self.method_type.get()
         if method_type:
             self.method_type_entry = True
-            if method_type == 'Rumer':
+            if method_type == 'Equal Bond-Distributed Set':
+                self.cheminst_str_type = tk.StringVar(value="Asymmetric")
+                self.radio_widgets["Symmetric"].config(state=tk.DISABLED)
+            if method_type == 'Rumer Set' or method_type == 'Equal Bond-Distributed Set':
                 #self.enable_widgets_in_frame(self.frames["rumer_set_type_frame"])
-                self.disable_widgets_in_frame(self.frames["ChemInst_set_type_frame"])
-                self.disable_widgets_in_frame(self.frames["VB-ser_type_frame"])
+                #self.disable_widgets_in_frame(self.frames["ChemInst_set_type_frame"])
+                #self.disable_widgets_in_frame(self.frames["VB-set_type_frame"])
                 self.disable_widgets_in_frame(self.frames["symmetry_set_order_frame"])
                 self.disable_widgets_in_frame(self.frames["ovlp_cal_frame"])
                 self.disable_widgets_in_frame(self.frames["prio_label_frame"])
                 self.disable_widgets_in_frame(self.frames["diff_qualities_frame"])
                 self.disable_widgets_in_frame(self.frames["PDB_PDR_Button_frame"])
                 self.disable_widgets_in_frame(self.frames["priority_str_frame"])
-                self.disable_widgets_in_frame(self.frames["mout_frame"])
-            elif method_type == 'Chem inst':
+                #self.disable_widgets_in_frame(self.frames["mout_frame"])
+            elif method_type == 'Chemical Insight Set':
                 #self.disable_widgets_in_frame(self.frames["rumer_set_type_frame"])
                 self.enable_widgets_in_frame(self.frames["ChemInst_set_type_frame"])
                 self.enable_widgets_in_frame(self.frames["VB-set_type_frame"])
@@ -1786,7 +1835,7 @@ class Keywd_Input:
     def Insert_PDB(self):
         if self.prio_bond_window is None:
             self.prio_bond_window = tk.Toplevel(self.root, padx=10, pady=10)
-            self.prio_bond_window.title("Priority Bonds")
+            self.prio_bond_window.title("Pre-defined Bonds")
             self.prio_bond_window.geometry("450x450")
             self.prio_bond_window.configure(background="lightblue")
 
@@ -1794,7 +1843,7 @@ class Keywd_Input:
             frame.grid(row=0, column=0, sticky=tk.W)
 
             # Scrollable frame for dynamic fields
-            canvas = tk.Canvas(self.prio_bond_window, background="lightblue", height=300, width=300)
+            canvas = tk.Canvas(self.prio_bond_window, background="lightblue", height=300, width=415)
             scrollbar = ttk.Scrollbar(self.prio_bond_window, orient=tk.VERTICAL, command=canvas.yview)
             scrollable_frame = ttk.Frame(canvas, style="Colour_Frame.TFrame")
 
@@ -1813,7 +1862,7 @@ class Keywd_Input:
             frame1 = ttk.Frame(self.prio_bond_window, style="Colour_Frame.TFrame")
             frame1.grid(row=2, column=0)
 
-            label = ttk.Label(frame, text="Number of Structures:", style="Colour_Label.TLabel")
+            label = ttk.Label(frame, text="Total Bonds", style="Colour_Label.TLabel")
             label.grid(row=0, column=0, padx=10, pady=10)
             prio_bond_entry = ttk.Entry(frame, width=10)
             prio_bond_entry.grid(row=0, column=1)
@@ -1823,6 +1872,8 @@ class Keywd_Input:
                     (scrollable_frame, prio_bond_entry)
                     )
             Insert_button.grid(row=0, column=2, padx=10, pady=10)
+            orb_info_button = ttk.Button(frame, text="Orbital_Info",command=self.Orbital_Info)
+            orb_info_button.grid(row=0, column=3, padx=10, pady=10)
 
             close_button = ttk.Button(frame1, text="DONE", command=self.get_prio_bond_data)
             close_button.grid(row=0, column=0, pady=10, columnspan=2)
@@ -1847,7 +1898,7 @@ class Keywd_Input:
                     )
             prio_bond_label.grid(row=i, column=0, padx=10, pady=10)
 
-            prio_bond_entry = ttk.Entry(frame1, width=20)
+            prio_bond_entry = ttk.Entry(frame1, width=10)
             prio_bond_entry.grid(row=i, column=1, padx=10, pady=10)
 
             self.prio_bond_entries.append(prio_bond_entry)
@@ -1856,24 +1907,41 @@ class Keywd_Input:
         """
         Retrieve data from the dynamically created structure entry fields.
         """
-        self.PDB_data = [entry.get() for entry in self.prio_bond_entries]
-        print("Entered prio_bond:", self.PDB_data)
+        self.prio_bonds = []
+
+        for entry in self.prio_bond_entries:
+            text = entry.get().strip()
+            text = re.sub(r'[-,]', ' ', text)
+
+            if text:
+                nums = [int(x) for x in text.split()]
+                a, b = nums
+                print('nums',nums)
+                if len(nums) > 2:
+                    tk.messagebox.showerror("Invalid Input",f"Number of orbitals must \n"
+                                             "not exceed 2")
+                    return
+                self.prio_bonds.append(a)
+                self.prio_bonds.append(b)
+        
+        print("Entered bonds:", self.prio_bonds)
         self.prio_bond_window.destroy()
         self.prio_bond_window = None
-        return self.PDB_data
 
     def Insert_PDR(self):
         if self.prio_rads_window is None:
             self.prio_rads_window = tk.Toplevel(self.root, padx=10, pady=10)
             self.prio_rads_window.title("Priority Radicals")
-            self.prio_rads_window.geometry("450x450")
+            self.prio_rads_window.geometry("650x460")
             self.prio_rads_window.configure(background="lightblue")
+
+            nlp = abs(GlobVar.num_orbital - GlobVar.num_electron)
 
             frame = ttk.Frame(self.prio_rads_window, style="Colour_Frame.TFrame")
             frame.grid(row=0, column=0, sticky=tk.W)
 
             # Scrollable frame for dynamic fields
-            canvas = tk.Canvas(self.prio_rads_window, background="lightblue", height=300, width=300)
+            canvas = tk.Canvas(self.prio_rads_window, background="lightblue", height=350, width=620)
             scrollbar = ttk.Scrollbar(self.prio_rads_window, orient=tk.VERTICAL, command=canvas.yview)
             scrollable_frame = ttk.Frame(canvas, style="Colour_Frame.TFrame")
 
@@ -1892,55 +1960,103 @@ class Keywd_Input:
             frame1 = ttk.Frame(self.prio_rads_window, style="Colour_Frame.TFrame")
             frame1.grid(row=2, column=0)
 
-            label = ttk.Label(frame, text="Number of radicals:", style="Colour_Label.TLabel")
-            label.grid(row=0, column=0, padx=10, pady=10)
-            prio_rads_entry = ttk.Entry(frame, width=10)
-            prio_rads_entry.grid(row=0, column=1)
+           # if nlp == 0:
+           #     rad_count = 0
+           # else:
+            rad_count =1
 
             Insert_button = ttk.Button(
-                    frame, text="Insert",
-                    command=lambda: self.generate_prio_rads_fields(scrollable_frame, prio_rads_entry)
+                    frame, text="Create blank field",
+                   # command=lambda: self.generate_prio_rads_fields(scrollable_frame, nlp, rad_count)
+                    command=lambda: self.generate_prio_rads_fields(scrollable_frame, rad_count)
                     )
             Insert_button.grid(row=0, column=2, padx=10, pady=10)
+            orb_info_button = ttk.Button(frame, text="Orbital_Info",command=self.Orbital_Info)
+            orb_info_button.grid(row=0, column=3, padx=10, pady=10)
 
             close_button = ttk.Button(frame1, text="DONE", command=self.get_prio_rads_data)
             close_button.grid(row=0, column=0, pady=10, columnspan=2)
 
-    def generate_prio_rads_fields(self, frame1, prio_rads_entry):
+    def generate_prio_rads_fields(self, frame1, rad_count):
         """
         Generate labels and entry fields dynamically based on user input.
         """
-        try:
-            rads_number = int(prio_rads_entry.get())
-        except ValueError:
-            tk.messagebox.showerror("Invalid Input", "Please enter a valid number.")
-            return
+        self.i = self.i + 1
+        print('self.i',self.i)
+        row_val = self.i
+        prio_lnp_label = ttk.Label(
+                frame1, text=f"Preferred lone_pair {self.i}:", style="Colour_Label1.TLabel"
+                )
+        prio_lnp_label.grid(row=row_val, column=0, padx=10, pady=10)
 
-        # Clear previous fields
-        for widget in frame1.winfo_children():
-            widget.destroy()
+        prio_lnp_entry = ttk.Entry(frame1, width=10)
+        prio_lnp_entry.grid(row=row_val, column=1, padx=10, pady=10)
+        prio_rads_label = ttk.Label(
+                frame1, text=f" and radicals {self.i}:", style="Colour_Label1.TLabel"
+                )
+        prio_rads_label.grid(row=row_val, column=2, padx=10, pady=10)
 
-        for i in range(rads_number):
-            prio_rads_label = ttk.Label(
-                    frame1, text=f"Pre-defined rad {i+1}:", style="Colour_Label1.TLabel"
-                    )
-            prio_rads_label.grid(row=i, column=0, padx=10, pady=10)
+        prio_rads_entry = ttk.Entry(frame1, width=20)
+        prio_rads_entry.grid(row=row_val, column=3, padx=10, pady=10)
 
-            prio_rads_entry = ttk.Entry(frame1, width=20)
-            prio_rads_entry.grid(row=i, column=1, padx=10, pady=10)
-
-            self.prio_rads_entries.append(prio_rads_entry)
+        self.prio_rads_entries.append(prio_rads_entry)
+        self.prio_lnp_entries.append(prio_lnp_entry)
 
     def get_prio_rads_data(self):
         """
         Retrieve data from the dynamically created structure entry fields.
         """
-        data = [entry.get() for entry in self.prio_rads_entries]
-        print("Entered prio_rads:", data)
+        flg = 0
+        for lnp_entry, rad_entry in zip(self.prio_lnp_entries, self.prio_rads_entries):
+            val = lnp_entry.get().strip()
+            print("val",val)
+
+            if val == "0" and flg == 0:
+                text = rad_entry.get().strip()
+
+                if text:
+                    # Split by spaces or commas, ignore empty strings
+                    for x in re.split(r'[\s,]+', text):
+                        if x:
+                            self.pref_rad_py.append(int(x))  # convert to int if needed
+                    flg = 1
+
+                self.numrad_py = len(self.pref_rad_py)
+
+                print("self.pref_rad_py",self.pref_rad_py)
+
+            else:
+            #self.numrad = 0
+                self.pref_rad_lnp = []
+                numlp = []
+                numradlp = []
+                self.numudr_py += 1
+
+                lnp_text = lnp_entry.get().strip()
+                rad_text = rad_entry.get().strip()
+
+                if lnp_text:
+                    self.pref_rad_lnp.extend(lnp_text.split())
+                    numlp.append(len(self.pref_rad_lnp))
+                    lnp = len(self.pref_rad_lnp)
+
+                self.pref_rad_lnp.append('0')
+
+                if rad_text:
+                    self.pref_rad_lnp.extend(rad_text.split())
+                    numradlp.append(len(self.pref_rad_lnp)-(1+lnp))
+
+                self.pref_rad_lp_py.append(self.pref_rad_lnp)
+                self.numlp_py.append(numlp)
+                self.numradlp_py.append(numradlp)
+                print("self.pref_rad_lp",self.pref_rad_lp_py)
+                print("numrad",self.numrad_py)
+                print("numlp_py",self.numlp_py)
+                print("numradlp",self.numradlp_py)
         self.prio_rads_window.destroy()
         self.prio_rads_window = None
-        return data
-
+        #return data
+        
     def Insert_Priority_Str(self):
         if self.priority_str_window is None:
             self.priority_str_window = tk.Toplevel(self.root, padx=10, pady=10)
@@ -1981,6 +2097,8 @@ class Keywd_Input:
                     command=lambda: self.generate_priority_str_fields(scrollable_frame, str_entry)
                     )
             Insert_button.grid(row=0, column=2, padx=10, pady=10)
+            orb_info_button = ttk.Button(frame, text="Orbital_Info",command=self.Orbital_Info)
+            orb_info_button.grid(row=0, column=3, padx=10, pady=10)
 
             close_button = ttk.Button(frame1, text="DONE", command=self.get_priority_str_data)
             close_button.grid(row=0, column=0, pady=10, columnspan=2)
@@ -1990,7 +2108,7 @@ class Keywd_Input:
         Generate labels and entry fields dynamically based on user input.
         """
         try:
-            str_number = int(str_entry.get())
+            self.str_number = int(str_entry.get())
         except ValueError:
             tk.messagebox.showerror("Invalid Input", "Please enter a valid number.")
             return
@@ -1999,7 +2117,9 @@ class Keywd_Input:
         for widget in frame1.winfo_children():
             widget.destroy()
 
-        for i in range(str_number):
+        self.prio_structure_entries.clear()
+
+        for i in range(self.str_number):
             str_label = ttk.Label(frame1, text=f"Structure {i+1}:", style="Colour_Label1.TLabel")
             str_label.grid(row=i, column=0, padx=10, pady=10)
 
@@ -2012,11 +2132,29 @@ class Keywd_Input:
         """
         Retrieve data from the dynamically created structure entry fields.
         """
-        data = [entry.get() for entry in self.prio_structure_entries]
-        print("Entered Structures:", data)
+        self.strt_strucs = []
+
+        for entry in self.prio_structure_entries:
+            text = entry.get().strip()
+            text = re.sub(r'[-,]', ' ', text)
+
+            if text:
+                nums = [int(x) for x in text.split()]
+                if len(nums) > GlobVar.num_orbital:
+                    tk.messagebox.showerror("Invalid Input",f"Number of orbitals must \n"
+                                             "not exceed {GlobVar.num_orbital}.")
+                    return
+                self.strt_strucs.append(nums)
+        
+        print("Entered Structures:", self.strt_strucs)
         self.priority_str_window.destroy()
         self.priority_str_window = None
-        return data
+
+    def Orbital_Info(self):
+        tk.messagebox.showinfo("Orbital Informations",f"there are {GlobVar.num_iao} inactive orbitals\n" 
+                                                      f"and {GlobVar.num_orbital} active orbitals,\n" 
+                                                      f"which are: {GlobVar.active_orbitals}")
+
 
     def get_keywds(self):
         """Retrieve and process default keyword values."""
@@ -2033,6 +2171,7 @@ class Keywd_Input:
                 'Check Set if Symmetric': 3
                 }
         chinst = map_string_to_int(self.update_method_type(), method_mapping)
+        GlobVar.Rum_Ch = chinst
 
         cheminst_mapping = {'Symmetric': (1, 0), 'Asymmetric': (0, 1)}
         cheminst = self.cheminst_str_type_read()
@@ -2048,6 +2187,9 @@ class Keywd_Input:
 
         settype_mapping = {'Single Set': 0, 'Best Sets': 1, 'All Sets': 2}
         nset = map_string_to_int(self.ChemInst_set_type_read(), settype_mapping)
+        GlobVar.num_sets = nset
+        if nset == 1:
+            nset = 2  # it opt for All Sets as Best Sets will be calculated in the output section
 
         mout = self.mout_number
 
@@ -2072,14 +2214,34 @@ class Keywd_Input:
 
         itbp, nnbp, sybp, mnbondp, radicalp = prio_list
 
-        if self.get_PDB_Priority() != 'None':
+        #if self.get_PDB_Priority() != 'None':
+        #    nmbond = self.bond_number
+
+
+        if hasattr(self, 'strt_strucs') and hasattr(self, 'str_number'):
+            strt_strucs = self.strt_strucs
+            str_number = self.str_number
+            print("Number of Structures:", str_number)
+            print("Structures:", strt_strucs)
+        else:
+            strt_strucs = 0
+            str_number = 0
+            
+        if hasattr(self, 'prio_bonds') and hasattr(self, 'bond_number'):
+            main_bonds = self.prio_bonds
             nmbond = self.bond_number
+            print("Number of bonds:", nmbond)
+            print("bonds:", main_bonds)
+        else:
+            main_bonds = 0
+            nmbond = 0
 
+        print("I am here 1")
         Run_button.config(state=tk.NORMAL)
-
         return (chinst, symm, asymm, checksym, strtype, set_order, nset, mout, overlap,
-                itbp, nnbp, sybp, mnbondp, radicalp, nmbond)
-
+                itbp, nnbp, sybp, mnbondp, radicalp, nmbond, str_number, strt_strucs, main_bonds,
+                self.pref_rad_lp_py, self.numlp_py, self.numradlp_py, self.pref_rad_py,
+                self.numrad_py, self.numudr_py)
 class Help_info:
     def __init__(self):
         pass
@@ -2089,7 +2251,7 @@ class Help_info:
         help_win.title("Help - Run Options")
         help_win.geometry("900x700")
 
-        # Left listbox menu
+        # Left menu
         menu_frame = tk.Frame(help_win, width=200, bg='lightgray')
         menu_frame.pack(side=tk.LEFT, fill=tk.Y)
 
@@ -2097,112 +2259,612 @@ class Help_info:
         content_frame = tk.Frame(help_win)
         content_frame.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH)
 
-        # Listbox menu items
-        topics = ["1. Basic Info", 
-                  "2. Valence Bond Structure", 
-                  "3. Active Part Inputs",
-                  "4. Orbital Inputs",
-                  "5. Spatial Keywords",
-                  "6. Run & Optput"
-                  "7. Visualisation", 
-                  "8. Debug Mode"]
+        topics = [
+            "1. Basic Info",
+            "2. Valence Bond Structure",
+            "    2.1 Covalent structures",
+            "    2.2 Ionic structures",
+            "3. Generate structures",
+            "  3.1 Basic Informations",
+            "  3.2 Orbitals",
+            "  3.3 Keywords",
+            "4. Runs & Output",
+            "5. Visualisation",
+            "6. Debug Mode"
+        ]
 
         listbox = tk.Listbox(menu_frame, width=30)
         for topic in topics:
             listbox.insert(tk.END, topic)
+
         listbox.pack(pady=10, padx=10, fill=tk.BOTH)
 
-        # Text widget with help content
         text = tk.Text(content_frame, wrap=tk.WORD)
         text.pack(fill=tk.BOTH, expand=True)
 
-        # Store section indexes
-        section_indices = {}
+        # Paper URLs
+        pub1_url = "https://pubs.acs.org/doi/10.1021/acs.jctc.2c01000"
+        pub2_url = "https://pubmed.ncbi.nlm.nih.gov/40511678/"
 
-        help_content = {
-            "1. Basic Info": "This software is designed to generate, analyze, and visualize "
-            "Valence Bond (VB) structures with enhanced chemical insight and symmetry-adapted structure sets, "
-            "addressing key limitations of traditional Rumer sets.\n\n"
-            "It implements methodologies introduced in two publications:\n\n"
-            "1) 'New Methodology to Produce Sets of Valence Bond Structures with Enhanced Chemical Insights' "
-            "(Roy & Shurki, JCTC 2023)\n"
-            "2) 'The Topological Way—A New Methodology to Construct Symmetric Sets of Valence-Bond Structures' "
-            "(Roy & Shurki, JCP 2025)\n\n"
-            "Together, these form the foundation of a flexible, automated, and chemically intuitive platform for "
-            "constructing high-quality VB structure sets tailored to a wide range of molecular systems.",
-            "2. Valence Bond Structure":
-            'Valence Bond (VB) structures represent specific pairing distributions of localized orbitals '
-            'in a chemical system. A VB structure is typically expressed as a sequence of integers, '
-            'where each number corresponds to an atomic orbital. The sequence is organized into groups as follows:\n\n'
-            '  - Inactive orbitals (fully occupied)\n'
-            '  - Active orbitals containing lone pairs\n'
-            '  - Active orbital pairs, each singly occupied (i.e., bonded orbitals)\n'
-            '  - Active unpaired orbitals (radicals)\n\n'
-            'For example, consider a system with 11 orbitals:\n'
-            '  - 5 inactive orbitals\n'
-            '  - 1 active lone pair\n'
-            '  - 2 singlet pairs (i.e., 4 orbitals forming 2 bonds)\n'
-            '  - 1 unpaired orbital\n\n'
-            'A possible structure might be written as:\n'
-            '  1 1 2 2 3 3 4 4 5 5 6 6 7 8 9 10 11\n'
-            'Or, using a compact notation:\n'
-            '  1:5 6 6 7 8 9 10 11\n'
-            '(where "1:5" represents orbitals 1 through 5 as inactive and doubly occupied.' 
-            '"7 8" and "9 10" are singlet pairs or bonds and "11" is unpaired or radical).\n\n'
-            'The output structures generated by this software follow this format.\n'
-            'The numbers of active orbitals (number of lone pairs and  unpaired orbitals) '
-            'determine the number of permissible VB structures for a given chemical system.'
-            'The number of linearly independent Valence Bond (VB) structures for'
-            ' N singly occupied orbitals and a total system spin S is given by:\n\n'
-            '    (2S + 1) · N! / [(N/2 + S + 1)! · (N/2 – S)!]\n\n'
-            'In systems containing lone pairs or empty orbitals, the total number of structures is adjusted by '
-            'multiplying with the number of ways lone pairs and/or empty orbitals can be distributed.'
-            'Therefore, for M active orbital system L lone-pair presents then above formula must be'
-            ' multiplied by M! / l!*(M-L)! to get the complete set. The same formula will be'
-            ' applicable for ionic part too.',
-            "3. Active Part Inputs": "To Run the software, the basic informations about the molecular system" 
-            "must be inserted correctly, Which are listed below:\n"
-            "  - Number of Active Orbitals (NAO)\n"
-            "  - Number of Active Electrons (NAE)\n"
-            "  - Multiplicity (nmul) 2S + 1 \n"
-            "  - Chemical Formula: Formula given apropreatly in 'Caps lock' e.g: Benzene\n" 
-            "    must be given as:C6H6 or salicylic acid must be written as 'C7H6O3',\n" 
-            "    for reaction the reactants must be added with underscores '_' eg: A_B\n" 
-            "    if 'A' and 'B' are two reactants of a reaction\n"
-            "  - Geometry: Geometry of the system must be provided. There are two options:\n"
-            "    1) Geometry can be uploaded directly from the computer (Previously saved)\n"
-            "    2) Geometry can be written manually by clicking 'Geometry' button \n"
-            "    * The geometry can be provided in two units 'Bohr' or 'Angstrom'."
-            "    after inserting the geometry the molecile can be visualized on a 3-dimentional\n"
-            "    view and the bond length, angles and azimithal angles can be measured"
-            "  - Orbitals: after insertion of the above informations the orbital button\n"
-            "    will be enabled. User need to provide only active orbital informations\n"
-            "    detail are given in the orbital input section.\n",
-            "4. Orbital Inputs":"In the orbital pane two things need to be inserted as mentioned below\n"
-            "    1) Type of the orbitals.\n"
-            "    2) Atom number on which the particular orbital situated.\n"
-            "    here the orbitals can be four types 's', 'px', 'py', and 'pz'. ",
-            "5. Spatial Keywords":"Spatial Keywords",
-            "6. Run & Optput":"Click the Run Button to run the calculation",
-            "7. Visualisation": "Visualise molecular orbitals, densities, or vibrational modes.",
-            "8. Debug Mode": "Use debug mode to print intermediate variables or logs."
-        }
+        # -------------------------
+        # BASIC INFO
+        # -------------------------
 
-        for topic, content in help_content.items():
-            section_indices[topic] = text.index(tk.INSERT)
-            text.insert(tk.END, f"{topic}\n", "title")
-            text.insert(tk.END, content + "\n\n")
+        def show_basic():
 
-        text.tag_configure("title", font=("Helvetica", 12, "bold"))
+            text.config(state=tk.NORMAL)
+            text.delete("1.0", tk.END)
+
+            intro = (
+            "This software generates, analyzes and visualizes "
+            "Heitler-London-Slater-Pauling (HLSP) functions for valence bond calculations"
+            "which are also commonly called Valence Bond (VB) structures."
+            "This software can provide one or many sets of HLSP functions are with enhanced chemical "
+            "interpretation and symmetry-adapted structure sets.\n\n"
+
+            "The methodology implemented in this program is based on "
+            "two research publications:\n\n"
+            )
+
+            text.insert(tk.END, intro)
+
+            pub1 = (
+            "1) New Methodology to Produce Sets of Valence Bond Structures "
+            "with Enhanced Chemical Insights,"
+            )
+            pub1_info1 = " Roy & Shurki, JCTC (2023).\n"
+
+            text.insert(tk.END, pub1, "link1")
+            text.insert(tk.END, pub1_info1)
+
+            pub1_info2 = (
+            "   • Systematic VB structure generation\n"
+            "   • Chemically intuitive VB sets\n\n"
+            )
+
+            text.insert(tk.END, pub1_info2)
+
+            text.tag_config("link1", foreground="blue", underline=1)
+            text.tag_bind("link1","<Button-1>",lambda e: webbrowser.open(pub1_url))
+
+            pub2 = (
+            "2) The Topological Way — A New Methodology to Construct "
+            "Symmetric Sets of Valence-Bond Structures,"
+            )
+            pub2_info1 = (
+            " Roy & Shurki, JCP (2025).\n"
+            )
+
+            text.insert(tk.END, pub2,"link2", pub2_info1)
+
+            pub2_info2 = (
+            "   • Topology-based VB structure generation\n"
+            "   • Symmetry-adapted structure sets\n\n"
+            )
+
+            text.insert(tk.END,pub2_info2)
+
+            text.tag_config("link2", foreground="blue", underline=1)
+            text.tag_bind("link2","<Button-1>",lambda e: webbrowser.open(pub2_url))
+
+            text.config(state=tk.DISABLED)
+
+        # -------------------------
+        # VB STRUCTURE
+        # -------------------------
+
+        def show_vb():
+
+            text.config(state=tk.NORMAL)
+            text.delete("1.0", tk.END)
+
+            vb_text = (
+
+            "Valence Bond (VB) structures represent specific pairing "
+            "distributions of localized orbitals.\n\n"
+
+            "A VB structure is expressed as a sequence of integers where "
+            "each integer corresponds to an atomic orbital.\n\n"
+
+            "Structure layout:\n\n"
+
+            "   • Inactive orbitals\n"
+            "   • Active lone pairs\n"
+            "   • Bonded orbital pairs\n"
+            "   • Radical orbitals\n\n"
+
+            "Example system:\n"
+
+            "   5 inactive orbitals\n"
+            "   1 lone pair\n"
+            "   2 singlet bonds\n"
+            "   1 radical orbital\n\n"
+
+            "Example structure:\n\n"
+
+            "   1 1 2 2 3 3 4 4 5 5 6 6 7 8 9 10 11\n\n"
+
+            "Compact notation:\n"
+
+            "   1:5 6 6 7 8 9 10 11\n\n"
+
+            "Structure count formula:\n\n"
+
+            "[(2S+1)N! / ((N/2+S+1)! (N/2−S)!)] × [N! / (L!(N−L)!)]\n\n"
+
+            "N : active singly occupied orbitals\n"
+            "S : total spin\n"
+            "L : number of lone pairs\n"
+
+            "There are two different types of structures for two different bondings"
+            "a) Covalent Bonding b) Ionic Bonding"
+
+            )
+
+            text.insert(tk.END,vb_text)
+            text.config(state=tk.DISABLED)
+        # -------------------------
+        # Covalent STRUCTURE
+        # -------------------------
+
+        def show_Cov_str():
+
+            text.config(state=tk.NORMAL)
+            text.delete("1.0", tk.END)
+
+            vb_text = ("Covalent bonds are singlet pairings of two singly-occupied orbitals, which"
+                       "are represented by two consicutive orbital numbers written in the structures."
+                        "covalent structures must contain one or more singlet pairs as well as all "
+                       "the active orbitals must be includede. As an example, if a system has five"
+                       " active orbitals and spin 1/2, then the covalent structure of this system will be\n\n"
+                       "                      1 2 3 4 5 or 1 3 2 5 4\n\n"
+                       "1 2, 3 4 or 1 3, 2 5 are singlet pairs and 5 and 4 are radicals")
+
+            text.insert(tk.END,vb_text)
+            text.config(state=tk.DISABLED)
+        # -------------------------
+        # IONIC STRUCTURE
+        # -------------------------
+
+        def show_Ion_str():
+
+            text.config(state=tk.NORMAL)
+            text.delete("1.0", tk.END)
+
+            vb_text = ("Ionic bonds produced when and electron fully shifted towards other atom,"
+                       " therefotre one orbital get two electrons or a lone pair and become positively"
+                       " charged whereas, other atom posses an empty orbital and becomes a negatively"
+                       " charged. Therefore, in the structure we have an orbital with a lone pair as well"
+                       " as one orbital is removed for each ionic bond. Now an ionic structure can have"
+                       " one ionic bond or can have more. A system must have the identical number of"
+                       " covalent and ionic bonds. As an example, if a system has five"
+                       " active orbitals and spin 1/2, then the ionic structures of this system will be\n\n"
+                       "                         1 1 3 4 5 or 1 1 2 2 4\n\n"
+                       "1 1, 2 2 are ionic structure whereas, 3 4 is a singlet pair and 5 and 4 are radicals")
+
+            text.insert(tk.END,vb_text)
+            text.config(state=tk.DISABLED)
+
+        # -------------------------
+        # str_generation
+        # -------------------------
+
+        def str_gen():
+            text.config(state=tk.NORMAL)
+            text.delete("1.0", tk.END)
+
+            str_gen_text = ("To generate a basic set of structures need to provide a few basic informations"
+                       " about the system are listed below:\n\n"
+                       " 1: Basic Informations About The Molecular System:\n"
+                       "    1.1: Name of the system\n"
+                       "    1.2: Geometric informations\n"
+                       "         1.2.1: Unit of geometry values\n"
+                       "         1.2.2: Brows to upload previously saved geometry file\n"
+                       "                or insert geometry manually\n"
+                       "    1.3: Active space descriptions\n"
+                       "         1.3.1: Number of Active Orbitals (nao)\n"
+                       "         1.3.2: Number of Active Electrons (nae)\n"
+                       "         1.3.3: Multiplicity of Active Part (nmul)\n"
+                       " 2: Orbitals:\n"
+                       " 3: Keywords:\n\n")
+
+            text.insert(tk.END,str_gen_text)
+            text.config(state=tk.DISABLED)
+
+        # -------------------------
+        # BASIC INFO
+        # -------------------------
+
+        def basic_info():
+
+            text.config(state=tk.NORMAL)
+            text.delete("1.0", tk.END)
+
+            basic_info_text = (
+
+            "\n To generate a set of structures the following system information "
+            "must be provided:\n\n"
+
+            "Chemical Formula:\n\n"
+
+            " It must be provided in with there Stoichiometric subscripts.\n\n"
+
+            "Examples:\n"
+
+            "   Benzene → C6H6\n"
+            "   Salicylic acid → C7H6O3\n\n"
+
+            "For reactions use reactants or product symbols separated with underscores,\n"
+            "if reactants or products are A + B.\n\n"
+
+            "   A_B\n\n"
+            "For reaction 2H2 + O2 = 2H2O. It can be written in two ways shown below:\n\n"
+            "       1) 2H2_O2  or 2) 2H2O\n\n"
+
+            "\n\nNext we need to provide Geometry informations of the system\n\n"
+
+            "Two options are available to insert Geometries:\n"
+
+            "   1) Upload previously saved geometry file\n"
+            "                    or\n"
+            "   2) Enter manually\n\n"
+            "The geometry file must have a specific format there should be 4 or 5 columns\n"
+            "Column two the Atomic Number is optional\n\n"
+            "Column 1         Column 2         Column 3         Column 4         Column 5\n"
+            "Atomic Formula   Atomic number    X coord          Y coord          Z coord\n\n"
+            "After uploding the geometry files it can be seen by clicking 'View_Geometry' button\n"
+
+
+            "Code supports two different units of geometries as shown below:\n"
+
+            "   • Bohr\n"
+            "   • Angstrom\n"
+            " User needs to choose one of these option according to there inserted geometry\n\n"
+
+            "\n\nThen information about the active space of the system needs to provude: \n"
+            "Active space definition is fully depends upon user's\n"
+            "   • Number of Active Orbitals (NAO)\n"
+            "   • Number of Active Electrons (NAE)\n"
+            "   • Multiplicity (2S+1)\n\n"
+
+            )
+
+            text.insert(tk.END,basic_info_text)
+            text.config(state=tk.DISABLED)
+
+        # -------------------------
+        # ORBITALS
+        # -------------------------
+
+        def show_orb():
+
+            text.config(state=tk.NORMAL)
+            text.delete("1.0", tk.END)
+
+            orb_text=(
+
+            "Need to click ORBITALS button after inserting all basic informations\n"
+            "about the molecule or reaction. In the orbital panel one needs\n"
+            "to provide only active orbital informations. The atom number on which\n"
+            "the orbital is situated and the type of the orbitals.\n\n"
+
+            "1) Atom Number\n"
+            "2) Orbital Type\n\n"
+
+            "The orbital types can be providede in two different ways: 1) as fragment or\n"
+            "hybrid orbital ie, combinations of atomic basis or 2) simply pi1, pi2, pi3 and sigma.\n"
+            "They are looks like:\n"
+
+            "   • s or sig (sigma) `\n"
+            "   • px or pi1\n"
+            "   • py or pi2\n"
+            "   • pz or pi3\n"
+            )
+
+            text.insert(tk.END,orb_text)
+            text.config(state=tk.DISABLED)
+
+        # -------------------------
+        # KEYWORDS
+        # -------------------------
+
+        def keywd():
+
+            text.config(state=tk.NORMAL)
+            text.tag_config("bold", font=("Helvetica", 11, "bold"))
+            text.tag_config("underline", underline=1)
+            text.delete("1.0", tk.END)
+
+            text.insert(tk.END,"In keyword input pane all the keywords have default values already set up\n"
+                        "Therefore one can just press the Insert button and run the program to get\n"
+                        "a single symmetric covalent Chemically insightfull set. Bellow all the\n "
+                        "Keywords and it's meanings are provided one by one:\n\n")
+
+            text.insert(tk.END,"1.Main Operational Keywords:\n\n","bold")
+            text.insert(tk.END,"  1.1","bold") 
+            text.insert(tk.END," Chemical Insight Set:",("bold","underline")) 
+            text.insert(tk.END," The structures of the set will be selected\n"
+                        "      according to the chemical qualities and their priorities. There are\n"
+                        "      five different chemical qualities have been considerd among them\n"
+                        "      three are natural qualities and two are user preffered qualities\n"
+                        "      Natural qualities are explained below one by one:\n\n")
+            text.insert(tk.END,"      •","bold") 
+            text.insert(tk.END," Intra Atomic Bond (IAB) quality:",("bold","underline")) 
+            text.insert(tk.END," it penalize the structures possese\n"
+                        "        bonds between two orbitals of the same atom. more IAB more penalty\n\n")
+            text.insert(tk.END,"      •","bold") 
+            text.insert(tk.END," Near Atomic Bond (NAB) quality:",("bold","underline")) 
+            text.insert(tk.END," it penalize the structures possese\n"
+                        "        bonds between two atoms situated farther than covalent radius. more\n"
+                        "        distant bonds means more penalty. \n\n")
+            text.insert(tk.END,"      •","bold") 
+            text.insert(tk.END," Symmetry Breaking Bond (SBB) quality:",("bold","underline")) 
+            text.insert(tk.END," it penalize the structures possese\n"
+                        "        bonds between two orbitals with different symmetries that means bond \n"
+                        "        between sigma-sigma or pi1-pi1 is more preferable than bond between \n"
+                        "        sigma-pi1 or pi1-pi2. Presence of more this type of bonds get more\n"
+                        "        penalty.\n\n")
+            text.insert(tk.END,"      •","bold") 
+            text.insert(tk.END," Pre-Defined Bond (PDB) quality:",("bold","underline")) 
+            text.insert(tk.END," it favour the structures possese\n"
+                        "        bonds pre-defined by the user. Presence of more this type of bonds in\n"
+                        "        the structures get more favour.\n\n")
+            text.insert(tk.END,"      •","bold") 
+            text.insert(tk.END," Pre-Defined Radical (PDR) quality:",("bold","underline")) 
+            text.insert(tk.END," it favour the structures possese\n"
+                        "        radicals pre-defined by the user. Presence of more this type of\n"
+                        "        radicals in the structures get more favour.\n\n\n")
+
+            text.insert(tk.END,"  1.2","bold") 
+            text.insert(tk.END," Rumer Set:",("bold","underline")) 
+            text.insert(tk.END," The structures in the set are selected according to Rumer's\n"
+                        "      methodology. In this approach, a linearly independent set of valence\n"
+                        "      bond structuresis constructed using a diagrammatic representation.\n"
+                        "      First, all singly occupied active orbitals are arranged on a circle.\n"
+                        "      Bonds are then drawn between pairs of orbitals.\n"
+                        "      A valid linearly independent structure is obtained when the bonds\n"
+                        "      do not cross each other.\n\n")
+
+            text.insert(tk.END,"  1.3","bold") 
+            text.insert(tk.END," Equal Bond-Distributed Set:",("bold","underline")) 
+            text.insert(tk.END," In a whole set of structures many bonds can be\n"
+                        "      repeated multiple times. This option will provide sets that contains\n"
+                        "      all bonds repeated equal number of times.\n"
+                        "      This type of sets can have some important use.\n\n")
+
+            text.insert(tk.END,"  1.4","bold") 
+            text.insert(tk.END," Check Set if Symmetric:",("bold","underline")) 
+            text.insert(tk.END," This option provide the information about a set\n"
+                        "      if it is symmetric or not. This option needs sets to be uploaded.\n\n")
+
+            text.insert(tk.END,"2.General Keywords:\n\n","bold")
+            text.insert(tk.END,"  2.1","bold") 
+            text.insert(tk.END," HLSP Function Set Type:",("bold","underline")) 
+            text.insert(tk.END," Two different types of HLSP functions set can be \n"
+                        "      generated which are, symmetric and asymmetric. Here we are only \n"
+                        "      considering symmetry of the active part of the system. If one select\n"
+                        "      Symmetric, then they can choose one more option which is basically to\n"
+                        "      to choose the order of the symmetric HLSP function groups. there are\n"
+                        "      one of three orders can be chosen and according to that we have more\n"
+                        "      and more chances to get that type of structures in the set. The options\n"
+                        "      are explained below:\n")
+            text.insert(tk.END,"    a)","bold") 
+            text.insert(tk.END," Quality-Arrange:",("bold","underline")) 
+            text.insert(tk.END," Every HLSP function in a symmetric group\n" 
+                        "      has the same Chemical qualities and that represents the chemical quality\n"
+                        "      of that entire group. In this option program will try to provide a set\n"
+                        "      with more higher chemical quality structures.\n")
+            text.insert(tk.END,"    b)","bold") 
+            text.insert(tk.END," Big-to-Small:",("bold","underline")) 
+            text.insert(tk.END," The symmetric groups can have a single\n" 
+                        "      HLSP function or can have multiple. In this option program will try to\n"
+                        "      provide a set contains as much as possible bigger or more populated\n"
+                        "      groups.")
+            text.insert(tk.END,"    c)","bold") 
+            text.insert(tk.END," Small-to-Big:",("bold","underline")) 
+            text.insert(tk.END," The symmetric groups can have a single\n" 
+                        "      HLSP function or can have multiple. In this option program will try to\n"
+                        "      provide a set contains as much as possible smaller or less populated groups.\n\n")
+            text.insert(tk.END,"  2.2","bold") 
+            text.insert(tk.END," HLSP Function Type:",("bold","underline")) 
+            text.insert(tk.END," Two types of HLSP functions represents two\n"
+                        "      different types of bonding which are, Covalent and Ionic. One of \n"
+                        "      either or both can be needed depending on the methodology of\n"
+                        "      calculation. One need to select any one of the options among Covalent\n"
+                        "      , Ionic or Both.\n")
+            text.insert(tk.END,"  2.3","bold") 
+            text.insert(tk.END," Set Type:",("bold","underline")) 
+            text.insert(tk.END," The possible number of HLSP functions\n"
+                        "      is more than the number required to create an independent set.  \n"
+                        "      This program can generate all possible number of sets. one can asked\n"
+                        "      for a single best set (best according to the chemical qualities) or \n"
+                        "      all best sets or all sets or any number of sets. If they want few \n"
+                        "      number of sets, they must select 'All Sets' option and then click \n"
+                        "      more option and put the number how many sets they want. The different\n"
+                        "      options are shown below\n\n")
+            text.insert(tk.END,"    a)","bold") 
+            text.insert(tk.END," Single Set:",("bold","underline")) 
+            text.insert(tk.END," Select this option to get one best\n" 
+                        "      set according to the chemical qualities and their priorities are \n"
+                        "      given.\n")
+            text.insert(tk.END,"    b)","bold") 
+            text.insert(tk.END," All Sets:",("bold","underline")) 
+            text.insert(tk.END," Select this option to get all possible\n" 
+                        "      sets, where the first set will be the best set. This all possible \n"
+                        "      set will contain all symmetric and asymmetric set. One thing must\n"
+                        "      need to keep in mind that as the number of active orbitals of the \n"
+                        "      system will increase the number of set will increase exponentially\n"
+                        "      So it is allways safe to provide a realistic number inside the option\n"
+                        "      'more'.\n")
+            text.insert(tk.END,"    a)","bold") 
+            text.insert(tk.END," Best Sets:",("bold","underline")) 
+            text.insert(tk.END," In a specific chemical quality and priority\n"
+                        "      the system can have more than one best set, and selecting this \n" 
+                        "      option one would get all best quality sets. \n\n")
+
+            text.insert(tk.END,"3.Priorities of Chemical Qualities:","bold")
+            text.insert(tk.END," There are five chemical qualities what \n"
+                        "      user can prioritize these chemical qualities. All five qualities\n "
+                        "      may not be available for that particular active space or system\n"
+                        "      such as two atomic molecules do not have NAB quality. Two qualities\n"
+                        "      can have same priorities. The default priorities are 1st:IAB, 2nd:NAB,\n"
+                        "      3rd:SBB, PDB and PDR set in None. To put priority for PDB and PDR one\n"
+                        "      need to insert there prefered bonds and prefered radicles through\n"
+                        "      insert buttons 'Insert PDB' & 'Insert PDR'\n")
+            text.insert(tk.END,"   3.1","bold") 
+            text.insert(tk.END," Insert PDB:",("bold","underline")) 
+            text.insert(tk.END," To insert PDBs in the opend window 'Pre-Defined Bonds', first need \n"
+                        "      to insert total numberof bonds and then put separately in each entry \n"
+                        "      boxes. One can insert bonded orbitals separated with coma, dash or \n"
+                        "      blank pace and finally click the insert button")
+            text.insert(tk.END,"   3.2","bold") 
+            text.insert(tk.END," Insert PDR:",("bold","underline")) 
+            text.insert(tk.END," To insert PDRs in the opend window 'Pre-Defined Radicals', first need \n"
+                        "      to click the button 'Create blank field'. Every click will open two \n"
+                        "      entry boxes in a row. First box is for lone pairs and t0he second one \n"
+                        "      is for radicals. Two types of situation can appeared for two types of \n"
+                        "      HLSP function sets\n" 
+                        "        1) with lone pairs \n"
+                        "        2) without lone pairs"
+                        "      irrespective of covalent or ionic functions. If it is a set without lone\n"
+                        "      pairs, one must need to put 0 (zero) in the box for 'preffered lone_pair n'.\n"
+                        "      Radicals for without lone pair set can be provided onece only other wise\n"
+                        "      only first one will be taken. For sets with lone-pairs one can put as\n"
+                        "      many lone pairs as they want. If some lone pair sets are not been given any\n"
+                        "      radical prefference the set will be guided by rest of the qualities and if\n"
+                        "      no other qualities are selected then the choice of that set would be fully\n"
+                        "      arbitrary.")
+            text.insert(tk.END,"4. Preferred Structures:","bold")
+            text.insert(tk.END," User can insert their preferred \n"
+                        "      structures using 'Insert Preferred Structure' button. Programe will try to\n "
+                        "      include these structures without judging their qualities (they might or might\n"
+                        "      not mached with the preferred qualities of the run). However, it cannot be\n"
+                        "      guaranteed the inclusion of all preferred structures as long all of them\n"
+                        "      are mutually linearly independent.")
+            #text.insert(tk.END,keywd_text)
+            text.config(state=tk.DISABLED)
+
+        # -------------------------
+        # RUN
+        # -------------------------
+
+        def show_run():
+
+            text.config(state=tk.NORMAL)
+            text.delete("1.0", tk.END)
+            text.insert(tk.END,"  4.1 Various Runs:","bold")
+            text.insert(tk.END," The programe can capable \n"
+                        "      to produce Chemical Insight Sets, Rumer sets, Equal Bond Distributed Sets\n"
+                        "      with various manupulations.")
+
+            text.insert=(
+
+            "Press the RUN button to start the calculation.\n\n"
+
+            "The program generates:\n"
+
+            "   • VB structures\n"
+            "   • symmetry adapted sets\n"
+            "   • analysis output\n"
+
+            )
+
+            #text.insert(tk.END,run_text)
+            text.config(state=tk.DISABLED)
+
+        # -------------------------
+        # VISUALISATION
+        # -------------------------
+
+        def show_vis():
+
+            text.config(state=tk.NORMAL)
+            text.delete("1.0", tk.END)
+
+            vis_text=(
+
+            "Visualization module displays:\n\n"
+
+            "   • molecular orbitals\n"
+            "   • electron density\n"
+            "   • geometry structures\n"
+
+            )
+
+            text.insert(tk.END,vis_text)
+            text.config(state=tk.DISABLED)
+
+        # -------------------------
+        # DEBUG
+        # -------------------------
+
+        def show_debug():
+
+            text.config(state=tk.NORMAL)
+            text.delete("1.0", tk.END)
+
+            debug_text=(
+
+            "Debug mode prints intermediate variables\n"
+            "and diagnostic information.\n\n"
+
+            "Useful for:\n"
+
+            "   • debugging inputs\n"
+            "   • checking algorithm steps\n"
+            "   • development testing\n"
+
+            )
+
+            text.insert(tk.END,debug_text)
+            text.config(state=tk.DISABLED)
+
+        # -------------------------
+        # MENU HANDLER
+        # -------------------------
 
         def on_select(event):
-            selected = listbox.get(listbox.curselection())
-            if not selected:
-                return  
-            if selected in section_indices:
-                text.see(section_indices[selected])  # Scroll to the section
 
-        listbox.bind("<<ListboxSelect>>", on_select)
+            selection = listbox.curselection()
+            if not selection:
+                return
+
+            topic = listbox.get(selection[0])
+
+            if topic=="1. Basic Info":
+                show_basic()
+
+            elif topic=="2. Valence Bond Structure":
+                show_vb()
+
+            elif topic=="    2.1 Covalent structures":
+                show_Cov_str()
+
+            elif topic=="    2.2 Ionic structures":
+                show_Ion_str()
+
+            elif topic=="3. Generate structures":
+                str_gen()
+
+            elif topic=="  3.1 Basic Informations":
+                basic_info()
+
+            elif topic=="  3.2 Orbitals":
+                show_orb()
+
+            elif topic=="  3.3 Keywords":
+                keywd()
+
+            elif topic=="4. Run & Output":
+                show_run()
+
+            elif topic=="5. Visualisation":
+                show_vis()
+
+            elif topic=="6. Debug Mode":
+                show_debug()
+
+        listbox.bind("<<ListboxSelect>>",on_select)
 
 class drawing_molecule:
     def __init__(self):
@@ -2743,9 +3405,21 @@ class Run_Fort:
 
     def get_keywds(self, keywd_class):
         self.chinst, self.symm, self.asymm, self.checksym, self.strtype, self.set_order, \
-                self.nset, self.mout, self.ovlp, self.itb, self.nnb, self.syb, \
-                self.mnbond, self.radical, self.nmbond = keywd_class.get_keywds()
+        self.nset, self.mout, self.ovlp, self.itb, self.nnb, self.syb, \
+        self.mnbond, self.radical, self.nmbond, self.nstrt1, self.strt_struc1,\
+        self.main_bond, self.pref_rad_lp, self.numlp, self.numradlp,\
+        self.pref_rad, self.numrad_py, self.numudr_py = keywd_class.get_keywds()
+
         GlobVar.symm_key = self.symm
+
+        self.strt_struc = np.array(self.strt_struc1, dtype=np.int32, order='F')
+        self.main_bond_py = np.array(self.main_bond, dtype=np.int32, order='F')
+        self.pref_rad_lp_py = np.array(self.pref_rad_lp, dtype=np.int32, order='F')
+        self.pref_rad_py = np.array(self.pref_rad, dtype=np.int32, order='F')
+        self.numlp_py = np.array(self.numlp, dtype=np.int32, order='F')
+        self.numradlp_py = np.array(self.numradlp, dtype=np.int32, order='F')
+
+        print("nstrt1",self.nstrt1,self.strt_struc1)
 
     def get_orbs(self, orb_class):
         self.atoset, self.norbsym, self.active, self.atn, self.orbsym, self.actv_atm_num\
@@ -2756,6 +3430,12 @@ class Run_Fort:
         print('atn', self.atn)
         print('orbsym', self.orbsym)
         print('actv_atm_num', self.actv_atm_num)
+
+    def get_ctrl_keywds(self, ctrl_keywds):
+        self.geometry_unit, self.nao, self.nae, self.nmul = ctrl_keywds.get_ctrl_keywds()
+        self.nao_py = int(self.nao)
+        self.nae_py = int(self.nae)
+        self.nmul_py = int(self.nmul)
 
     def get_geometry(self):
         if not GlobVar.geometry_inserted:
@@ -2769,32 +3449,54 @@ class Run_Fort:
         #    bohrtoangs = 0.529177
 
         # Initialize fixed-size arrays
-        self.symat_py = np.zeros(100, dtype="U5")
-        self.coordx_py = np.zeros(100, dtype=np.float64)
-        self.coordy_py = np.zeros(100, dtype=np.float64)
-        self.coordz_py = np.zeros(100, dtype=np.float64)
-        self.symatno_py = np.zeros(100, dtype=np.float64)
+        self.symat_py = np.zeros(GlobVar.total_atoms, dtype="U5", order='F')
+        self.coordx_py = np.zeros(GlobVar.total_atoms, dtype=np.float64, order='F')
+        self.coordy_py = np.zeros(GlobVar.total_atoms, dtype=np.float64, order='F')
+        self.coordz_py = np.zeros(GlobVar.total_atoms, dtype=np.float64, order='F')
+        self.symatno_py = np.zeros(GlobVar.total_atoms, dtype=np.float64, order='F')
+
+        #self.nstrt1 = 2
+
+        print("strt_struc1",self.strt_struc1)
+        print("main_bond_py",self.main_bond_py)
+        print("pref_rad_lp_py",self.pref_rad_lp_py)
+        print("pref_rad_py",self.pref_rad_py)
+        print("numlp_py",self.numlp_py)
+        print("numradlp_py",self.numradlp_py)
+        print("numrad_py",self.numrad_py)
+        print("numudr_py",self.numudr_py)
+        #self.symat_py = np.zeros(100, dtype="S5", order='F')
+        #self.coordx_py = np.zeros(100, dtype=np.float64, order='F')
+        #self.coordy_py = np.zeros(100, dtype=np.float64, order='F')
+        #self.coordz_py = np.zeros(100, dtype=np.float64, order='F')
+        #self.symatno_py = np.zeros(100, dtype=np.float64, order='F')
 
         # Number of atoms
-        n = len(coordx)  
+        #n = len(coordx)  
 
         # Copy and convert data with scaling
-        self.symat_py[:n] = symat
-        self.coordx_py[:n] = np.array(coordx) #* bohrtoangs
-        self.coordy_py[:n] = np.array(coordy) #* bohrtoangs
-        self.coordz_py[:n] = np.array(coordz) #* bohrtoangs
-        self.symatno_py[:n] = np.array(symatno, dtype=np.float64)
+        #self.symat_py[:n] = symat
+        #self.coordx_py[:n] = np.array(coordx) #* bohrtoangs
+        #self.coordy_py[:n] = np.array(coordy) #* bohrtoangs
+        #self.coordz_py[:n] = np.array(coordz) #* bohrtoangs
+        #self.symatno_py[:n] = np.array(symatno, dtype=np.float64)
+
+        self.symat_py[:] = np.asarray(symat, dtype='U5')
+        self.coordx_py[:] = np.asarray(coordx, dtype=np.float64)
+        self.coordy_py[:] = np.asarray(coordy, dtype=np.float64)
+        self.coordz_py[:] = np.asarray(coordz, dtype=np.float64)
+        self.symatno_py[:] = np.asarray(symatno, dtype=np.float64)
 
 #       # print('geometry:',self.symat_py, self.coordx_py, self.coordy_py, self.coordz_py, self.symatno_py)
 
-    def get_ctrl_keywds(self, ctrl_keywds):
-        self.geometry_unit, self.nao, self.nae, self.nmul = ctrl_keywds.get_ctrl_keywds()
 
     def share_input_data(self, output_folder):
+        self.out_folder_name = output_folder
+        print(self.norbsym)
         print(self.geometry_unit)
-        print(self.nao)
-        print(self.nae)
-        print(self.nmul)
+        print(self.nao_py)
+        print(self.nae_py)
+        print(self.nmul_py)
         print(GlobVar.molecule_string)
         print(self.chinst, self.symm)
         print(self.checksym)
@@ -2822,14 +3524,22 @@ class Run_Fort:
         print(GlobVar.total_atoms)
         print(GlobVar.num_iao)
         print(self.actv_atm_num)
-        print(output_folder)
-        #exit()
-        symm_str.get_ctrl_inputs(
+        print(self.out_folder_name)
+        print(self.strt_struc)
+        print(self.main_bond_py)
+        print(self.pref_rad_lp_py)
+        print(self.pref_rad_py)
+        print(self.numlp_py)
+        print(self.numrad_py)
+        print(self.numradlp_py)
+        print(self.numudr_py)
+        symm_str.ctrl_mod.get_ctrl_inputs(
+                self.nao_py,
+                self.nae_py,
+                self.nstrt1,
+                GlobVar.total_atoms,
                 self.geometry_unit,
-                self.nao,
-                self.nae,
-                self.nmul,
-                GlobVar.molecule_string,
+                self.nmul_py,
                 self.chinst, 
                 self.symm,
                 self.asymm,
@@ -2854,10 +3564,18 @@ class Run_Fort:
                 self.atn,
                 self.orbsym,
                 self.strtype,
-                GlobVar.total_atoms,
                 GlobVar.num_iao,
                 self.actv_atm_num,
-                output_folder
+                self.strt_struc,
+                self.main_bond_py,
+                self.pref_rad_lp_py,
+                self.pref_rad_py,
+                self.numlp_py,
+                self.numrad_py,
+                self.numradlp_py,
+                self.numudr_py,
+                GlobVar.molecule_string,
+                self.out_folder_name
                 )
         return (self.mout)
 
@@ -2867,6 +3585,7 @@ class Output:
         self.root = root
 
     def load_structure_file(self, fname):
+        self.fname = fname
         Output_window = tk.Toplevel(self.root)
         Output_window.title("Output")
         Output_window.geometry("1050x950")
@@ -2882,6 +3601,7 @@ class Output:
         rumers_ion = []
         sls_ion = []
         sets= perm_cov_str= perm_ion_str= all_cov_str= all_ion_str = 0
+        print('I am here')
 
         self.frames = {}
 
@@ -2915,11 +3635,10 @@ class Output:
 #        text_widget.pack(expand=True, fill=tk.BOTH)
         scrollbar.config(command=text_widget.yview)
         font = tkFont.Font(family="Helvetica", size=14)
-
         # calculation number of available structures & allowed structures
-        nlp = GlobVar.num_orbital - GlobVar.num_electron
         nao = GlobVar.num_orbital
         nae = GlobVar.num_electron
+        nlp =abs(nao - nae)
         nmult = GlobVar.multiplicity
         cov_nlp = nlp
         nlast = nmult - 1
@@ -3103,51 +3822,241 @@ class Output:
                             'Error', 'No independent set has been found, try after few munits'
                             )
                     return
+###################################################################################################
+
+       ## Below part is to find out highest quality structures and update the list(lines) ##
+       ## for the option 'Best_Sets'.
+
+        if GlobVar.num_sets == 1:
+            if GlobVar.CovIon == 1 or GlobVar.CovIon == 2:
+                best_strc_cov = []
+                strc_cov = None
+
+            if GlobVar.CovIon == 1 or GlobVar.CovIon == 3:
+                best_strc_ion = []
+                strc_ion = None
+
+            for line in lines:
+                if GlobVar.CovIon == 1 or GlobVar.CovIon == 2:
+                    if line.startswith('Cov_Space'):
+                        if strc_cov is not None:
+                            best_strc_cov.append(strc_cov)
+                        strc_cov = []
+                    if line.startswith('Set_number_c'):
+                        linear_indset = line.strip().split()
+                        strc_cov.append(linear_indset[2:])
+
+                if GlobVar.CovIon == 1 or GlobVar.CovIon == 3:
+                    if line.startswith('Ion_Space'):
+                        if strc_ion is not None:
+                            best_strc_ion.append(strc_ion)
+                        strc_ion = []
+                    if line.startswith('Set_number_i'):
+                        linear_indset = line.strip().split()
+                        strc_ion.append(linear_indset[2:])
+
+            if GlobVar.CovIon == 1 or GlobVar.CovIon == 2:
+                if strc_cov is not None:
+                    best_strc_cov.append(strc_cov)
+         #       print('best_strc_cov',best_strc_cov)
+
+            if GlobVar.CovIon == 1 or GlobVar.CovIon == 3:
+                if strc_ion is not None:
+                    best_strc_ion.append(strc_ion)
+          #      print('best_strc_ion',best_strc_ion)
+          #  print('overall_qualities_cov',overall_qualities_cov)
+          #  print('overall_qualities_ion',overall_qualities_ion)
+
+            
+
+            if GlobVar.CovIon == 1 or GlobVar.CovIon == 2:
+                result_cov = []
+                for struct, qualities in zip(best_strc_cov, overall_qualities_cov):
+                
+                    mapped_sums = []
+                    min_indices = []
+                
+                    for group in struct:  
+                        values = [qualities[int(x)-1] for x in group]
+                        mapped_sums.append(sum(values))
+                
+                    if mapped_sums:
+                        min_val = min(mapped_sums)
+                        min_indices = [i for i, x in enumerate(mapped_sums) if x == min_val]
+                        min_indices = [i + 1 for i in min_indices]
+                    else:
+                        normalized = []
+                
+                    #result_cov.append(normalized)
+                    result_cov.append(min_indices)
+            
+            if GlobVar.CovIon == 1 or GlobVar.CovIon == 3:
+                result_ion = []
+                for struct, qualities in zip(best_strc_ion, overall_qualities_ion):
+                
+                    mapped_sums = []
+                    min_indices = []
+                
+                    for group in struct:  
+                        values = [qualities[int(x)-1] for x in group]
+                        mapped_sums.append(sum(values))
+                
+                    if mapped_sums:
+                        min_val = min(mapped_sums)
+                        min_indices = [i for i, x in enumerate(mapped_sums) if x == min_val]
+                        min_indices = [i + 1 for i in min_indices]
+                    else:
+                        normalized = []
+                
+                    result_ion.append(min_indices)
+            
+        #    print('result_cov',result_cov)
+        #    print('result_cov_1',result_cov_1)
+            cov_block_idx = 0
+            ion_block_idx = 0
+            
+            lines1 = [] # temporary list to store lowest structure indices
+            i = 0
+            while i < len(lines):
+            
+                line = lines[i]
+                #print('line',line)
+            
+                # -------- Cov_Space --------
+                if (GlobVar.CovIon == 1 or GlobVar.CovIon == 2) and line.startswith('Cov_Space'):
+                    #if line.startswith('Cov_Space'):
+                    lines1.append(line)  
+                    #print('lines1',lines1)
+                        
+                    i += 1
+                    set_idx = 1  
+                    counter = 1
+            
+                    while i < len(lines) and lines[i].startswith('Set_number_c'):
+                        if cov_block_idx < len(result_cov) and set_idx in result_cov[cov_block_idx]:
+                            parts = lines[i].split()
+                            #print('parts',parts)
+
+                            new_line = f"Set_number_c  {counter}   " + " ".join(parts[2:]) + "\n"
+                            #print('new_line',new_line)
+                            lines1.append(new_line) 
+                            #print('lines1',lines1)    
+                            counter += 1
+                            
+                        set_idx += 1
+                        i += 1
+            
+                    cov_block_idx += 1
+                    continue
+
+                # -------- Ion_Space --------
+                if (GlobVar.CovIon == 1 or GlobVar.CovIon == 3) and line.startswith('Ion_Space'):
+                    #if line.startswith('Ion_Space'):
+                    lines1.append(line)  # keep header
+
+                    i += 1
+                    set_idx = 1
+                    counter = 1
+
+                    while i < len(lines) and lines[i].startswith('Set_number_i'):
+
+                        if ion_block_idx < len(result_ion) and set_idx in result_ion[ion_block_idx]:
+                            parts = lines[i].split()
+
+                            new_line = f"Set_number_i  {counter}   " + " ".join(parts[2:]) + "\n"
+                            lines1.append(new_line)
+
+                            #print('lines1*',lines1)    
+                            counter += 1
+
+                        set_idx += 1
+                        i += 1
+
+                    ion_block_idx += 1
+                    continue
+                #sys.exit()
+            lines = lines1.copy()
+        #print('lines1****',lines)
+###########################################################################################
 
         flag1 = 1
         flag2 = 2
         flag3 = 3
-        view_set_button = tk.Button(
+        view_set_button_cov = tk.Button(
                 self.frames["button_frame"], 
                 text='View Cov Set', 
                 command=lambda: self.view_set(flag1, structures_cov, various_qualities_cov, overall_qualities_cov,
                                               rumers_cov, sls_cov, set_text_wt, lines, 'cov')
                 )
-        view_set_button.grid(row=0, column=2, padx=10, pady=10)
+        view_set_button_cov.grid(row=0, column=2, padx=10, pady=10)
+        if GlobVar.CovIon == 3:
+            view_set_button_cov.config(state=tk.DISABLED)  # Initially disable the button
 
-        view_set_button = tk.Button(
+        view_set_button_ion = tk.Button(
                 self.frames["button_frame"], 
                 text='View Ion Set', 
                 command=lambda: self.view_set(flag1, structures_ion, various_qualities_ion, overall_qualities_ion,
                                               rumers_ion, sls_ion, set_text_wt, lines, 'ion')
                 )
-        view_set_button.grid(row=0, column=3, padx=10, pady=10)
+        view_set_button_ion.grid(row=0, column=3, padx=10, pady=10)
+        if GlobVar.CovIon == 2:
+            view_set_button_ion.config(state=tk.DISABLED)  # Initially disable the button
+        
+        def handle_next_set():
+            if GlobVar.ciflg == 'cov':
+                self.view_set(flag2, structures_cov, various_qualities_cov, overall_qualities_cov,
+                            rumers_cov, sls_cov, set_text_wt, lines, '')
+            elif GlobVar.ciflg == 'ion':
+                self.view_set(flag2, structures_ion, various_qualities_ion, overall_qualities_ion,
+                            rumers_ion, sls_ion, set_text_wt, lines, '')
 
-        view_nextset_button = tk.Button(
-                self.frames["button_frame"], text='Next Set', 
-                command=lambda: self.view_set(flag2, structures, various_qualities, overall_qualities,
-                                              rumers, sls, set_text_wt, lines, '')
-                )
-        view_nextset_button.grid(row=0, column=4, padx=10, pady=10)
-        if len(lines) == 1:
-            view_nextset_button.config(state=tk.DISABLED)  # Initially disable the button
+        def handle_prev_set():
+            if GlobVar.ciflg == 'cov':
+                self.view_set(flag3, structures_cov, various_qualities_cov, overall_qualities_cov,
+                            rumers_cov, sls_cov, set_text_wt, lines, '')
+            elif GlobVar.ciflg == 'ion':
+                self.view_set(flag3, structures_ion, various_qualities_ion, overall_qualities_ion,
+                            rumers_ion, sls_ion, set_text_wt, lines, '')
 
+
+    # Create the button and assign the nested function
         view_prevtset_button = tk.Button(
-                self.frames["button_frame"], text='Prev Set', 
-                command=lambda: self.view_set(flag3, structures, various_qualities, overall_qualities,
-                                              rumers, sls, set_text_wt, lines, '')
-                )
+            self.frames["button_frame"],
+            text='Prev Set',
+            command=handle_prev_set
+        )
         view_prevtset_button.grid(row=0, column=1, padx=10, pady=10)
-        if len(lines) == 1:
+    #CovIon = None
+        if GlobVar.num_sets == 0:
             view_prevtset_button.config(state=tk.DISABLED)  # Initially disable the button
 
 
+        view_nextset_button = tk.Button(
+            self.frames["button_frame"], 
+            text='Next Set', 
+            command= handle_next_set
+        )
+        view_nextset_button.grid(row=0, column=4, padx=10, pady=10)
+
+        if GlobVar.num_sets == 0:
+            view_nextset_button.config(state=tk.DISABLED)  # Initially disable the button
+
+
     def view_set(self, flag, structure_ci, various_qualities_ci, overall_qualities_ci, 
-                 rumers_ci, sls_ci, set_text_wt, lines, ciflg):
-        print('inside view_set',flag)
-        print('sls',sls_ci)
-        diff_sets = []
+                 rumers_ci, sls_ci, set_text_wt, lines, covionflg):
+
+        various_qualities_selected = []
+        overall_qualities_selected = []
+        rumers_selected = []
+        indset = []
+        diff_sets = 0
         max_set = 0
+
+        if covionflg != '':
+            GlobVar.ciflg = covionflg
+
+        #print('ciflg********',GlobVar.ciflg)
+
         if flag == 1:
             GlobVar.set_id = 1
             self.set_info_wt.delete("1.0", "end")
@@ -3157,47 +4066,48 @@ class Output:
         elif flag == 3:
             GlobVar.set_id -= 1
             self.set_info_wt.delete("1.0", "end")
-        print('flag',GlobVar.set_id)
 
         set_text_wt.tag_configure("right", justify="right")
-        print('lines',lines)
         count_c = 0
         count_i = 0
-        for line in lines:
-            if line.startswith('Set_number_c') and ciflg == 'cov':
-                linear_indset = line.strip().split()
-                diff_sets = linear_indset[1]
-            if line.startswith('Set_number_i') and ciflg == 'ion':
-                linear_indset = line.strip().split()
-                diff_sets = linear_indset[2]
-        max_set = max(diff_sets)
-        print('max_set', max_set)
-        linear_indset = 0
 
         for line in lines:
-            if 'Cov_Space' in line and ciflg == 'cov':
+            if line.startswith('Set_number_c') and GlobVar.ciflg == 'cov':
+                linear_indset = line.strip().split()
+                diff_sets = linear_indset[1]
+            if line.startswith('Set_number_i') and GlobVar.ciflg == 'ion':
+                linear_indset = line.strip().split()
+                diff_sets = linear_indset[2]
+
+        max_set = diff_sets
+        linear_indset = 0
+        structure = []
+        various_qualities=[]
+        overall_qualities=[]
+        rumers=[]
+        sls=[]
+
+        for line in lines:
+            if 'Cov_Space' in line and GlobVar.ciflg == 'cov':
                 structure=structure_ci[count_c]
                 various_qualities=various_qualities_ci[count_c] 
                 overall_qualities=overall_qualities_ci[count_c] 
                 rumers=rumers_ci[count_c]
                 sls=sls_ci[count_c]
-                print('sls,count',sls, count_c)
                 count_c += 1
-            if 'Ion_Space' in line and ciflg == 'ion':
+            if 'Ion_Space' in line and GlobVar.ciflg == 'ion':
                 structure=structure_ci[count_i]
                 various_qualities=various_qualities_ci[count_i] 
                 overall_qualities=overall_qualities_ci[count_i] 
                 rumers=rumers_ci[count_i]
                 sls=sls_ci[count_i]
-                print('sls,count',sls, count_i)
                 count_i += 1
-            if line.startswith('Set_number_c') and ciflg == 'cov':
+            if line.startswith('Set_number_c') and GlobVar.ciflg == 'cov':
                 linear_indset = line.strip().split()
-                print('linear_indset',linear_indset)
 
                 if linear_indset[1] == str(GlobVar.set_id):
                     if count_c == 1:
-                        indset = []
+                        #indset = []
                         set_text_wt.delete("1.0", "end")
                         set_text_wt.insert(
                                 tk.END, f"\n    Total Number of  Independent Set of Structures: {max_set}  \n\n"
@@ -3207,22 +4117,26 @@ class Output:
                                 )
                     sl = 0
                     for index in linear_indset[2:]:
+                        #print('linear_indset',linear_indset[2:])
+                        #print('structure',structure[int(index) - 1],[int(index) - 1])
                         sl += 1
                         indset.append(int(index))
                         set_text_wt.insert(
-                                tk.END, f" {sl}  ({sls[int(index) - 1]}):        " + structure[int(index) - 1] + "\n"
+                                tk.END, f" {sl}  ({sls[int(index) - 1]}):     " + structure[int(index) - 1] + "\n"
                                 )
-                    info_button = tk.Button(self.frame_view_info, text="Set Info", 
-                           command=lambda: self.set_info(
-                                various_qualities, overall_qualities, rumers, indset
-                                )
-                            )
-                    info_button.grid(row=0, column=0, sticky=tk.W, padx=10)
+                        various_qualities_selected.append(various_qualities[int(index) - 1])
+                        overall_qualities_selected.append(overall_qualities[int(index) - 1])
+                        self.set_info(various_qualities_selected, overall_qualities_selected)
+
+                    #info_button = tk.Button(self.frame_view_info, text="Set Info", 
+                    #       command=lambda: self.set_info(
+                    #            various_qualities_selected, overall_qualities_selected
+                    #            )
+                    #        )
+                    #info_button.grid(row=0, column=0, sticky=tk.W, padx=10)
                     if GlobVar.symm_key == 1:
                         symm_grp_button = tk.Button(self.frame_view_info, text="Symmetry groups",
-                                                    command=lambda:self.show_symm_groups(
-                                                        overall_qualities, structure
-                                                        )
+                                                    command=self.show_symm_groups
                                                     )
                         symm_grp_button.grid(row=0, column=1, sticky=tk.W, padx=10)
 
@@ -3245,12 +4159,11 @@ class Output:
                     view_button_prev.grid(row=0, column=0, sticky=tk.W, padx=10)
                     #print('linear_indset', linear_indset)
 
-            if line.startswith('Set_number_i') and ciflg == 'ion':
+            if line.startswith('Set_number_i') and GlobVar.ciflg == 'ion':
                 linear_indset = line.strip().split()
                 print('linear_indset',linear_indset)
 
                 if linear_indset[1] == str(GlobVar.set_id):
-                    indset = []
                     if count_i == 1:
                         set_text_wt.delete("1.0", "end")
                         set_text_wt.insert(
@@ -3266,17 +4179,19 @@ class Output:
                         set_text_wt.insert(
                                 tk.END, f" {sl}  ({sls[int(index) - 1]}):        " + structure[int(index) - 1] + "\n"
                                 )
-                    info_button = tk.Button(self.frame_view_info, text="Set Info", 
-                           command=lambda: self.set_info(
-                                various_qualities, overall_qualities, rumers, indset
-                                )
-                            )
-                    info_button.grid(row=0, column=0, sticky=tk.W, padx=10)
+                        various_qualities_selected.append(various_qualities[int(index) - 1])
+                        overall_qualities_selected.append(overall_qualities[int(index) - 1])
+                        self.set_info(various_qualities_selected, overall_qualities_selected)
+
+                    #info_button = tk.Button(self.frame_view_info, text="Set Info", 
+                    #       command=lambda: self.set_info(
+                    #            various_qualities_selected, overall_qualities_selected
+                    #            )
+                    #        )
+                    #info_button.grid(row=0, column=0, sticky=tk.W, padx=10)
                     if GlobVar.symm_key == 1:
                         symm_grp_button = tk.Button(self.frame_view_info, text="Symmetry groups",
-                                                    command=lambda:self.show_symm_groups(
-                                                        overall_qualities, structure
-                                                        )
+                                                    command=self.show_symm_groups
                                                     )
                         symm_grp_button.grid(row=0, column=1, sticky=tk.W, padx=10)
 
@@ -3320,7 +4235,7 @@ class Output:
             print('entry', entry)
             print(structures[entry])
 
-            nlp = GlobVar.num_electron - GlobVar.num_orbital
+            nlp = abs(GlobVar.num_electron - GlobVar.num_orbital)
             if nlp != 0:
                 for item in structure:
                     if item not in seen:
@@ -3347,37 +4262,131 @@ class Output:
         print('nlp:',nlp_lst,'rad:',rad_lst,'bond:',bond_lst)
 
 
-    def show_symm_groups(self, overall_qualities, structure):
-        strpergrp = Counter(overall_qualities)
-        strpergrp = dict(sorted(strpergrp.items()))
-        print('strpergrp', strpergrp)
+    def show_symm_groups(self):
+        top = tk.Toplevel(root)   # create new window
+        top.title("Symmetry sub-groups")
+        top.geometry("500x600")
+        top.configure(background="lightblue")
 
-    def set_info(self, various_qualities, overall_qualities, rumer, indset):
-        oqt = sum(overall_qualities[i - 1] for i in indset)
+        canvas = tk.Canvas(top, bg="lightblue")
+        scrollbar = tk.Scrollbar(top, orient="vertical", command=canvas.yview)
+        scroll_frame = tk.Frame(canvas)
+        scroll_frame.configure(background="lightblue")
+
+        scroll_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+            )
+
+        #canvas = tk.Canvas(container, height=370, width=510)
+        canvas.create_window((0, 0), window=scroll_frame,  anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+
+
+        input_file = self.fname + '/' + 'out_symm.temp'
+        with open(input_file, 'r') as f:
+            lines = f.readlines()
+        
+            current_space = None
+            current_block = []
+            results = []
+        
+            for line in lines:
+                line = line.strip()
+        
+                # Detect new space
+                if line.startswith("Cov Space") or line.startswith("Ion Space"):
+                    if current_space is not None:
+                        results.append((current_space, current_block))
+                    current_space = line
+                    current_block = []
+                    continue
+        
+                # Skip empty lines
+                if not line:
+                    continue
+        
+                parts = line.split()
+        
+                # Skip malformed lines
+                if len(parts) < 3:
+                    continue
+        
+                serial = int(parts[0])
+                quality = int(parts[1])
+                structure = parts[2:]
+        
+                current_block.append((serial, quality, structure))
+        
+            # Append last block
+            if current_space is not None:
+                results.append((current_space, current_block))
+        grouped_results = []
+
+        for space, block in results:
+            groups = defaultdict(list)
+
+            for serial, quality, structure in block:
+                groups[quality].append((serial, structure))
+
+            grouped_results.append((space, dict(groups)))
+        
+        for space, groups in grouped_results:
+
+            tk.Label(scroll_frame,
+                     text=space,
+                     font=("Arial", 16, "bold"),
+                     bg="lightblue",
+                     anchor="w").pack(fill="x", padx=10, pady=5)
+
+            for q in sorted(groups.keys()):
+
+                tk.Label(scroll_frame,
+                         text=f"  Sub-group (Symmetry score {q}):",
+                         font=("Arial", 14, "bold"),
+                         bg="lightblue",
+                         anchor="w").pack(fill="x", padx=20)
+
+                for serial, structure in groups[q]:
+                    struct_str = " ".join(structure)
+
+                    tk.Label(scroll_frame,
+                            text=f"    {serial}:  {struct_str}",
+                            font=("Arial", 14),
+                            bg="lightblue",
+                            anchor="w",
+                            justify="left").pack(fill="x", padx=30)
+
+            tk.Label(scroll_frame, text="", bg="lightblue").pack(pady=5)
+
+        tk.Button(top, text="Close", command=top.destroy).pack(pady=5)
+
+    def set_info(self, various_qualities, overall_qualities):
+        oqt = sum(overall_qualities[i] for i in range(len(overall_qualities)))
         self.set_info_wt.delete("1.0", "end")
         self.set_info_wt.insert(tk.END, f"\n Overall Quality: {oqt}\n\n")
-        self.set_info_wt.insert(tk.END, "IAB  NAB  SBB  PDB  PDR\n")
-        self.set_info_wt.insert(tk.END, f"{'-----':<8}" 
+        self.set_info_wt.insert(tk.END, " IAB  NAB  SBB  PDB  PDR\n")
+        self.set_info_wt.insert(tk.END, f"{' -----':<8}" 
                                 f"{'-----':<8}" 
                                 f"{'-----':<8}" 
                                 f"{'-----':<8}" 
                                 f"{'-----':<8}\n")
-        for i in indset:
-            a, b, c, d, e = various_qualities[i-1].strip().split()
-            self.set_info_wt.insert(tk.END, f"{a:<8}" 
+        for i in range(len(various_qualities)):
+            a, b, c, d, e = various_qualities[i].strip().split()
+            self.set_info_wt.insert(tk.END,f"  {a:<8}" 
                                     f"{b:<8}" 
                                     f"{c:<8}" 
                                     f"{d:<8}" 
                                     f"{e:<8}""\n")
-        j = 0
-        for i in indset:
-            if rumer[i-1] == 'R':
-                j += 1
-
-        if j == len(indset):
+        if GlobVar.Rum_Ch == 0:
             self.set_info_wt.insert(tk.END, "\n The set is a Rumer Set\n")
-        else:
+        elif GlobVar.Rum_Ch == 1:
             self.set_info_wt.insert(tk.END, "\n The set is a Chemical Insight Set \n")
+        elif GlobVar.Rum_Ch == 2:
+            self.set_info_wt.insert(tk.END, "\n The set is a Equal Bond-Distributed Set \n")
 
         return #oqt
 
@@ -3387,6 +4396,7 @@ class Output:
             nao = number of active electrons
             nmult = multiplicity
         '''
+        print("nlpppp",nlp)
         wigner = 0
         sets = 1
 
@@ -3403,6 +4413,7 @@ class Output:
 
 
         ''' Number of sets depending on lone pairs'''
+        print("nlp*****",nlp)
         if nlp != 0:
             sets = math.comb(nao, nlp)
 
